@@ -1,0 +1,68 @@
+---
+title: Empirical laws, old and new, in the nutrition transition
+author:
+  - name: Benjamin Schiek
+    email: b.schiek@cgiar.org
+    affiliation: Alliance Bioversity-CIAT
+    footnote: Corresponding Author
+address:
+  - code: Alliance Bioversity-CIAT
+    address: Alliance Bioversity-CIAT, Km 17 Recta Cali-Palmira, Valle del Cauca, Colombia
+abstract: |
+  Engel's Law and Bennett's Law are often mentioned in the nutrition transition literature. But seldom is any evidence of their validity presented in a straightforward, visual manner. Here I present...using FAO and World Bank data. I also present variant formulations which fit the data more cleanly. Including consumption inequality in the model improves the fit. The fitted slope and y-intercept parameters are fairly stable across four and a half decades of data. Animations (available as supplemental material) offer striking visual confirmation of this stability. I propose a new theoretical framework that unifies the two laws as separate manifestations of a single underlying principle. Finally, I present another empirical law that appears to have gone unnoticed until now: a tight log-linear corresponance between commodity expected price and price volatility.
+
+journal: "CG Space"
+bibliography: Empirical laws, old and new, in the nutrition transition.bib
+header-includes:
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+#linenumbers: true
+numbersections: true
+csl: elsevier-harvard.csl
+output: rticles::elsevier_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+library(plyr)
+library(tidyverse)
+library(zoo)
+library(tidyquant)
+library(patchwork)
+library(kableExtra)
+```
+
+# Introduction
+
+It is important to develop solid intuition about these empirical relations, as such concepts may influence policy discussions regarding future food demand and strategies to meet that demand... back of the envelope calculation of future food demand... prevent duplication of efforts. Tilman et al. [-@tilman2011global], for example, presented a tight empirical relation between Gross Domestic Product (GDP) and calorie consumption, which they believe to be newly discovered by them. In fact, a strong case could be made that they had merely re-discovered the same empirical relation (or a corrollary thereof) observed by Engel in 1841. 
+
+Engel's Law...Zimmerman [-@zimmerman1932ernst] cites several 19th century datasets that appear to contradict Engel's Law.
+
+Bennett's Law... [@bennett1941international].
+
+I then propose a theoretical unification of the two laws by deriving them both from the same principle of diminishing returns to marginal increases in expenditures on inferior goods.
+
+# The established laws
+
+## Engel's Law
+
+The influence of income distribution on Engel's Law was explored by Cirera and Masset [-@cirera2010income]. Following in this vein, here I tried including the income Gini coefficent in the models. is not significant. However, the consumption Gini coefficient is significant at the 0.05 level. Adding consumption inequality to the model increases the adjusted R-squared by 0.10. GCIP data.
+
+Tilman et al. [-@tilman2011global] reached an estimate of 100%-110% increase in food demand based on about 2.5% growth in GDP. More realistic growth estimates ...[@diaz2016future].
+
+
+## Bennett's Law
+
+# Two laws, or two manifestations of the same law?
+
+As far as expenditures go, food stands to luxury goods as starchy foods stand to protein and vitamin rich foods.
+
+# A new one: expected price and price volatility
+
+# Discussion and conclusion
+
+Policy implications etc. higher expected return goes hand in hand with higher risk---in an almost perfect one-to-one tradeoff. Focus is always on productivity, genetic gain...but this shows that innovative, cooperative risk pooling mechanisms may be an equally important, complementary role. social capital ... (Belo Horizonte, Multi-Stake... Platforms?)
+
+# References {-}
