@@ -52,7 +52,11 @@ Tilman et al. [-@tilman2011global] reached an estimate of 100%-110% increase in 
 
 "The poorer is a family, the greater is the proportion of the total outgo which must be used for food" [@zimmerman1932ernst].
 
-```{r, fig.show = "hold", fig.width = 7, fig.height=7, fig.align='left', fig.cap="\\label{fig:Engel1}\\textit{(Top)} ...", echo = FALSE}
+Only recently African countries included in the ICP data...in Figure \ref{fig:Engel0}
+
+World Bank International Comparison Program Data (ICP)
+
+```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align='left', fig.cap="\\label{fig:Engel0}Engel's Law. Source: Author's creation based on ICP data for 2017. GDP/capita is retrieved from the FAO database and is based on 2015 prices.", echo = FALSE}
 #===========================================================================
 shift_legend2 <- function(p) {
   # ...
@@ -262,8 +266,8 @@ df_icp_raw$Country[grep("Bahamas", df_icp_raw$Country)] <- "Bahamas"
 df_icp_raw$Country[grep("Venezuela", df_icp_raw$Country)] <- "Venezuela"
 df_icp_raw$Country[grep("Cape Verde", df_icp_raw$Country)] <- "Cabo Verde"
 df_icp_raw$Country[grep("Virgin Islands, British", df_icp_raw$Country)] <- "British Virgin Islands"
-unique(df_icp_raw$Country[grep("China", df_icp_raw$Country)])
-unique(df_gdp_raw$Area[grep("China", df_gdp_raw$Area)])
+#unique(df_icp_raw$Country[grep("Guatemala", df_icp_raw$Country)])
+#unique(df_gdp_raw$Area[grep("China", df_gdp_raw$Area)])
 #unique(df_icp_raw$Item)
 #unique(df_icp_raw$Element)
 df_icp <- subset(df_icp_raw, Item == "FOOD AND NON-ALCOHOLIC BEVERAGES" &
@@ -304,7 +308,7 @@ out_list <- FAOdat_createRegionGroups(df_gdp_raw, exclude_these = NULL, keep_FAO
                                       output_countryVecs = T)
 df_gdp_raw <- out_list[["df_raw"]]
 #unique(df_gdp_raw$Area[which(is.na(df_gdp_raw$Region))])
-#unique(df_gdp_raw$Area[grep("d'Ivoire", df_gdp_raw$Area)])
+#unique(df_gdp_raw$Area[grep("Guatemala", df_gdp_raw$Area)])
 #unique(df_gdp_raw$Region[grep("d'Ivoire", df_gdp_raw$Area)])
 #---------------------------------------------------------------------------
 df_gdp_raw$Area[grep("Tanzania", df_gdp_raw$Area)] <- "Tanzania"
@@ -367,13 +371,21 @@ mod <- lm(`Food expenditure share of GDP, logged` ~ `GDP / capita (USD), logged`
 m <- round(mod$coefficients[2], 2)
 b <- round(mod$coefficients[1], 2)
 
-labelThese_vec <- c("Tanzania", "Uganda", "Kenya", "Ethiopia",
-                    "India", "South Africa", "Iran",
-                    "DRC", "Austria", "United Kingdom", "Zambia",
-                    "Angola", "France", "Vietnam", "China, mainland", "Ghana",
-                    "Japan", "Australia", "United States", "Spain",
-                    "Egypt", "Turkey", "Sudan", "South Korea",
-                    "Nicaragua", "Rwanda", "Burundi", "Mozambique", "Italy")
+# unique(df_plot$Country[which(df_plot$Region == "Asia\n(excluding W. Asia)")])
+# unique(df_plot$Country[which(df_plot$Region == "N. Africa / W. Asia")])
+label_Africa <- c("Tanzania", "Uganda", "Kenya", "Ethiopia", "South Africa",
+                  "DRC", "Angola", "Ghana","Rwanda", "Mozambique")
+label_NAfricaWAsia <- c("Egypt", "Turkey", "Sudan", "Saudi Arabia", "Jordan",
+                        "Israel", "United Arab Emirates", "Kuwait")
+label_Asia <- c("India", "Iran", "China, mainland", "Vietnam", "Japan",
+                "South Korea", "Afghanistan", "Indonesia", "Kazakhstan",
+                "Singapore", "Tajikistan")
+label_NAmEurAusNZ <- c("Austria", "United Kingdom", "France", "Australia",
+                       "United States", "Spain", "Italy")
+label_LAC <- c("Nicaragua", "Haiti", "Argentina", "Colombia", "Mexico",
+               "Dominican Republic", "Brazil", "Uruguay")
+labelThese_vec <- c(label_Africa, label_NAfricaWAsia, label_Asia,
+                    label_NAmEurAusNZ, label_LAC)
 
 df_plot$label_these <- NA
 u <- df_plot$Country
@@ -384,23 +396,24 @@ bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
 color_vec <- sample(bag_of_colors, n)
 
 shape_vec <- c(21:24, 4)
+point_size <- 4
 
 gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
                           y = `Food expenditure share of GDP, logged`,
                           group = Region, fill = Region, shape = Region,
                           label = label_these))
 # gg <- gg + geom_point(aes(fill = Region, group = Region, shape = Region), pch = 21, alpha = 0.5, size = 6, color = "black")
-gg <- gg + geom_point(alpha = 0.6, size = 5, color = "black", stroke = 2)
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
 gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
 # gg <- gg + geom_abline(slope = m, intercept = b,
 #                        linetype = "dashed", size = 1)
 gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
 gg <- gg + ggrepel::geom_text_repel(color = "black", size = 5)
-gg <- gg + labs(title = "Engel's Law", 
-                subtitle = paste0("Slope = ", m, ", y-intercept = ", b),
-                caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
-                GDP/capita is based on 2015 prices.")
+gg <- gg + labs(#title = "Engel's Law", 
+                subtitle = paste0("Slope = ", m, ", y-intercept = ", b))#,
+                #caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
+                #GDP/capita is based on 2015 prices.")
 gg <- gg + guides(fill = guide_legend(override.aes = list(linetype = 0)),
          color = guide_legend(override.aes = list(linetype = 0)))
 gg <- gg + theme(legend.position = "bottom",
@@ -408,8 +421,11 @@ gg <- gg + theme(legend.position = "bottom",
                  legend.title = element_blank())
 gg
 #ggsave("Engels Law 1.png", width = 8.5, height = 6.5, units = "in")
+```
 
+Better fit when examined by regions...parameter values vary somewhat by region in Figure \ref{fig:Engel0_disagg}. Might also try disaggregating by quantile.
 
+```{r, fig.show = "hold", fig.width = 10, fig.height=6, fig.align='left', fig.cap="\\label{fig:Engel0_disagg}Engel's Law by region, ICP data for 2017.", echo = FALSE}
 region_vec <- unique(df_plot$Region)
 facet_labels <- c()
 for(i in 1:length(region_vec)){
@@ -419,7 +435,8 @@ mod <- lm(`Food expenditure share of GDP, logged` ~ `GDP / capita (USD), logged`
 #summary(mod)
 m <- round(mod$coefficients[2], 2)
 b <- round(mod$coefficients[1], 2)
-
+#   print(this_region)
+# print(m)
   facet_labels[i] <- paste0("Slope = ", m, ", y-intercept = ", b)
 }
 
@@ -428,50 +445,386 @@ names(facet_labels) <- region_vec
 gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
                           y = `Food expenditure share of GDP, logged`,
                           group = Region, fill = Region, shape = Region,
-                          label = Country))
-gg <- gg + geom_point(alpha = 0.6, size = 5, color = "black", stroke = 2)
+                          label = label_these))
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
 gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
 gg <- gg + geom_smooth(method = lm, se = F)
-gg <- gg + facet_wrap(~Region, ncol = 3, scales = "free_y", labeller = labeller(Region = facet_labels))
-#gg <- gg + ggrepel::geom_text_repel(color = "black", size = 4)
+gg <- gg + facet_wrap(~Region, ncol = 3, scales = "free", labeller = labeller(Region = facet_labels))
+gg <- gg + ggrepel::geom_text_repel(color = "black", size = 4, fontface = "bold")
 gg <- gg + theme(strip.background = element_blank(),
+                 strip.text.x = element_text(size = 10, face = "bold", hjust = -0.01),
                  #legend.direction = "vertical",
                  #legend.spacing.y = unit(1, 'cm'),
-                 legend.text = element_text(margin = margin(r = 30, unit = "pt")),
+                 legend.text = element_text(size = 12),
                  legend.title = element_blank())
-                 gg <- gg + guides(fill = guide_legend(#nrow = 2,
+gg <- gg + guides(fill = guide_legend(#nrow = 2,
                                       override.aes = list(linetype = 0)),
          color = guide_legend(override.aes = list(linetype = 0)))
 gg <- shift_legend2(gg)
 gg <- ggplotify::as.ggplot(gg)
-gg
-
-
-#--------------------------------------------------------------------------
-gg <- ggplot(df_plot, aes(x = `2017 GDP / capita (USD), logged`,
-                          y = `2017 Real food expenditure / capita (USD), logged`,
-                          group = Region))
-gg <- gg + geom_point(aes(color = Region, shape = Region), size = 3)
-gg <- gg + geom_abline(slope = m, intercept = b,
-                       color = "cyan", linetype = "dashed", size = 1)
-gg <- gg + ggrepel::geom_text_repel(data = df_labelThese, aes(label = Country))
-gg <- gg + labs(title = "Engel's Law", 
-                subtitle = paste0("Slope = ", m, ", y-intercept = ", b),
-                caption = "Source: Author's creation based on World Bank International Comparison Program Data.
-                GDP/capita is based on 2015 prices.")
-gg <- gg + theme(legend.position = "top",
-                 legend.spacing.x = unit(1.0, 'cm'),
-                 legend.title = element_blank())
-gg
-#ggsave("Engels Law 2.png", width = 8.5, height = 6.5, units = "in")
-#--------------------------------------------------------------------------
-
+#gg
+#ggsave("Engels Law 1 Disaggregated.png", width = 8.5, height = 6.5, units = "in")
 ```
 
 
 "Engel’s law establishes that as income increases, households’ demand for
-food increases less than proportionally" [@cirera2010income].
+food increases less than proportionally" [@cirera2010income]... Figure \ref{fig:Engel1}.
+
+
+```{r, fig.show = "hold", fig.width = 9, fig.height=6, fig.align='left', fig.cap="\\label{fig:Engel1}Engel's Law, variation 1, ICP data for 2017.", echo = FALSE}
+
+unique(df_icp_raw$Element)
+df_icp <- subset(df_icp_raw, Item == "FOOD AND NON-ALCOHOLIC BEVERAGES" &
+                   Element == "Real expenditures per capita (U.S. dollars)" &
+                   Year == 2017)
+df_icp <- df_icp[which(!is.na(df_icp$Value)), ]
+df_icp <- df_icp[, c("Country", "Value")]
+df_icp$Value <- log(df_icp$Value)
+colnames(df_icp)[ncol(df_icp)] <- "Real expenditures per capita (USD), logged"
+#--------------------------------------------------------------------------
+#df_icp$Country[which(df_icp$Country == "China")] <- "China, mainland"
+#unique(df_icp$Country[grep("Timor-Leste", df_icp$Country)])
+dont_match1 <- setdiff(unique(df_icp$Country), unique(df_gdp$Country))
+dont_match2 <- setdiff(unique(df_gdp$Country), unique(df_icp$Country))
+dont_match <- c(dont_match1, dont_match2)
+df_engel <- merge(df_gdp, df_icp, by = c("Country"))
+#==========================================================================
+df_engel$Region[grep("Western Asia", df_engel$Region)] <- "N. Africa / W. Asia"
+df_engel$Region[grep("Northern Africa", df_engel$Region)] <- "N. Africa / W. Asia"
+df_engel$Region[which(df_engel$Region %in% c("Western Africa",
+                                               "Eastern Africa",
+                                               "Middle Africa",
+                                               "Southern Africa"))] <- "Sub-Saharan Africa"
+df_engel$Region[grep("Europe", df_engel$Region)] <- "Europe"
+df_engel$Region[which(df_engel$Region %in% c("Europe", "North America"))] <- "Europe / N. Amer.\nAustralia / NZ"
+df_engel$Region[which(df_engel$Area %in% c("Australia", "New Zealand"))] <- "Europe / N. Amer.\nAustralia / NZ"
+df_engel$Region[which(df_engel$Region %in% c("Southern Asia", "South-Eastern Asia", "Central Asia", "Eastern Asia"))] <- "Asia\n(excluding W. Asia)"
+df_engel$Region[which(df_engel$Region == "Aus/NZ/Oceania")] <- "Pacific Islands"
+#unique(df_engel$Region)
+#-------------------------------------------------------------------------
+df_plot <- df_engel
+colnames(df_plot)[3] <- c("GDP / capita (USD), logged")
+df_plot <- subset(df_plot, Region != "Pacific Islands" &
+                    !(Country %in% c("Saint Lucia", "Seychelles")))
+#--------------------------------------------------------------------------
+mod <- lm(`Real expenditures per capita (USD), logged` ~ `GDP / capita (USD), logged`, df_plot)
+#summary(mod)
+m <- round(mod$coefficients[2], 2)
+b <- round(mod$coefficients[1], 2)
+
+# unique(df_plot$Country[which(df_plot$Region == "Asia\n(excluding W. Asia)")])
+# unique(df_plot$Country[which(df_plot$Region == "N. Africa / W. Asia")])
+label_Africa <- c("Tanzania", "Uganda", "Kenya", "Ethiopia", "South Africa",
+                  "DRC", "Angola", "Ghana","Rwanda", "Mozambique")
+label_NAfricaWAsia <- c("Egypt", "Turkey", "Sudan", "Saudi Arabia", "Jordan",
+                        "Israel", "United Arab Emirates", "Kuwait")
+label_Asia <- c("India", "Iran", "China, mainland", "Vietnam", "Japan",
+                "South Korea", "Afghanistan", "Indonesia", "Kazakhstan",
+                "Singapore", "Tajikistan")
+label_NAmEurAusNZ <- c("Austria", "United Kingdom", "France", "Australia",
+                       "United States", "Spain", "Italy")
+label_LAC <- c("Nicaragua", "Haiti", "Argentina", "Colombia", "Mexico",
+               "Dominican Republic", "Brazil", "Uruguay")
+labelThese_vec <- c(label_Africa, label_NAfricaWAsia, label_Asia,
+                    label_NAmEurAusNZ, label_LAC)
+
+df_plot$label_these <- NA
+u <- df_plot$Country
+df_plot$label_these[which(u %in% labelThese_vec)] <- u[which(u %in% labelThese_vec)]
+
+n <- length(unique(df_plot$Region))
+bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
+color_vec <- sample(bag_of_colors, n)
+
+shape_vec <- c(21:24, 4)
+point_size <- 4
+
+gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
+                          y = `Real expenditures per capita (USD), logged`,
+                          group = Region, fill = Region, shape = Region,
+                          label = label_these))
+# gg <- gg + geom_point(aes(fill = Region, group = Region, shape = Region), pch = 21, alpha = 0.5, size = 6, color = "black")
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
+gg <- gg + scale_fill_manual(values = color_vec)
+gg <- gg + scale_shape_manual(values = shape_vec)
+# gg <- gg + geom_abline(slope = m, intercept = b,
+#                        linetype = "dashed", size = 1)
+gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
+gg <- gg + ggrepel::geom_text_repel(color = "black", size = 5)
+gg <- gg + labs(#title = "Engel's Law", 
+                subtitle = paste0("Slope = ", m, ", y-intercept = ", b))#,
+                #caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
+                #GDP/capita is based on 2015 prices.")
+gg <- gg + guides(fill = guide_legend(override.aes = list(linetype = 0)),
+         color = guide_legend(override.aes = list(linetype = 0)))
+gg <- gg + theme(legend.position = "bottom",
+                 legend.spacing.x = unit(1.0, 'cm'),
+                 legend.title = element_blank())
+gg
+#ggsave("Engels Law 2.png", width = 8.5, height = 6.5, units = "in")
+
+```
+
+
+Variation 1 disaggregated by region...again note how the fitted parameters vary from one region to another... In this case, Sub-Saharan Africa is more cleanly fit while the other regions are more poorly fit Figure \ref{fig:Engel1_disagg}.
+
+```{r, fig.show = "hold", fig.width = 10, fig.height=6, fig.align='left', fig.cap="\\label{fig:Engel1_disagg}Engel's Law, variation 1, by region, ICP data for 2017.", echo = FALSE}
+region_vec <- unique(df_plot$Region)
+facet_labels <- c()
+for(i in 1:length(region_vec)){
+  this_region <- region_vec[i]
+this_df_plot <- subset(df_plot, Region == this_region)
+mod <- lm(`Real expenditures per capita (USD), logged` ~ `GDP / capita (USD), logged`, this_df_plot)
+#summary(mod)
+m <- round(mod$coefficients[2], 2)
+b <- round(mod$coefficients[1], 2)
+#   print(this_region)
+# print(m)
+  facet_labels[i] <- paste0("Slope = ", m, ", y-intercept = ", b)
+}
+
+names(facet_labels) <- region_vec
+
+gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
+                          y = `Real expenditures per capita (USD), logged`,
+                          group = Region, fill = Region, shape = Region,
+                          label = label_these))
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
+gg <- gg + scale_fill_manual(values = color_vec)
+gg <- gg + scale_shape_manual(values = shape_vec)
+gg <- gg + geom_smooth(method = lm, se = F)
+gg <- gg + facet_wrap(~Region, ncol = 3, scales = "free", labeller = labeller(Region = facet_labels))
+gg <- gg + ggrepel::geom_text_repel(color = "black", size = 4, fontface = "bold")
+gg <- gg + theme(strip.background = element_blank(),
+                 strip.text.x = element_text(size = 10, face = "bold", hjust = -0.01),
+                 #legend.direction = "vertical",
+                 #legend.spacing.y = unit(1, 'cm'),
+                 legend.text = element_text(size = 12),
+                 legend.title = element_blank())
+gg <- gg + guides(fill = guide_legend(#nrow = 2,
+                                      override.aes = list(linetype = 0)),
+         color = guide_legend(override.aes = list(linetype = 0)))
+gg <- shift_legend2(gg)
+gg <- ggplotify::as.ggplot(gg)
+#gg
+#ggsave("Engels Law 2 Disaggregated.png", width = 8.5, height = 6.5, units = "in")
+```
+
+Tilman et al. [-@tilman2011global] examined a second variation of Engel's Law and used it to calculate future global food demand.^[Tilman et al. do not mention Engel's Law in their paper, believing this empirical relation to be newly discovered by them.] ...using FAO data...\ref{fig:Engel2}. ...This is also useful since the FAO data extend back to the 1960s, whereas the ICP data extend back only to 2011, and only 2017 for Africa. Therefore it is possible to examine the stability of the empirical relation over a substantial period of time.
+
+```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align='left', fig.cap="\\label{fig:Engel2}Engel's Law, variation 2, FAO data for 2017.", echo = FALSE}
+
+df_raw_1 <- read.csv("FoodBalanceSheetsHistoric_E_All_Data.csv", stringsAsFactors = F)
+df_raw_1 <- subset(df_raw_1, Item.Code != 2928)
+df_raw_2 <- read.csv("FoodBalanceSheets_E_All_Data.csv", stringsAsFactors = F)
+df_raw_2 <- subset(df_raw_2, Item.Code != 2928)
+rm_cols <- c("Area.Code", "Item.Code", "Element.Code")
+rm_cols <- which(colnames(df_raw_1) %in% rm_cols)
+df_raw_1 <- df_raw_1[, -rm_cols]
+df_raw_2 <- df_raw_2[, -rm_cols]
+df_raw <- merge(df_raw_1, df_raw_2, by = c("Area", "Item", "Element", "Unit"))
+df_raw$Item <- as.character(df_raw$Item)
+df_raw$Element <- as.character(df_raw$Element)
+df_raw$Area <- as.character(df_raw$Area)
+u <- colnames(df_raw)
+df_raw <- df_raw[, -grep("F", u)]
+v <- colnames(df_raw)[5:ncol(df_raw)]
+colnames(df_raw)[5:ncol(df_raw)] <- gsub("Y", "", v)
+df_raw <- gather(df_raw,Year,Value,`1961`:`2017`)
+#------------------------------------------------------------------------
+rm(df_raw_1, df_raw_2); gc()
+#------------------------------------------------------------------------
+# out_list <- FAOdat_createRegionGroups(df_raw, exclude_these = NULL, keep_FAOregions = F,
+#                                       df_is_trade_matrix = F,
+#                                       consolidate_LAC = T,
+#                                       consolidate_WEur = T,
+#                                       consolidate_AusNZPacIslands = T,
+#                                       consolidate_SSA = F,
+#                                       output_countryVecs = T)
+# df_raw <- out_list[["df_raw"]]
+#--------------------------------------------------------------------------
+df_raw$Area[grep("Tanzania", df_raw$Area)] <- "Tanzania"
+df_raw$Area[grep("CÃ´te d'Ivoire", df_raw$Area)] <- "Côte d'Ivoire"
+#--------------------------------------------------------------------------
+df_fbal <- subset(df_raw, Element == "Food supply (kcal/capita/day)" &
+                    Item == "Grand Total")
+df_fbal <- df_fbal[, c("Area", "Year", "Value")]
+df_fbal$Value <- log(df_fbal$Value)
+colnames(df_fbal)[ncol(df_fbal)] <- "Food supply (kcal/capita/day), logged"
+colnames(df_fbal)[1] <- "Country"
+#rm(df_raw); gc()
+#--------------------------------------------------------------------------
+df_gdp <- df_gdp <- subset(df_gdp_raw, Item == "Gross Domestic Product per capita" &
+                     Element == "Value US$, 2015 prices")
+colnames(df_gdp)[1] <- "Country"
+df_gdp <- df_gdp[, c("Country", "Year", "Region", "Value")]
+df_gdp$Value <- log(df_gdp$Value)
+colnames(df_gdp)[ncol(df_gdp)] <- "GDP / capita (USD), logged"
+df_engel <- merge(df_fbal, df_gdp, by = c("Country", "Year"))
+#--------------------------------------------------------------------------
+df_engel$Region[grep("Western Asia", df_engel$Region)] <- "N. Africa / W. Asia"
+df_engel$Region[grep("Northern Africa", df_engel$Region)] <- "N. Africa / W. Asia"
+df_engel$Region[which(df_engel$Region %in% c("Western Africa",
+                                               "Eastern Africa",
+                                               "Middle Africa",
+                                               "Southern Africa"))] <- "Sub-Saharan Africa"
+df_engel$Region[grep("Europe", df_engel$Region)] <- "Europe"
+df_engel$Region[which(df_engel$Region %in% c("Europe", "North America"))] <- "Europe / N. Amer.\nAustralia / NZ"
+df_engel$Region[which(df_engel$Area %in% c("Australia", "New Zealand"))] <- "Europe / N. Amer.\nAustralia / NZ"
+df_engel$Region[which(df_engel$Region %in% c("Southern Asia", "South-Eastern Asia", "Central Asia", "Eastern Asia"))] <- "Asia\n(excluding W. Asia)"
+df_engel$Region[which(df_engel$Region == "Aus/NZ/Oceania")] <- "Pacific Islands"
+df_engel <- subset(df_engel, Region != "Pacific Islands" &
+                     Country != "Bahamas")
+
+#--------------------------------------------------------------------------
+this_year <- "2017"
+df_plot <- subset(df_engel, Year == this_year)
+
+df_mod <- df_plot[, setdiff(colnames(df_plot), c("Country", "Year", "Region"))]
+#keep_rows <- which(!is.na(df_mod$`Consumption Inequality (Gini Coefficient)`))
+#df_mod <- df_mod[keep_rows, ]
+keep_rows <- which(!is.na(df_mod$`Food supply (kcal/capita/day), logged`))
+df_mod <- df_mod[keep_rows, ]
+
+row.names(df_mod) <- df_plot$Country[keep_rows]
+#df_mod$`Income Inequality (Gini Coefficient)` <- NULL
+#df_mod$`Consumption Inequality (Gini Coefficient)` <- NULL
+#df_mod$`Income Inequality (Gini Coefficient)` <- log(df_mod$`Income Inequality (Gini Coefficient)`)
+#df_mod$`Consumption Inequality (Gini Coefficient)` <- log(df_mod$`Consumption Inequality (Gini Coefficient)`)
+
+#df_mod$`Consumption Inequality (Gini Coefficient)` <- NULL
+
+mod <- lm(`Food supply (kcal/capita/day), logged` ~ ., df_mod)
+summary(mod)
+#m_gini <- round(mod$coefficients[3], 2)
+m_gdp <- round(mod$coefficients[2], 2)
+b <- round(mod$coefficients[1], 2)
+
+# plot(mod$fitted.values, mod$residuals)
+# plot(mod$fitted.values, df_mod$`Food supply (kcal/capita/day), logged`)
+
+# y_lab <- paste(b, "+", m_gdp, "(GDP/capita (USD, 2015 prices), logged) +\n",
+#       m_gini, "(Consumption Inequality (Gini Coefficient), logged)")
+
+# df_mod$`6.93 + 0.1 (GDP/capita (USD, 2015 prices), logged) +\n -0.14 (Consumption Inequality (Gini Coefficient), logged)` <-
+#   mod$fitted.values
+# df_mod$Area <- row.names(df_mod)
+# df_mod <- merge(df_mod, df_plot[, c("Area", "Region")], by = "Area")
+# df_plot <- df_mod
+#unique(df_plot$Area[grep("Korea", df_plot$Area, ignore.case = T)])
+# label_these <- c("China, mainland", "United States of America", "France", "Austria",
+#                  "Lesotho", "South Africa", "Colombia", "Mexico", "Guatemala",
+#                  "Nicaragua", "Viet Nam", "Republic of Korea", "Indonesia",
+#                  "Kenya", "Ethiopia", "Burkina Faso", "Ghana", "Senegal",
+#                  "Angola", "Brazil", "Bolivia", "Haiti", "Dominican Republic",
+#                  "Australia", "Japan", "Turkey", "Estonia", "Italy",
+#                  "Liberia", "Iran", "Afghanistan")
+
+df_plot$label_these <- NA
+u <- which(df_plot$Country %in% labelThese_vec)
+df_plot$label_these[u] <- df_plot$Country[u]
+
+# n <- length(unique(df_plot$Region))
+# bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
+# color_vec <- sample(bag_of_colors, n)
+gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
+                          y = `Food supply (kcal/capita/day), logged`,
+                          group = Region, fill = Region, shape = Region,
+                          label = label_these))
+# gg <- gg + geom_point(aes(fill = Region, group = Region, shape = Region), pch = 21, alpha = 0.5, size = 6, color = "black")
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
+gg <- gg + scale_fill_manual(values = color_vec)
+gg <- gg + scale_shape_manual(values = shape_vec)
+# gg <- gg + geom_abline(slope = m, intercept = b,
+#                        linetype = "dashed", size = 1)
+gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
+gg <- gg + ggrepel::geom_text_repel(color = "black", size = 5)
+gg <- gg + labs(#title = "Engel's Law", 
+                subtitle = paste0("Slope = ", m_gdp, ", y-intercept = ", b))#,
+                #caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
+                #GDP/capita is based on 2015 prices.")
+gg <- gg + guides(fill = guide_legend(override.aes = list(linetype = 0)),
+         color = guide_legend(override.aes = list(linetype = 0)))
+gg <- gg + theme(legend.position = "bottom",
+                 legend.spacing.x = unit(1.0, 'cm'),
+                 legend.title = element_blank())
+gg
+#ggsave("Engels Law 3.png", width = 8.5, height = 6.5, units = "in")
+
+
+```
+
+
+...Figure \ref{fig:Engel2_disagg}
+
+```{r, fig.show = "hold", fig.width = 7, fig.height=5, fig.align='left', fig.cap="\\label{fig:Engel2_disagg}Engel's Law, variation 2, by region, FAO data for 2017.", echo = FALSE}
+
+
+hist(df_plot$`Food supply (kcal/capita/day), logged`)
+hist(df_plot$`GDP / capita (USD), logged`)
+out_quantile <- quantile(df_plot$`Food supply (kcal/capita/day), logged`, probs = c(0.33, 0.66, 1))
+df_plot$Quantile <- NA
+u <- df_plot$`GDP / capita (USD), logged`
+df_plot$Quantile[which(u <= out_quantile[1])] <- "1st Quantile"
+df_plot$Quantile[which(u > out_quantile[1] & u <= out_quantile[2])] <- "2nd Quantile"
+df_plot$Quantile[which(u > out_quantile[2])] <- "3rd Quantile"
+
+
+#region_vec <- unique(df_plot$Region)
+region_vec <- unique(df_plot$Quantile)
+facet_labels <- c()
+for(i in 1:length(region_vec)){
+  this_region <- region_vec[i]
+#this_df_plot <- subset(df_plot, Region == this_region)
+  this_df_plot <- subset(df_plot, Quantile == this_region)
+mod <- lm(`Food supply (kcal/capita/day), logged` ~ `GDP / capita (USD), logged`, this_df_plot)
+#summary(mod)
+m <- round(mod$coefficients[2], 2)
+b <- round(mod$coefficients[1], 2)
+#   print(this_region)
+# print(m)
+  facet_labels[i] <- paste0("Slope = ", m, ", y-intercept = ", b)
+}
+
+names(facet_labels) <- region_vec
+
+gg <- ggplot(df_plot, aes(x = `GDP / capita (USD), logged`,
+                          y = `Food supply (kcal/capita/day), logged`,
+                          group = Region, fill = Region, shape = Region,
+                          label = label_these))
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 2)
+gg <- gg + scale_fill_manual(values = color_vec)
+gg <- gg + scale_shape_manual(values = shape_vec)
+gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
+gg <- gg + facet_wrap(~Quantile, ncol = 2, scales = "free", labeller = labeller(Region = facet_labels))
+gg <- gg + ggrepel::geom_text_repel(color = "black", size = 4, fontface = "bold")
+gg <- gg + theme(strip.background = element_blank(),
+                 strip.text.x = element_text(size = 10, face = "bold", hjust = -0.01),
+                 #legend.direction = "vertical",
+                 #legend.spacing.y = unit(1, 'cm'),
+                 legend.text = element_text(size = 12),
+                 legend.title = element_blank())
+gg <- gg + guides(fill = guide_legend(#nrow = 2,
+                                      override.aes = list(linetype = 0)),
+         color = guide_legend(override.aes = list(linetype = 0)))
+
+
+
+gg <- shift_legend2(gg)
+gg <- ggplotify::as.ggplot(gg)
+#gg
+#ggsave("Engels Law 2 Disaggregated.png", width = 8.5, height = 6.5, units = "in")
+
+
+
+```
+
+But how stable is Engel's Law?...Figure \ref{fig:Engel_stability}.
+
+```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align='left', fig.cap="\\label{fig:Engel_stability}Engel's Law parameter stability, FAO data 1970-2018.", echo = FALSE}
+
+```
 
 ## Bennett's Law
 
