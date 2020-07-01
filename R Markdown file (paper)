@@ -435,14 +435,14 @@ gg <- gg + scale_shape_manual(values = shape_vec)
 gg <- gg + geom_smooth(method = lm, se = F)
 gg <- gg + facet_wrap(~Region, ncol = 3, scales = "free_y", labeller = labeller(Region = facet_labels))
 #gg <- gg + ggrepel::geom_text_repel(color = "black", size = 4)
-gg <- gg + guides(fill = guide_legend(#nrow = 2,
-                                      override.aes = list(linetype = 0)),
-         color = guide_legend(override.aes = list(linetype = 0)))
 gg <- gg + theme(strip.background = element_blank(),
                  #legend.direction = "vertical",
                  #legend.spacing.y = unit(1, 'cm'),
                  legend.text = element_text(margin = margin(r = 30, unit = "pt")),
                  legend.title = element_blank())
+                 gg <- gg + guides(fill = guide_legend(#nrow = 2,
+                                      override.aes = list(linetype = 0)),
+         color = guide_legend(override.aes = list(linetype = 0)))
 gg <- shift_legend2(gg)
 gg <- ggplotify::as.ggplot(gg)
 gg
