@@ -77,7 +77,7 @@ Finally, I present a new empirical law that appears to govern the relation betwe
 
 >"The broad fact that variety rather than uniformity is characteristic of food consumption throughout the world is familiar and indisputable. Differences are found in the 'dishes' consumed from country to country, region to region, locality to locality, even family to family. Within a country or region, these differences appear also from one epoch to another. They are so prevalent and conspicuous, in fact, that it seems almost hopeless to discover, in the international sphere, some way of characterizing summarily the diets of different nations and contrasting them one with the other" [@bennett1941international].
 
-Even within a fairly small geographical region of Africa, diets can vary considerably (Figure \ref(fig:dietDiversity)). If we were to look at each of these food catgories in more detail, we would see even more diversity in terms of what specific crops constitute the groups.
+Even within a fairly small geographical region of Africa, diets vary considerably (Figure \ref(fig:dietDiversity)). If we were to look at each of these food catgories in more detail, we would see even more diversity in terms of what specific crops constitute the groups.
 
 ```{r dietDiversity, fig.show = "hold", fig.width = 7, fig.height=4, fig.align="center", fig.cap="Diets are diverse.", echo = FALSE}
 this_file <- "Bennetts Law post_diverse diets.csv"
@@ -123,7 +123,7 @@ gg <- ggplotify::as.ggplot(gg)
 ```
 Nonetheless, Bennett found the "way of characterizing summarily the diets of different nations" he was looking for by examining the carbohydrate content of diets in relation to income. An example is given in the left panel of Figure \ref{fig:Bennet01}. The relation says that, regardless of geography and culture, carbohydrates form a declining portion of the diet as income rises.
 
-A question remains as to how much of the carbohydrates are replaced by proteins and how much are replaced by fats, as income rises. Cursory exploration of the data reveals that the carbohydrates are replaced almost exclusively by fats (right panel, Figure \ref{fig:Bennet01}). Drewnowski and Popkin [-@drewnowski1997nutrition] dispute this, claiming that globalization has led to increased fat intake regardless of income level. While there may be some truth to their argument in an absolute sense, Figure \ref{fig:Bennet01} indicates quite clearly that relative fat intake is still highly coupled with income level, despite "globalized diets".
+A question remains as to how much of the carbohydrates are replaced by proteins and how much are replaced by fats, as income rises. Cursory exploration of the data reveals that the carbohydrates are replaced exclusively by fats, as income increases (right panel, Figure \ref{fig:Bennet01}). Drewnowski and Popkin [-@drewnowski1997nutrition] dispute this, claiming that globalization has led to increased fat intake regardless of income level. While there may be some truth to their argument in an absolute sense, Figure \ref{fig:Bennet01} indicates quite clearly that relative fat intake is still highly coupled with income level, despite "globalized diets".
 
 ```{r Bennett01, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\italic{(Left)} Bennett's Law, \\italic{(Right)} the fat-carb frontier. The size of the points in the fat carb frontier correspond to the log of GDP. Source: Author's creation using the FAO Food Balance Sheets for 2017. Grams are converted to calories assuming a ratio of 4 calories per gram of protein or carbohydrate, and 9 calories per gram of fat, in accordance with U.S. Dept. of Agriculture guidelines.", echo = FALSE}
 # 4 calories in a gram of protein or carbohydrate, 9 calories in a gram of fat.
@@ -651,31 +651,93 @@ gg_EngelKcal + gg_Engel0Stab + plot_layout(ncol = 2)
 An example of the calorie demand formulation of Engel's Law is given in the left panel of Figure \ref{fig:Engel2}. The fit (Adjusted R squared) is reasonable, but not quite as good as the fit observed in the original formulation. Like Bennett's Law, the parameters of Engel's Law exhibit stability over time (right panel). An animation of the left panel of Figure \ref{fig:Engel2} over the years 1970 to 2018, provided in the supplemental materials, offers a striking visualization of this stability.
 Again, note that the slope and y-intercept appear to be inversely related...graph...effectively reducing to a one parameter model.
 <!-- After rising to a peak value of about 0.11 in 1980, the slope has gradually decreased to about 0.09. The y-intercept, meanwhile, has risen from about 6.9 to about 7.2. -->
-If Engel's Law is to be taken as the measure of how well off the world is (as Engel himself suggested), then this trajectory indicates that the world is trending slightly poorer.
+```{r}
+
+df_plot <- subset(df_plot, Year >= 1980)
+df_plot <- df_plot %>% spread(Type, Value)
+df_plot <- df_plot[, c("Y-intercept", "Slope")]
+mod <- lm(Slope ~., df_plot)
+summary(mod)
+
+gg <- ggplot(df_plot, aes(x = `Y-intercept`, y = Slope))
+gg <- gg + geom_point()
+gg
+
+
+```
 
 
 # Two laws, or two manifestations of the same law?
 
-Food is just the most notable example of a broad class of goods whose demand increases less than proportionally with income. Other examples, include toilet paper, ...
-Engel's Law is a special case of a broader law 
+Both Engel's Law and Bennett's Law express a log-linear relation between a particular budget and demand for a particular good. In both cases, demand for the particular good in question increases less than proportionately with income. Is there something unique about these goods---food and carbohydrates---or can Engel's and Bennett's Laws be generalized to a single law governing the income elasticity of demand for any good?
 
+Food expenditures to the total budget. Expenditures on carbohydrate-rich foods to the food budget. Carbohydrate expenditures are to the food budget what food expenditures are to the total budget. This symmetry suggests a more general law governing the income elasticity of demand for any good, of which Engel's and Bennett's Laws are but two instances. Analogous laws for other categories of goods were part of the early discussion, clothing...rent, fuel, and light.
 
-This is essentially a "production side" analogue of the time honored, empirical consumer side observation going back to Bernoulli (and perhaps as far back as Aristotle [@kauder1953genesis]) that _"in the absence of the unusual, the utility resulting from any small increase in wealth will be inversely proportionate to the quantity of goods previously possessed"_ [@bernoulli1954exposition].
+At first glance, it may seem that food is unique in that certain biophysical constraints intrinsically limit the amount of this good the human organism can make use of in any given time period. However, the same can be said of toilet paper and exercise equipment. Different, but perfectly analagous, constraints intrinsically limit the usefulness of glue, diamonds, and vacations. This is called the Law of Diminishing Marginal Utility, and it applies to everything, not just food.
 
-Formalization of such statements depends upon how one interprets, mathematically, the notion of change expressed in words like "additional return" and "small increase". If these are interpreted as percentage changes, then the production side statement can be formalized as follows.
+Astute observers have documented this law, in one guise or another, throughout much of written history [@kauder1953genesis]. In 1738, Daniel Bernoulli put it this way:
+
+>"[i]n the absence of the unusual, the utility resulting from any small increase in wealth will be inversely proportionate to the quantity of goods previously possessed" [@bernoulli1954exposition].
+
+Bernoulli's statement can be formalized as follows.
 
 \begin{equation}
-\frac{\partial \ln(R)}{\partial \ln(w_i)} \sim \frac{1}{w_i}
-\label{eq:dimRetDefine}
+\frac{\partial U}{\partial x} \sim \frac{1}{x}
+\label{eq:dimUtilDefine}
 \end{equation}
 
-Where, to be clear, the term $\frac{\partial \ln(R)}{\partial \ln(w_i)}$ is the portfolio return elasticity with respect to investment in the $i^{th}$ portfolio item. In other words, this indicates the percentage increase in portfolio return given a $1$ percent increase in investment in the $i^{th}$ portfolio item. The subsequent portion of the equation, "$\sim 1 / w_i$", then means "inversely proportionate to the quantity of funds already invested".
+Where, to be clear, the term $\frac{\partial U}{\partial x}$ is the marginal change in utility given a marginal increase in the quantity of good $x$, and "$\sim 1 / x$", means "inversely proportionate to the quantity of good $x$ already acquired". It then follows that
 
-Implies a ceiling on the 
+\begin{equation}
+\begin{split}
+\int \frac{d U}{d x} \: dx = \int \alpha \frac{d \ln(x)}{dx} \: dx \\
+U(x)  &= \alpha \ln(x) + k
+\end{split}
+\label{eq:integrate_lnU}
+\end{equation}
 
-Bernoulli [@...] law of diminishing returns to marginal increments... graph of utility curve... This implies that whether a good is inferior or superior depends on the quantity held.
+Where the proportionality constant $\alpha = dU/d\ln(x)$ regulates the marginal change in utility given a $1$ percent increase in good $x$.
 
-As far as expenditures go, food stands to luxury goods as starchy foods stand to protein and vitamin rich foods.
+Assuming that consumers want to maximize utility, then the marginal utility of the good must be equal to the marginal utility of the consumer's budget (income), $B$.
+
+\begin{equation}
+\alpha_B \frac{d \ln(B)}{dx} = \int \alpha_x \frac{d \ln(x)}{dx}
+\label{eq:assumption}
+\end{equation}
+
+If $x$ is defined as an expenditure, and other expenditures are held constant, then $dB = dx$, and
+
+\begin{equation}
+\begin{split}
+\int \alpha_B \frac{d \ln(B)}{dx} \: dx = \int \alpha_x \frac{d \ln(x)}{dx} \: dx \\
+\alpha_B \ln(B) + k_B  &= \alpha_x \ln(x) + k_x
+\end{split}
+\end{equation}
+
+Which can then be rearranged into a log-linear expression.
+
+\begin{equation}
+\ln(x) = \beta \ln(B) + c \:\:; \:\:\: \beta = \alpha_B / \alpha_x = \frac{d \ln(x)}{d \ln(B)} \:\: c = (k_B - k_x) / \alpha_x
+\label{eq:general_law}
+\end{equation}
+
+Engel's Law and Bennett's Law may thus be considered particular instances of this more general principle governing the income elasticity of demand for any good $x$, derived from the Law of Diminishing Marginal Utility (equation \ref{eq:dimUtilDefine}) and the assumption that consumers are utility maximizers (equation \ref{eq:assumption}).
+
+Note that the slope $\beta$ is the ratio $\alpha_B / \alpha_x$. A value of $\beta$ less than $1$ therefore indicates that the percentage increase in utility resulting from from a $1$ percent increase in $x$ is greater than the percentage increase in utility resulting from a $1$ percent increase in income. This can be interpreted as saying that the consumer's need or apetite for $x$ is more quickly satisfied than their need for income. As a consequence, expenditure on $x$ rises less than proportionately with income. This is the case corresponding to Engel's and Bennett's Laws. A value of $\beta$ greater than $1$ indicates that the consumer's need for $x$ is less quickly satisfied than their need for income.^[If $x$ is expressed as an expenditure share, then replace $1$ with $0$.]
+
+Note, moreover, that an increase in the price of $x$ effectively results in a decrease in satisfaction per unit expenditure on $x$, and vice versa. It follows, then, that $\beta$ is largely determined by the price of $x$ relative to other goods, with high values of $\beta$ corresponding to high prices of good $x$ relative to other goods, and vice versa. This may help to explain the geographical variation in slope observed in Figures ... and ...; as well as the temporal variation observed in Figures ... and ....
+
+This also shines a light on the circumstances under which Engel's and Bennett's Laws could be violated. One can conceive of situations of extreme poverty and/or of soaring prices, for example, such that $\beta$ becomes greater than $1$ for a wide range of goods, including food. Early proponents of Engel's Law were confounded by numerous micro-surveys indicating a more than proportionate increase in food expenditures per increase in income (i.e., a $\beta$ greater than $1$) [@zimmerman1932ernst]. The derivation here suggests that such counterexamples need not be interpreted as a refutation of the law. and offers an indication of    The fleeting discussion of analogous laws for other goods need not have been abandoned due to inconsistent values for $\beta$.
+
+The law of income elasticity of demand derived in equation \ref{eq:general_law} is not about a particular value of $\beta$ for a particular good $x$, nor even whether  but rather about log-linear relation.
+
+[earlier: graph CPI volatility (monthly) against Adj R2, geographically and temporally...then here set up nice segue from that to the new empirical law below.]
+
+
+
+
+
+
 
 The variation in parameter values across geographic regions reflects this [inferior-superior good relativity].
 
@@ -826,6 +888,40 @@ gg <- gg + labs(title = "The ag commodity risk-return frontier, by region",
 gg <- shift_legend2(gg)
 gg <- ggplotify::as.ggplot(gg)
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
