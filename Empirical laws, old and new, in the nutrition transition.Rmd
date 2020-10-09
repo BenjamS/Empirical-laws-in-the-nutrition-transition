@@ -9,7 +9,7 @@ address:
   - code: Alliance Bioversity-CIAT
     address: Alliance Bioversity-CIAT, Km 17 Recta Cali-Palmira, Valle del Cauca, Colombia
 abstract: |
-  Much of the Nutrition Transition literature implicitly rests upon Engel's Law and Bennett's Law. However, rarely are these key empirical laws explicitly referenced or visualized in a straightforward manner. There is evidence that this may be due to a general lack of awareness of these old laws or of their relevance to modern discussions of dietary transitions, food security, and resillient food systems. Here I address this gap with an in-depth, graphical review of Engel's and Bennett's Laws, including analysis of their stability across time and space. Animations (provided as supplemental materials) offer further striking visualization of the laws' evolution over time. I then propose a new theoretical framework that unifies the two laws as separate manifestations of the single underlying principle of diminishing marginal utility. Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear corresponance between the mean price of agricultural commodities and their respective volatility.
+  Much of the Nutrition Transition literature implicitly rests upon Engel's Law and Bennett's Law. However, rarely are these key empirical laws explicitly referenced or visualized in a straightforward manner. There is evidence that this may be due to a general lack of familiarity with these old laws and their relevance to modern discussions of dietary transitions, food security, and resilient food systems. Here I address this gap with an in-depth, graphical review of Engel's and Bennett's Laws, including analysis of their stability across time and space. Animations (provided as supplemental materials) offer further striking visualization of the laws' evolution over time. I then propose a theoretical framework by which to unify the two laws as separate manifestations of the single underlying principle of diminishing marginal utility. Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear corresponance between the mean prices of agricultural commodities and their respective volatilities.
 keywords: Nutrition transition, Bennett's Law, Engel's Law, food demand, food price volatility, food security, food systems
 journal: Food Policy
 bibliography: Empirical laws, old and new, in the nutrition transition.bib
@@ -38,8 +38,8 @@ point_size <- 1.5
 smallPoint_size <- 1
 label_size <- 2.5
 smallLabel_size <- 2
-title_size <- 9
-subtitle_size <- 8
+title_size <- 6
+subtitle_size <- 6
 legendText_size <- 7
 axisText_size <- 6
 axisTitle_size <- 8
@@ -71,9 +71,9 @@ shift_legend2 <- function(p) {
 
 # Introduction
 
-A good understanding of Bennett's Law [@bennett1941international] and Engel's Law [@zimmerman1932ernst] is key to understanding the future composition and quantity of food demand, at all scales. The laws figured centrally in the food crisis literature of the 1960s [@brown1963man]; and, nowadays, form the _implicit_ premise of much of the Nutrition Transition literature [@popkin1993nutritional; @kearney2010food]. However, this time around there is surprisingly little explicit reference to or graphical representation of the laws. It appears, moreover, that many donors, breeding programs, and even some academic researchers, are simply unaware of the laws' existence. Tilman et al. [-@tilman2011global], for example, present what they believe to be a newly discovered empirical relation between income and calorie consumption. In fact, this relation was previously documented by Brown [-@brown1963man], and is probably best characterized as an alternative formulation of Engel's Law. Donors and international breeding programs, meanwhile, continue to focus resources on starchy crops in excess of what would be justified by Bennett's Law [@wiebe2020modeling; @finplan2018].
+A good understanding of Bennett's Law [@bennett1941international] and Engel's Law [@zimmerman1932ernst] is key to understanding the future composition and quantity of food demand, at all scales. These old laws thus form the implicit basis for much of the discussion regarding dietary transitions, future food demand, food/nutritional security, and resilient food systems [@popkin1993nutritional; @kearney2010food]. However, there is surprisingly little explicit reference to or graphical representation of the laws in this literature. An important precursor to the modern discussion [@brown1963man] was less circumspect, but also neglected to indicate the origins of these empirical laws. It appears, moreover, that many donors, breeding programs, and even some academic researchers, are simply unaware of the laws' existence. Tilman et al. [-@tilman2011global], for example, present what they believe to be a newly discovered empirical relation between income and calorie consumption. In fact, this relation was previously documented by Brown [-@brown1963man], and is probably best characterized as an alternative formulation of Engel's Law. Donors and international breeding programs, meanwhile, continue to focus resources on starchy crops in excess of what would be justified by Bennett's Law [@wiebe2020modeling; @finplan2018].
 
-For such reasons, here I append a footnote to the Nutrition Transition literature to clarify the origins and relevance of Bennett's and Engel's Laws. I present a graphical analysis of the laws in greater detail than has so far appeared in the literature, including analysis of the laws' stability across time and space. I then show how Bennett's and Engel's Laws can be thought of as particular instances of a single law---the Law of Diminishing Marginal Utility. This sheds light on the meaning of the law's parameters, and the circumstances under which they may change.
+Here I append a footnote to the discussion in order to address this apparent lack of familiarity with the origins and relevance of Bennett's and Engel's Laws. I present a graphical analysis of the laws in greater detail than has so far appeared in the literature, including analysis of the laws' stability across time and space. I then show how Bennett's and Engel's Laws can be thought of as particular instances of a single law---the Law of Diminishing Marginal Utility. This sheds light, moreover, on the meaning of the law's parameters, and the circumstances under which they may change.
 
 Finally, I present a new empirical law that appears to govern the relation between a commodity's expected price and its price volatility. This may serve to open up new perspectives on the role of price risk in food system resilience and nutritional security---a topic which has so far received little attention in the literature.
 <!-- I then propose a theoretical unification of the two laws by deriving them both from the same principle of diminishing returns to marginal increases in expenditures on inferior goods. -->
@@ -133,6 +133,8 @@ gg <- ggplotify::as.ggplot(gg)
 ```
 The empirical relation indicates that, regardless of geography and culture, carbohydrates constitute a declining portion of the diet as income rises. A question remains as to how much of the carbohydrates are replaced by proteins and how much are replaced by fats, as income rises. Cursory exploration of the data reveals that the carbohydrates are replaced exclusively by fats, as income increases (right panel, Figure \ref{fig:Bennett01}). Drewnowski and Popkin [-@drewnowski1997nutrition] dispute this, claiming that globalization has led to increased fat intake regardless of income level. While there may be some truth to their argument in an absolute sense, Figure \ref{fig:Bennett01} seems to suggest quite clearly that relative fat intake is still highly coupled with income level, despite "globalized diets".
 
+Perisse et al. [-@perisse1969effect] found that the protein share of diets remains roughly constant at 11% across all income levels. The slope on the fat-carb frontier is nearly -1, which supports this finding (although the y intercept (~91%) implies a constant protein share of 9%, slightly lower than Perisse et al.'s estimate). Metabolically speaking, constant protein intake in the face of declining carbohydrate intake implies increased consumption of animal products.^[The increased fat intake also implies this to some degree, although not necessarily, since fats may be acquired from non-animal sources.] The often mentioned dietary transition to animal products that accompanies rising incomes and urbanization may thus be considered a corrollary of Bennett's Law.
+
 ```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="left", fig.cap="\\label{fig:Bennett01}Bennett's Law (Left) and the fat-carb frontier (Right). The size of the points in the right panel correspond to the log of GDP. Source: Author's creation using the FAO FBS for 2017. Grams are converted to calories assuming a ratio of 4 calories per gram of protein or carbohydrate, and 9 calories per gram of fat, in accordance with U.S. Dept. of Agriculture guidelines.", echo = FALSE}
 # 4 calories in a gram of protein or carbohydrate, 9 calories in a gram of fat.
 # https://www.nal.usda.gov/fnic/how-many-calories-are-one-gram-fat-carbohydrate-or-protein
@@ -161,12 +163,19 @@ b <- round(mod$coefficients[1], 2)
 df_out <- as.data.frame(broom::glance(mod))
 adjR2 <- round(df_out$adj.r.squared, 2)
 #-----------------------------------------------------------------------------
-label_Africa <- c("Tanzania", "Uganda", "Ethiopia", "South Africa",
-                  "Ghana")
+# label_Africa <- c("Tanzania", "Uganda", "Ethiopia", "South Africa",
+#                   "Ghana")
+# label_NAfricaWAsia <- c("Turkey", "Saudi Arabia")
+# label_Asia <- c("India", "Iran", "China, mainland", "Vietnam", "Japan",
+#                 "South Korea")
+# label_NAmEurAusNZ <- c("Italy", "France", "Australia")
+# label_LAC <- c("Nicaragua", "Colombia", "Brazil")
+# labelThese_vec <- c(label_Africa, label_NAfricaWAsia, label_Asia,
+#                     label_NAmEurAusNZ, label_LAC)
+label_Africa <- c("Uganda", "South Africa")
 label_NAfricaWAsia <- c("Turkey", "Saudi Arabia")
-label_Asia <- c("India", "Iran", "China, mainland", "Vietnam", "Japan",
-                "South Korea")
-label_NAmEurAusNZ <- c("Italy", "France", "Australia")
+label_Asia <- c("India", "China, mainland", "Vietnam")
+label_NAmEurAusNZ <- c("France", "Australia")
 label_LAC <- c("Nicaragua", "Colombia", "Brazil")
 labelThese_vec <- c(label_Africa, label_NAfricaWAsia, label_Asia,
                     label_NAmEurAusNZ, label_LAC)
@@ -192,7 +201,7 @@ gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
 # gg <- gg + geom_abline(slope = m, intercept = b,
 #                        linetype = "dashed", size = 1)
-#gg <- gg + geom_text_repel(color = "black", size = label_size)
+gg <- gg + geom_text_repel(color = "black", size = label_size)
 gg <- gg + labs(title = "Bennett's Law", 
   subtitle = this_subtitle)#,
 #caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
@@ -236,7 +245,7 @@ gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
 # gg <- gg + geom_abline(slope = m, intercept = b,
 #                        linetype = "dashed", size = 1)
-#gg <- gg + geom_text_repel(color = "black", size = label_size)
+gg <- gg + geom_text_repel(color = "black", size = label_size)
 gg <- gg + labs(title = "The fat-carb frontier", 
   subtitle = this_subtitle)#,
 #caption = "Source: Author's creation based on World Bank International Comparison Program Data for 2017.
@@ -260,9 +269,11 @@ gg_fatCarbFrontier <- gg
 (gg_BennettsLaw + plot_layout(guides = "collect") & theme(legend.position = "bottom")) + (gg_fatCarbFrontier + theme(legend.position = "none"))
 
 ```
+Clearly, Bennett's Law can be useful for determining the future composition of food demand as a function of GDP growth. However, only recently have researchers begun to take advantage of this potential. Gouel and Guimbard [-@gouel2019nutrition] introduce a novel demand model that integrates Bennett's Law, and find that demand for starchy crops will grow by just 30.8% in 2050, whereas demand for non-starchy commodities will grow by 35.5% (in the case of pulses, nuts, and oilcrops) to 72.1% (in the case of oils and fats). International agricultural research investment decisions, on the other hand, appear to be made without much regard for Bennett's Law. The largest share of investment continues to go into starchy crop research, with smaller portions invested in the non-starchy commodity groups for which demand is growing most quickly [@ispc2018; @finplan2018].
+
 In the spirit of Hans Rosling [-@rosling2005new], animations of the plots in Figure \ref{fig:Bennett01} are provided in the supplemental materials. These animations present a striking visualization of the evolution of Bennett's Law and the fat-carb frontier over time. In these animations, it is interesting to observe the progress, regress, fits, and starts of different nations along the frontier. The trajectory of China over the past five decades, from an 80% carb diet to a 40% carb diet, is one of many remarkable examples to behold.
 
-The fit (adjusted R-squared) for Bennett's Law deteriorates at a geographically disaggregate view (Figure \ref{fig:BennettDisagg}). However, the fit for the fat-carb frontier, which is essentially a corrllary to Bennett's Law, remains quite good across regions (Figure \ref{fig:fatCarbDisagg}). Varying parameter values suggest heterogeneity in local conditions from one region to another. I address the possible reasons behind this heterogeneity farther below.
+The fit (adjusted R-squared) for Bennett's Law deteriorates when the data are geographically disaggregated (Figure \ref{fig:BennettDisagg}). However, the fit for the fat-carb frontier, which is essentially a corrllary to Bennett's Law, remains quite good across regions (Figure \ref{fig:fatCarbDisagg}). Varying parameter values suggest heterogeneity in local conditions from one region to another. I address the possible reasons behind this heterogeneity farther below.
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="left", fig.cap="\\label{fig:BennettDisagg}Bennett's Law by region, FAO FBS data for 2017.", echo = FALSE}
 
@@ -536,17 +547,13 @@ gg
 
 ```
 
-Perisse et al. [-@perisse1969effect] found that the protein share of diets remains roughly constant at 11% across all income levels. The slope on the fat-carb frontier is nearly -1, which supports this finding (although the y intercept (~91%) implies a constant protein share of 9%, slightly lower than Perisse et al.'s estimate). Metabolically speaking, constant protein intake in the face of declining carbohydrate intake implies increased consumption of animal products.^[The increased fat intake also implies this to some degree, although not necessarily, since fats may be acquired from non-animal sources.] The often mentioned dietary transition to animal products that accompanies rising incomes and urbanization may thus be considered a corrollary of Bennett's Law.
-
-Clearly, Bennett's Law can be useful for determining the future composition of food demand as a function of GDP growth. However, only recently have researchers begun to take advantage of this potential. Gouel and Guimbard [-@gouel2019nutrition] introduce a novel demand model that integrates Bennett's Law, and find that demand for starchy crops will grow by just 30.8% in 2050, whereas demand for non-starchy commodities will grow by 35.5% (in the case of pulses, nuts, and oilcrops) to 72.1% (in the case of oils and fats). International agricultural research investment decisions, on the other hand, appear to be made without much regard for Bennett's Law. The largest share of investment continues to go into starchy crop research, with smaller portions invested in the non-starchy commodity groups for which demand is growing most quickly [@ispc2018; @finplan2018].
-
 # Engel's Law
 
 Nearly a century prior to Bennett's discovery, the young Director of the Statistical Bureau of Saxony, Ernst Engel, was poring over 199 Belgian working class budgets, when he noticed that
 
 >"[t]he poorer the individual, a family, or a people, the greater must be the percentage of the income necessary for the maintenance of physical sustenance, and again of this a greater portion must be allowed for food" [@zimmerman1932ernst].
 
-Engel went so far as to conclude that "[t]he proportion of the outgo used for food, other things being equal, is the best measure of the material standard of living of a population" [-@zimmerman1932ernst]. Numerous authors cast doubt on the validity of Engel's observation across different cultural and socioeconomic contexts. Nonetheless, Engel's Law has emerged, today, as a universal empirical phenomenon. An example is given in Figure \ref{fig:Engel0}.
+Engel went so far as to conclude that "[t]he proportion of the outgo used for food, other things being equal, is the best measure of the material standard of living of a population" [-@zimmerman1932ernst]. In the early literature that Engel set in motion, numerous authors cast doubt on the validity of his observation across different cultural and socioeconomic contexts. Nonetheless, Engel's Law has emerged, today, as a universal empirical phenomenon. An example is given in Figure \ref{fig:Engel0}.
 
 ```{r, fig.show = "hold", fig.width = 4, fig.height=4, fig.align="center", fig.cap="\\label{fig:Engel0}Engel's Law. Source: Author's creation based on World Bank International Comparison Program (ICP) data for 2017. GDP/capita is retrieved from the FAO database and is based on 2015 prices.", echo = FALSE}
 #===========================================================================
@@ -808,9 +815,9 @@ gg <- ggplotify::as.ggplot(gg)
 
 ```
 
-Alternative formulations of Engel's Law have proliferated since its conception. Some of these have been discredited as poor reflections or distortions of Engel's original formulation [@zimmerman1932ernst]. One alternative formulation that has gained acceptance states that "as income increases, households' demand for food increases less than proportionally" [@cirera2010income]. In this formulation, food expenditure share is simply replaced by food expenditure. Another name for food expenditure is food demand, expressed in units of monetary value. Tilman et al. [-@tilman2011global] take this formulation one step further, expressing food demand in units of calories. Tilman et al. present their calorie formulation as a new discovery. However, the only distinction between this "new discovery" and Engel's Law is the units in which food demand is expressed. Moreover, Brown observed this particular form of Engel's Law much earlier [-@brown1963man].
+Alternative formulations of Engel's Law have proliferated since its conception. Some of these have been discredited as poor reflections or distortions of Engel's original formulation [@zimmerman1932ernst]. One alternative formulation that has gained acceptance states that "as income increases, households' demand for food increases less than proportionally" [@cirera2010income]. In this formulation, food expenditure share is simply replaced by food expenditure. Another name for food expenditure is food demand, expressed in units of monetary value. Tilman et al. [-@tilman2011global] take this formulation one step further, expressing food demand in units of calories. They present their calorie formulation as a new discovery. However, the only distinction between this "new discovery" and Engel's Law is the units in which food demand is expressed. Moreover, Brown observed this particular form of Engel's Law much earlier [-@brown1963man].
 
-The expenditure and calorie formulations of Engel's Law facilitate analysis of future food demand. Tilman et al. [-@tilman2011global], for example, estimate a 100% to 110% increase in food demand by 2050 over 2010 levels. Cirera and Masset [-@cirera2010income], meanwhile, use the alternative formulation to reveal an inverse relation between food demand and income inequality, estimating that future food demand could be 2.7% higher than expected if inequality is reduced, or, conversely, 5.4% lower than expected if inequality increases.
+Regardless, these alternative formulations of Engel's Law facilitate analysis of future food demand. Tilman et al. [-@tilman2011global], for example, apply their calorie formulation to estimate a 100% to 110% increase in food demand by 2050 over 2010 levels. Cirera and Masset [-@cirera2010income], meanwhile, use the expenditure formulation to reveal an inverse relation between food demand and income inequality, estimating that future food demand could be 2.7% higher than expected if inequality is reduced, or, conversely, 5.4% lower than expected if inequality increases.
 
 Another practical benefit of the calorie demand formulation of Engel's Law is that the FAO food calorie demand data extend back from the present to the 1960s, whereas the World Bank ICP food expenditure share data extend back only to 2011 (and only to 2017 for Africa). The calorie demand formulation thus allows us to examine the stability of the law over a much longer period of time.
 
@@ -954,7 +961,7 @@ maxYengel <- round(max(df_plotStab$`Y intercept`[ind]), 2)
 
 ```
 
-An example of the calorie demand formulation of Engel's Law is given in the left panel of Figure \ref{fig:EngelStability}. The fit (Adjusted R squared) is reasonable, but not quite as good as the fit observed in the original formulation. Like Bennett's Law, Engel's Law fits the data well across time, particularly since 1980 (right panel). The slope and y intercepts likewise exhibit stability over this period, ranging narrowly from `r minSlopeEngel` to `r maxSlopeEngel` and `r minYengel` to `r maxYengel`, respectively. An animation of the calorie ddemand formulation of Engel's Law, provided in the supplemental materials, offers further visual confirmation of this stability.
+An example of the calorie demand formulation of Engel's Law is given in the left panel of Figure \ref{fig:EngelStability}. The fit is reasonable, but not quite as good as the fit observed in the original formulation. Like Bennett's Law, Engel's Law fits the data well across time, particularly since 1980 (right panel). The slope and y intercepts likewise exhibit stability over this period, ranging narrowly from `r minSlopeEngel` to `r maxSlopeEngel` and `r minYengel` to `r maxYengel`, respectively. An animation of the calorie demand formulation of Engel's Law, provided in the supplemental materials, offers further visual confirmation of this stability.
 
 As with Bennett's Law, the slope and y intercept of Engel's Law are affine to each other across time (Figure \ref{fig:mAffineYengel}).
 <!-- After rising to a peak value of about 0.11 in 1980, the slope has gradually decreased to about 0.09. The Y intercept, meanwhile, has risen from about 6.9 to about 7.2. -->
@@ -988,7 +995,7 @@ Both Engel's Law and Bennett's Law express a log-linear relation between a parti
 
 At first, it may seem that there is something special about food that sets it apart from other goods. In the early discussion surrounding Engel's Law, analogous laws for clothing, rent, and utilities were also proposed [@zimmerman1932ernst], but did not exhibit the same consistency as Engel's Law, and are no longer discussed today.
 
-While it is true that certain metabolic constraints intrinsically limit the amount of food that the human organism can make use of in any given time period, the same can be said of non-food goods such as toilet paper and exercise equipment. Non-metabolic, but perfectly analagous, constraints similarly limit the usefulness of glue, jet fuel, and diamonds. There is thus nothing particularly unique about food in this respect. The Law of Diminishing Marginal Utility applies to everything. Astute observers have documented this law, in one guise or another, throughout much of written history [@kauder1953genesis]. In 1738, Daniel Bernoulli put it this way:
+While it is true that certain metabolic constraints intrinsically limit the amount of food that the human organism can make use of in any given time period, the same can be said of non-food goods such as toilet paper and exercise equipment. Non-metabolic, but perfectly analagous, constraints similarly limit the usefulness of glue, jet fuel, and diamonds. This is called the Law of Diminishing Marginal Utility, and there is nothing particularly unique about food or carbohydrates in this respect. Astute observers have documented this law, in one guise or another, throughout much of written history [@kauder1953genesis]. In 1738, Daniel Bernoulli put it this way:
 
 >"[i]n the absence of the unusual, the utility resulting from any small increase in wealth will be inversely proportionate to the quantity of goods previously possessed" [@bernoulli1954exposition].
 
@@ -1011,14 +1018,14 @@ U(x)  &= \alpha \ln(x) + k
 
 Where the proportionality constant $\alpha = dU/d\ln(x)$ regulates the marginal change in utility given a $1$ percent increase in good $x$.
 
-Assuming that consumers want to maximize utility, then the marginal utility of the good must be equal to the marginal utility of the consumer's budget (income), $B$.
+Assuming that consumers want to maximize utility, then the marginal utility of the good must be equal to the marginal utility of the consumer's budget (income), $B$, for a marginal increment in $x$.
 
 \begin{equation}
-\alpha_B \frac{d \ln(B)}{dx} = \int \alpha_x \frac{d \ln(x)}{dx}
+\frac{d \ln(B)}{dx} = \frac{d \ln(x)}{dx}
 \label{eq:assumption}
 \end{equation}
-
-If $x$ is defined as an expenditure, and other expenditures are held constant, then $dB = dx$, and
+<!-- If $x$ is defined as an expenditure, and other expenditures are held constant, then $dB = dx$, and -->
+By which it then follows
 
 \begin{equation}
 \begin{split}
@@ -1044,15 +1051,17 @@ Engel's Law and Bennett's Law may thus be considered particular instances of thi
 
 Note that the slope $\beta$ is the ratio $\alpha_B / \alpha_x$. A value of $\beta$ less than $1$ therefore indicates that the percentage increase in utility resulting from from a $1$ percent increase in $x$ is greater than the percentage increase in utility resulting from a $1$ percent increase in income. This can be interpreted as saying that the consumer's need or apetite for $x$ is more quickly satisfied than their need for income. As a consequence, expenditure on $x$ rises less than proportionately with income. This is the case corresponding to Engel's and Bennett's Laws. A value of $\beta$ greater than $1$ indicates that the consumer's need for $x$ is less quickly satisfied than their need for income.^[If $x$ is expressed as an expenditure share, then replace $1$ with $0$.]
 
-Note, moreover, that an increase in the price of $x$ effectively results in a decrease in satisfaction per unit expenditure on $x$, and vice versa. It follows, then, that $\beta$ is largely determined by the price of $x$ relative to other goods, with high values of $\beta$ corresponding to high prices of good $x$ relative to other goods, and vice versa. This may help to explain the geographical variation in slope observed in Figures ... and \ref{fig:Engel0Disagg}; as well as the temporal variation observed in Figures \ref{fig:BennettStability} and \ref{fig:EngelStability}.
+Note, moreover, that an increase in the price of $x$ effectively results in a decrease in satisfaction per unit expenditure on $x$, and vice versa. It follows, then, that $\beta$ is largely determined by the price of $x$ relative to other goods, with high values of $\beta$ corresponding to high prices of good $x$ relative to other goods, and vice versa. This may help to explain the geographical variation in slope observed in Figures \ref{fig:fatCarbDisagg} and \ref{fig:Engel0Disagg}; as well as the temporal variation observed in Figures \ref{fig:BennettStability} and \ref{fig:EngelStability}.
 
-This also shines a light on the circumstances under which the slope of Engel's and Bennett's Laws could change, and even violate the classical understanding of these laws. One can conceive of situations of extreme poverty and/or of soaring prices, for example, such that $\beta$ turns greater than $1$ for a wide range of goods, including food. Likewise, the laws for non-food goods discussed in the early literature may not have "caught on" as well as Engel's and Bennett's Laws due to wide variations in their relative prices from one place and time to another.
+This also shines a light on the circumstances under which Engel's and Bennett's Laws could be violated. One can conceive of situations of extreme poverty and/or of soaring prices, for example, such that $\beta$ turns greater than $1$ for a wide range of goods, including food. Likewise, the laws for non-food goods discussed in the early literature may not have "caught on" as well as Engel's and Bennett's Laws due to wide variations in their relative prices from one place and time to another.
 
 # A new empirical law: expected price and price volatility
 
-The theoretical derivation of Engel's and Bennett's Laws above suggests that staple food price volatility may alter the slope of Engel's and Bennett's Laws, and thus alter the course of the Nutrition Transition. An understanding of staple food price volatility is thus critically important, in principle. In practice, on the other hand, food price volatility has not been an issue for most of the past 47 years. After a tumultuous decade culminating in the oil crisis of 1973, food prices began a long period of steady, stable decline. However, since 2007, staple food prices have again begun to exhibit volatility, severely curtailing access to essential foodstuffs on numerous occasions, across large swaths of the globe. A fledgling discussion of the causes and effects of this volatility has begun [@CWFSpriceVol2011; @imf2011price; @von2012global; @kalkuhl2016food]. Here I present a new empirical finding that may help to orient this discussion.
+The theoretical derivation of Engel's and Bennett's Laws above suggests that staple food price volatility may alter the slope of Engel's and Bennett's Laws, and thus alter the course of the Nutrition Transition. An understanding of staple food price volatility is thus critically important, in principle.
 
-```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:priceSeries}The higher the price, the more volatile. Source: Author's creation using FAO export data for 1972-2017. 'Export price' equals FAO's Export Value series divided by its Export Quantity series.", echo = FALSE}
+In practice, of course, food price volatility has not been an issue for most of the past 47 years. After a tumultuous decade culminating in the oil crisis of 1973, food prices began a long period of steady, stable decline. However, since 2007, staple food prices have again begun to exhibit volatility, severely curtailing access to essential foodstuffs on numerous occasions, across large swaths of the globe. A fledgling discussion of the causes and effects of this volatility has begun [@CWFSpriceVol2011; @imf2011price; @von2012global; @kalkuhl2016food]. Here I present a new empirical finding that may help to orient this discussion.
+
+```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:priceSeries}The higher the price, the more volatile it is. Source: Author's creation using FAO export data for 1972-2017. 'Export price' equals FAO's Export Value series divided by its Export Quantity series.", echo = FALSE}
 this_file <- "FAO export data world.csv"
 df_export_world <- read.csv(this_file, stringsAsFactors = F)
 df_export_world$X <- NULL
@@ -1077,7 +1086,9 @@ gg
 
 ```
 
-Four food price series are plotted in Figure \ref{fig:priceSeries}. After poring over several such plots, one notices that higher price series are consistently more volatile than lower price series. And one notices this to be true across a wide range of food and non-food agricultural commodities, including both raw and processed versions of the commodities. The relation between price level and volatility also appears to persist over a wide range of food price epochs, from the oil crisis of 1973 through to the more recent volatile period beginning in 2007. A plot of the logged mean of ag prices over this period (1962-2017) against the respective logged standard deviations reveals a distinct log-linear relation between price magnitude and price volatility (Figure \ref{fig:riskReward}).^[See Appendix for details on the grouping in this plot.]
+Four food price series are plotted in Figure \ref{fig:priceSeries}. After poring over several such plots, one notices that higher price series are consistently more volatile than lower price series. And one notices this to be true across a wide range of food and non-food agricultural commodities, including both raw and processed versions of the commodities. The relation between price level and volatility also appears to persist over a wide range of food price epochs, from the oil crisis of 1973 through to the more recent volatile period beginning in 2007. A plot of the logged mean of ag prices over this period (1962-2017) against the respective logged standard deviations reveals a distinct log-linear relation between price magnitude and price volatility (Figure \ref{fig:riskReward}).^[See Appendix for details on the commodity grouping in this plot.]
+
+The wide range of products that conform to this rule, including food, non-food, raw, and processed products, suggests that the relation may hold for non-agricultural commodity price series as well. However, non-agricultural price data generally do not extend back as far as the FAO data examined here, and so this will be difficult to verify on an equal footing.
 
 ```{r, fig.show = "hold", fig.width = 4, fig.height=5, fig.align="center", fig.cap="\\label{fig:riskReward}Logged mean price of agricultural commodities plotted against their respective logged standard deviations. Source: Author's creation using FAO export data 1961-2017.", echo = FALSE}
 
@@ -1200,10 +1211,10 @@ df_plot <- df_riskReward[-ind_outlier, c("Item", "Group", "Mean world export pri
 
 df_plot$`Mean export value\n(million USD)` <- df_plot$`Mean Export Value ('000 USD)` / 1000
 
-labelItems <- c("Maize", "Cassava", "Flour, wheat", "Starch, cassava",
+labelItems <- c("Maize", "Flour, wheat", "Starch, cassava",
               "Coffee, green", "Coffee, roasted", "Wheat", "Bananas",
-              "Plantains", "Potatoes", "Cassava Equivalent", "Cocoa, beans",
-              "Wool, greasy", "Beans, dry", "Cotton lint", "Silk, raw",
+              "Plantains", "Potatoes", "Cocoa, beans",
+              "Wool, greasy", "Beans, dry", "Silk, raw",
               "Apples",
               "Soybeans", "Oil, soybean", "Rubber, natural", "Rice",
               "Cocoa, butter")
@@ -1246,7 +1257,7 @@ gg
 #ggsave("risk reward frontier.pdf")
 ```
 
-Figure \ref{fig:riskReward} says that, at the global level, the mean price of a given agricultural commodity is roughly proportionate to its volatility. In other words, from the producer's perspective, there is a nearly one to one tradeoff between risk and expected reward. At successively disaggregated levels, however (Figure \ref{fig:riskRewardByRegion}), there is a less than proportionate risk-reward tradeoff.
+The law also fits the data well at geographically disaggregated scales (Figure \ref{fig:riskRewardByRegion}). The slopes at the disaggregated scale parameters are considerably lower than at the globally aggregated level. At the globally aggregated level, the mean price of a given agricultural commodity increases roughly proportionately to the increase in volatility, while at the geographically disaggrgated level, mean prices increase less than proportionately with volatility. From the producer's standpoint, this means that market risk grows exponentially with expected reward.
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:riskRewardByRegion}Logged mean price plotted against logged standard deviation, by region.", echo = FALSE}
 this_file <- "FAO export data regions.csv"
@@ -1317,7 +1328,7 @@ gg <- gg + geom_point(alpha = 0.6, size = smallPoint_size, color = "black", stro
 gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
 #gg <- gg + geom_text_repel(size = label_size)
-gg <- gg + facet_wrap(~Region, scales = "free_x", labeller = labeller(Region = facet_labels))
+gg <- gg + facet_wrap(~Region, labeller = labeller(Region = facet_labels))
 gg <- gg + labs(title = "The ag commodity producer's risk-reward frontier, by region")
 gg <- gg + guides(fill = guide_legend(#nrow = 2,
   override.aes = list(linetype = 0)),
@@ -1336,13 +1347,31 @@ gg <- ggplotify::as.ggplot(gg)
 
 ```
 
-The wide range of products that conform to this rule, including food, non-food, raw, and processed products, suggests that the relation may hold for non-agricultural export price series as well. However, non-agricultural price data generally do not extend back as far as the FAO data examined here, and so this will be difficult to verify on an equal footing.
+The empirical relation in Figure \ref{fig:riskRewardByRegion} thus implies that efforts to increase smallholder access to premium and value added markets must go hand in hand with efforts to mitigate the associated increase in price risk. This mitigation requires a great deal of innovation, as smallholders generally have no means by which to accumulate risk capital in the classical sense.
 
-may inform resillience policy...smallholder risk...cassava...risk tolerance
+Step one in the innovation of smallholder risk mitigating mechanisms is to stop mistaking this absence of classical risk capital for rural poverty. Smallholders are in fact sitting on immense stores of "intangible" value in the form of social capital, environmental services, and informal tenure (what De Soto calls "dead capital"). The latter category alone may be worth as much as USD USD $10 trillion [@de2000mystery]. The challenge, then, is not to invent smallholder risk capital out of thin air, but to invent new standards and measures by which to monetize the smallholder risk capital already in existence.
 
 # Conclusion
 
+Bennett's and Engel's Laws remain a very useful but largely unexploited planning and decision support resource. Only recently in their long history have researchers began to apply these laws in rigorous assessments of the quantity and composition of future food demand. In support of these efforts, here I have presented a graphical and theoretical analysis of the laws, which may help to build intuition about their meaning and relevance to modern discussions.
+
+In the theoretical analysis, I demonstrated how the slopes of Engel's and Bennett's Laws may depend on staple food prices relative to the prices of other goods; and how this may in turn explain the remarkable stability and consistency of the laws observed in the graphical analysis. In the last section, above, I presented a new empirical law relating agricultural commodity price to price volatility. This may help to orient discussions regarding the future behavior of Bennett's and Engel's Laws as the world enters the new epoch of staple food price volatility that began in 2007.
+
+Moreover, the new law holds clear policy implications for smallholder resilience building initiatives. In particular, the law indicates that efforts to add value to smallholder agriculture must be complemented by efforts to mitigate the higher associated risk. It also suggests that the low uptake of high value-adding technology observed throughout much of the developing world may be partly explained by the low priority given to price risk mitigation by aid and research organizations.
+
+
+Resilient food systems are about .
+
+The role of risk capital...investments in 
+
+
+
+
+
+
 \pagebreak
+
+
 
 # References {-}
 
@@ -1354,12 +1383,18 @@ may inform resillience policy...smallholder risk...cassava...risk tolerance
 
 ```{r, results = "markup", echo = F}
 
-df_table <- 
-
-kable(df_table,
-      format = "pandoc",
-      caption = "\\label{tab:tabCountries}") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+# unique(df_bennettRegion$Region)
+# df_asia <- subset(df_bennettRegion[, c("Country")], Region == "Asia\n(excluding W. Asia)")
+# df_
+# 
+# df_table <- df_bennettRegion[order(df_bennettRegion$Region), c("Country", "Region")]
+# #df_table <- df_table[-which(duplicated(df_table$Country)), ]
+# df_table <- df_table %>% spread(Region, Country)
+# 
+# kable(df_table,
+#       format = "pandoc",
+#       caption = "\\label{tab:tabCountries}") %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
 
 ```
@@ -1367,12 +1402,12 @@ kable(df_table,
 
 ```{r, results = "markup", echo = F}
 
-df_table <- 
-
-kable(df_table,
-      format = "pandoc",
-      caption = "\\label{tab:tabCommods}") %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+# df_table <- 
+# 
+# kable(df_table,
+#       format = "pandoc",
+#       caption = "\\label{tab:tabCommods}") %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 
 
 ```
