@@ -819,9 +819,10 @@ element_vec <- c("Expenditure, market exchange rate-based (US$, billions)",
 df_icp <- subset(df_icp, Element %in% element_vec)
 #---
 region_vec <- unique(df_icp$Country[grep("ICP", df_icp$Country)])
-region_vec <- c("WORLD", region_vec)
+#region_vec <- c("WORLD", region_vec)
 df_icp <- subset(df_icp, !(Country %in% region_vec))
 #---
+df_icp$Country[which(df_icp$Country == "WORLD")] <- "World"
 df_icp$Country[grep("Gambia", df_icp$Country)] <- "Gambia"
 df_icp$Country[grep("Iran", df_icp$Country)] <- "Iran"
 df_icp$Country[grep("São Tomé and Principe", df_icp$Country)] <- "Sao Tome and Principe"
@@ -852,8 +853,8 @@ df_gdpPcap <- subset(df_icp, Good %in% c("1000000:GROSS DOMESTIC PRODUCT") &
 #"SP.POP.TOTL.ICP:Population"
 #df_gdpPcap <- df_gdpPcap %>% spread(Good, Value)
 df_gdpPcap$Region <- NULL
-colnames(df_gdpPcap)[ncol(df_gdpPcap)] <- c("GDP/capita")#, "Population")
-df_gdpPcap$`GDP/capita, logged` <- log(df_gdpPcap$`GDP/capita`)
+colnames(df_gdpPcap)[ncol(df_gdpPcap)] <- c("GDP/capita (USD)")#, "Population")
+df_gdpPcap$`GDP/capita (USD), logged` <- log(df_gdpPcap$`GDP/capita (USD)`)
 df_gdpPcap$Good <- NULL
 df_gdpPcap$Element <- NULL
 #---
@@ -901,7 +902,7 @@ adjR2_vec <- c()
 for(i in 1:length(these_elements)){
   this_element <- these_elements[i]
   this_df_plot <- subset(df_plot, Element == this_element)
-  mod <- lm(`Expenditure, logged` ~ `GDP/capita, logged`, this_df_plot)
+  mod <- lm(`Expenditure, logged` ~ `GDP/capita (USD), logged`, this_df_plot)
   #summary(mod)
   m <- round(mod$coefficients[2], 2)
   b <- round(mod$coefficients[1], 2)
@@ -917,7 +918,7 @@ n <- length(unique(df_plot$Region))
 bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
 color_vec <- sample(bag_of_colors, n)
 
-gg <- ggplot(df_plot, aes(x = `GDP/capita, logged`,
+gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
                           y = `Expenditure, logged`,
                           #label = label_these,
                           group = Region, fill = Region, shape = Region))
@@ -990,7 +991,7 @@ these_goods <- unique(df_plot$Good)
 # # }
 # df_plot <- subset(df_plot, !(Country %in% c("Chad", "Suriname", "Botswana", "Guyana", "Kuwait")))
 
-gg <- ggplot(df_plot, aes(x = `GDP/capita, logged`,
+gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
                           y = `Expenditure/capita, logged`))
 gg <- gg + geom_point()
 gg <- gg + facet_wrap(~Good)
@@ -1001,7 +1002,7 @@ adjR2_vec <- c()
 for(i in 1:length(these_goods)){
   this_good <- these_goods[i]
   this_df_plot <- subset(df_plot, Good == this_good)
-  mod <- lm(`Expenditure/capita, logged` ~ `GDP/capita, logged`, this_df_plot)
+  mod <- lm(`Expenditure/capita, logged` ~ `GDP/capita (USD), logged`, this_df_plot)
   #summary(mod)
   m <- round(mod$coefficients[2], 2)
   b <- round(mod$coefficients[1], 2)
@@ -1013,7 +1014,7 @@ for(i in 1:length(these_goods)){
 
 names(facet_labels) <- these_goods
 
-gg <- ggplot(df_plot, aes(x = `GDP/capita, logged`,
+gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
                           y = `Expenditure/capita, logged`,
                           #label = label_these,
                           group = Region, fill = Region, shape = Region))
