@@ -76,6 +76,7 @@ shift_legend2 <- function(p) {
 @pope2012
 
 A good understanding of Bennett's Law [@bennett1941international] and Engel's Law [@zimmerman1932ernst; @stigler1954early] is key to understanding the future composition and quantity of food demand as incomes rise. These old laws thus form the implicit basis for much of the discussion regarding dietary transitions, future food demand, food/nutritional security, and resilient food systems [@popkin1993nutritional; @kearney2010food; @popkin2012global; @timmer1983food; bodirsky2015global]. However, there is surprisingly little explicit reference to or graphical representation of the laws in this literature. An important precursor to the modern discussion [@brown1963man] was less circumspect, but also neglected to indicate the origins of these empirical laws. It appears, moreover, that many donors, breeding programs, and academic researchers are simply unaware of the laws' existence. Tilman et al. [-@tilman2011global], for example, present what they believe to be a newly discovered empirical relation between income and calorie consumption. In fact, this relation was previously documented by Brown [-@brown1963man], and is probably best characterized as an alternative formulation of Engel's Law. Donors and international breeding programs, meanwhile, continue to focus resources on starchy crops in excess of what would be justified by Bennett's Law [@wiebe2020modeling; @finplan2018].
+mention of Engel's Law: [@muhammad2011international]
 
 Here I append a footnote to the discussion in order to address this apparent lack of familiarity with the origins and relevance of Bennett's and Engel's Laws. I present a graphical analysis of the laws in greater detail than has so far appeared in the literature, including a novel rendering of Bennett's Law as a fat-carbohydrate tradeoff frontier, and an analysis of the laws' stability over time. I then show how Bennett's and Engel's laws can be interpreted as consequences of a single overarching law---the Law of Diminishing Marginal Utility. This sheds light, moreover, on the meaning of the law's parameters, the circumstances under which they may change, and why Bennett's and Engel's Laws have remained relatively popular compared to analogous laws for non-food goods.
 
@@ -83,7 +84,7 @@ Finally, I present a new empirical law that appears to have gone unnoticed until
 <!-- I then propose a theoretical unification of the two laws by deriving them both from the same principle of diminishing returns to marginal increases in expenditures on inferior goods. -->
 # What are empirical laws?
 
-In the social sciences, empirical laws have frequently been interpreted as laws of a binding or deterministic character, leading, for example, to theories of "economic determinism" []. It is thus worthwhile to clarify at the outset that "empirical laws", here, refers to observed historical tendencies, typically lacking a firm theoretical explanation. As Houthakker put it:
+In the social sciences, empirical laws, also referred to as "stylized facts", have frequently been interpreted as laws of a binding or deterministic character, leading, for example, to notions of "economic determinism" []. It is thus worthwhile to clarify at the outset that "empirical laws", here, refers to observed historical tendencies, typically lacking a firm theoretical explanation. As Houthakker put it:
 
 >"[Empirical] laws are in the first instance empirical regularities, which may originally have been observed without much theoretical basis.... A large part of the business of the empirical sciences is to develop theories within which already discovered laws have their place and new regularities can be explored" [@houthakker1992there].
 
@@ -928,165 +929,34 @@ gg <- gg + theme(axis.title = element_text(size = axisTitle_size),
 gg
 ```
 
-# Different laws, or different manifestations of the same law?
-@houthakker1992there Are there laws?
 
-```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\label{fig:qerwerwer}....", echo = FALSE}
+# Putting Engel's Law and Bennett's Law to use: back of the envelope calculations of future food demand
 
-all_goods <- unique(df_engel$Good)
-not_these <- all_goods[grep("[0-9]", all_goods)]
-not_these <- c(not_these, "Food")
-df_engelOther <- subset(df_engel, !(Good %in% not_these))
-#unique(df_engelOther$Good)
-#colnames(df_engelOther)
-#unique(df_engelOther$Element)
-this_element <- "Food expenditure/capita (USD), logged"
-df_plot <- subset(df_engelOther, Year == 2017 &
-                    Element == this_element &
-                    Region != "Aggregated")
-u <- colnames(df_plot)
-colnames(df_plot)[which(u == "Expenditure, logged")] <- this_element
-these_goods <- unique(df_plot$Good)
+While a full fledged future food demand study is beyond the scope of this article, it is worth taking a moment to sketch out how the empirical laws examined above can be used to generate back-of-the-envelope calculations of future food demand and future cereal & starchy root demand.
 
-facet_labels <- c()
-adjR2_vec <- c()
-for(i in 1:length(these_goods)){
-  this_good <- these_goods[i]
-  this_df_plot <- subset(df_plot, Good == this_good)
-  mod <- lm(`Food expenditure/capita (USD), logged` ~ `GDP/capita (USD), logged`, this_df_plot)
-  #summary(mod)
-  m <- round(mod$coefficients[2], 2)
-  b <- round(mod$coefficients[1], 2)
-  df_out <- as.data.frame(broom::glance(mod))
-  adjR2 <- round(df_out$adj.r.squared, 2)
-  facet_labels[i] <- paste0(this_good, "\nAdj. R-squared = ", adjR2, "\nSlope = ", m, ", Y intercept = ", b)
-  adjR2_vec[i] <- adjR2
-}
+World food demand for a given year can be approximated by evaluating the calorie formulation of Engel's Law at world GDP/capita for that year. Historically, this approximation has been quite good, diverging just 3%-9% from the measured value (left panel, Figure \ref{fig:...}). The cereal and starchy root share of the global diet for a given year can likewise be approximated by evaluating Bennett's Law at GDP/capita for that year. However, this approximation has diverged considerably from the measured value, by 9-15 percentage points (right panel, Figure \ref{fig:...}).
 
-names(facet_labels) <- these_goods
+It may be possible to reduce the error by including control variables in the model. For back-of-the-envelope projections of future demand, however, it may be sufficient to notice that the error is fairly consistent across years, and to apply an error correction term on this basis. In the parsimonious calculation here, for example, the Bennett model is corrected by substracting the average percentage point error since 2000. (No correction is applied to the Engel model.)
 
-gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
-                          y = `Food expenditure/capita (USD), logged`,
-                          #label = label_these,
-                          group = Region, fill = Region, shape = Region))
-gg <- gg + geom_point(alpha = 0.6, size = smallPoint_size, color = "black", stroke = 0.5)
-gg <- gg + scale_fill_manual(values = color_vec)
-gg <- gg + scale_shape_manual(values = shape_vec)
-#gg <- gg + geom_smooth(method = lm, se = F)
-gg <- gg + facet_wrap(~Good, ncol = 4,
-                      labeller = labeller(Good = facet_labels))
-#gg <- gg + geom_text_repel(color = "black", size = smallLabel_size)
-gg <- gg + theme(strip.background = element_blank(),
-                 strip.text.x = element_text(hjust = -0.01, size = facetTitle_size),
-                 #legend.direction = "vertical",
-                 #legend.spacing.y = unit(1, 'cm'),
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = legendText_size),
-                 axis.text = element_text(size = axisText_size),
-                 axis.title = element_text(size = axisTitle_size))
-gg <- gg + guides(fill = guide_legend(#nrow = 2,
-  override.aes = list(linetype = 0)),
-  color = guide_legend(override.aes = list(linetype = 0)))
-gg
+There remains the question of which parameter values to use when projecting into the future. One method is suggested in Figures \ref{fig:...}: to fit the models cross-sectionally for several years, to examine parameter value trajectories over time, and to choose values based on one's assumptions of how the trajectories are likely to evolve in future years. This decision is facilitated by the remarkable stability of the historical parameter values over time. In the case of Engel's Law, one may also draw upon the observed parameter relation in equation \ref{eq:yintEngelKcal} to reduce the dilemma from two parameters to one parameter. For the 2050 food demand estimate below, the Engel slope parameter is set to `r f`, and the y intercept parameter is calculated from this based on equation \ref{eq:yintEngelKcal}. For the 2050 starchy staples demand estimate, the Bennett slope and y intercept parameters are set to the mean of parameters since 1980, `r d` and `r x`, respectively.
+<!-- basically assuming that the values will revert to values of previous years rather than continuing on their trajectory. -->
+
+The final ingredient required for a back-of-the-envelope estimate of future food demand is an estimate of future GDP/capita, or, alternatively, separate estimates of future GDP and population. Estimates of future population are readily available out to 2100 from the UN [@desa2019world]. Reliable estimates of future GDP are considerably less straightforward to calculate [@diaz2016future], but have become increasingly available [@foure2013modelling]. For back-of-the-envelope purposes, it may be sufficient to assume an annualized GDP growth rate `r` and then to calculate the percentage change in GDP over the baseline year as `% \delta GDP = (1 + r)^n`, where `n` is the number of years between the baseline year and the future year of interest. In a full fledged analysis, careful consideration must be given to the different units in which GDP can be expressed---typically a choice between constant USD, USD at the market exchange rate, or USD at the purchasing power parity exchange rate.
+
+In the parsimonious approach considered here, GDP is expressed in USD at the market exchange rate, and 2050 GDP is estimated assuming an annualized growth rate of 2%. World population in 2050 is assumed to be 9.7 billion, based on the UN's projection.
+
+The resulting estimate of total daily food demand is presented in Table 1, where it is compared to other notable food demand estimates. The starchy staples share of diet in 2050 is estimated to be `r x`. Total starchy staple demand in 2050 is then calculated by multiplying the total food demand by `r x/100`. This gives ..., a figure in line with Gouel et al.'s projection of starchy staple demand [-@gouel2019nutrition]. A sensitivity analysis heatmap is given in Figure \ref{fig:...}.
+Table 1:
+[@valin2014future]
+[@alexandratos2012world] 60% not 70%
+[@gouel2019nutrition]
+[@tilman2011global]
+<!-- These results are in line with Gouel et al.'s estimate of a 46% increase in food demand, including an 18% increase in demand for starchy staples [-@gouel2019nutrition]. -->
+<!-- The 16% increase in cereal demand may not include livestock feed? -->
 
 
-```
-
-
-Both Engel's Law and Bennett's Law express a log-linear relation between a particular budget (total and food budget, respectively) and demand for a particular good (food and carbohydrates, respectively). Is there something unique about these laws and the goods they cover, or can they be generalized to a single law governing the income elasticity of demand for any good?
-
-At first, it may seem that there is something special about food that sets it apart from other goods. In the early discussion surrounding Engel's Law, analogous laws for clothing, rent, and utilities were also proposed [@zimmerman1932ernst], but did not exhibit the same consistency as Engel's Law, and are no longer discussed today.
-
-While it is true that certain metabolic constraints intrinsically limit the amount of food that the human organism can make use of in any given time period, the same can be said of non-food goods such as toilet paper and exercise equipment. Non-metabolic, but perfectly analagous, constraints similarly limit the usefulness of glue, jet fuel, and diamonds. This is called the Law of Diminishing Marginal Utility, and there is nothing particularly unique about food or carbohydrates in this respect. Astute observers have documented this law, in one guise or another, throughout much of written history [@kauder1953genesis]. In 1738, Daniel Bernoulli put it this way:
-
->"[i]n the absence of the unusual, the utility resulting from any small increase in wealth will be inversely proportionate to the quantity of goods previously possessed" [@bernoulli1954exposition].
-
-Bernoulli's statement can be formalized as follows.
-
-\begin{equation}
-\frac{\partial U}{\partial x} \sim \frac{1}{x}
-\label{eq:dimUtilDefine}
-\end{equation}
-
-Where, to be clear, the term $\partial U / \partial x$ is the marginal change in utility given a marginal increase in the quantity of good $x$, and "$\sim 1 / x$", means "inversely proportionate to the quantity of good $x$ already acquired". An expression $U(x)$ for the utility of good $x$ can then be obtained by integrating Bernoulli's statement.
-
-\begin{equation}
-\begin{split}
-\int \frac{d U}{d x} \: dx &= \int \alpha \frac{d \ln(x)}{dx} \: dx \\
-U(x)  &= \alpha \ln(x) + k
-\end{split}
-\label{eq:integrate_lnU}
-\end{equation}
-
-Where the proportionality constant $\alpha = dU/d\ln(x)$ regulates the marginal change in utility given a $1$ percent increase in good $x$.
-
-Assuming that consumers want to maximize utility, then the marginal utility of the good must be equal to the marginal utility of the consumer's budget (income), $B$, for a marginal increment in $x$.
-
-\begin{equation}
-\frac{\partial \ln(B)}{\partial x} = \frac{d \ln(x)}{dx}
-\label{eq:assumption}
-\end{equation}
-<!-- If $x$ is defined as an expenditure, and other expenditures are held constant, then $dB = dx$, and -->
-By which it then follows
-
-\begin{equation}
-\begin{split}
-\int \alpha_B \frac{\partial \ln(B)}{\partial x} \: dx &= \int \alpha_x \frac{d \ln(x)}{dx} \: dx \\
-\alpha_B \ln(B) + k_B  &= \alpha_x \ln(x) + k_x
-\end{split}
-\end{equation}
-
-Which can then be rearranged into a log-linear expression.
-
-\begin{equation}
-\ln(x) = \beta \ln(B) + c
-\label{eq:general_law}
-\end{equation}
-
-Where
-
-\begin{equation}
-\beta = \alpha_B / \alpha_x = \frac{d \ln(x)}{d \ln(B)}, \:\: c = (k_B - k_x) / \alpha_x
-\end{equation}
-
-Engel's Law and Bennett's Law may thus be considered particular instances of this more general principle governing the income elasticity of demand for any good $x$, derived from the Law of Diminishing Marginal Utility (equation \ref{eq:dimUtilDefine}) and the assumption that consumers are utility maximizers (equation \ref{eq:assumption}).
-
-Note that the slope $\beta$ is the ratio $\alpha_B / \alpha_x$. A value of $\beta$ less than $1$ therefore indicates that the percentage increase in utility resulting from from a $1$ percent increase in $x$ is greater than the percentage increase in utility resulting from a $1$ percent increase in income. This can be interpreted as saying that the consumer's need or apetite for $x$ is more quickly satisfied than their need for income. As a consequence, expenditure on $x$ rises less than proportionately with income. This is the case corresponding to Engel's and Bennett's Laws. A value of $\beta$ greater than $1$ indicates that the consumer's need for $x$ is less quickly satisfied than their need for income.^[If $x$ is expressed as an expenditure share, then replace $1$ with $0$.]
-
-Note, moreover, that an increase in the price of $x$ effectively results in a decrease in satisfaction per unit expenditure on $x$, and vice versa. It follows, then, that $\beta$ is largely determined by the price of $x$ relative to other goods, with high values of $\beta$ corresponding to high prices of good $x$ relative to other goods, and vice versa. This may help to explain the geographical variation in slope observed in Figures \ref{fig:fatCarbDisagg} and \ref{fig:Engel0Disagg}; as well as the temporal variation observed in Figures \ref{fig:BennettStability} and \ref{fig:EngelStability}. ...as suggested by Houthakker [-@houthakker1957international].
-
-This also shines a light on the circumstances under which Engel's and Bennett's Laws could be violated. One can conceive of situations of extreme poverty and/or of soaring prices, for example, such that $\beta$ turns greater than $1$ for a wide range of goods, including food. By the same token, the laws for non-food goods discussed in the early literature may not have "caught on" as well as Engel's and Bennett's Laws due to wide variations in their relative prices from one place and time to another.
-
-[@aitchison1954synthesis]: we may reasonably suppose that many commodities begin life as luxuries and eventually become semi-luxuries or necessities as increasing incomes and falling prices bring consumers nearer to an ultimate saturation level. Such we might expect to have been the history of radio sets and to be the future prospects of television, domestic refrigerators and the like.
-
-# Making use of Engel's Law, Bennett's Law, and the fat-carb frontier to estimate future food demand
-
-A full demand study is beyond the scope of this paper, but here I provide an indication as to how the empirical laws examined above can be used to generate back-of-the-envelope calculations of future food demand, future cereal & starchy root demand, and future macronutrient demand.
-
-The residuals of Bennett's Law generally range between $+/-0.4$, which can translate into substantial errors on the order of $+/-10$ percentage points. In a full fledged demand study, it may be possible to reduce this error. For the purposes of a back of the envelope calculation, however, and considering the error is about the same from year to year, it is sufficient to add a correction term based on past years.
-
-In a more careful study,...considerations of GDP at constant prices, or as PPP.
-
-...from equation \ref{eq:yintEngelKcal}
-
+2% annual growth in GDP [].
 Can do this for any country
-
-Can make a better model for Bennett's Law, including other variables
-
-Can make carbohydrate model
-
-For Bennett model, mean of parameters since 1980 used, basically assuming that the values will revert to values of previous years rather than continuing on their trajectory. The mean of the error since 2000 used.
-
-These results are in line with Gouel et al.'s estimate of a 46% increase in food demand, including an 18% increase in demand for starchy staples [-@gouel2019nutrition].
-
-The 16% increase in cereal demand may not include livestock feed?
-
-Assumption:
-
-Population reaches 9.7 billion in 2050 [@desa2019world].
-
-3% annual growth in GDP [].
-
 ```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:demandBackTest}....", echo = FALSE}
 # Define get demand estimate function
 getDemEst <- function(df_dem){
@@ -1281,9 +1151,183 @@ kcalPday2010 * 1.46
 starchKcalPday2010 * 1.18
 DemTot2050_est
 DemCerRoot2050_est
+# Tilman et al.: 100%-110% increases in 2050 over 2005.
+Tilman_est_kcalPcap <- kcalPday2005 * 2.1 / worldPop2050 
+Tilman_est_trilKcal <- 10^-12 * kcalPday2005 * 2.1
+# Results in 3600-3800 kcal/capita/day, which is a body builder's diet, approaching twice the recommended helthy calorie intake for sedentary adult males. --maybe moreso since UN 2050 pop projection in 2011 was 9.3 billion (this implied in opening sentences of Tilman paper.)
 
   
 ```
+
+
+
+# Different laws, or different manifestations of the same law?
+@houthakker1992there Are there laws?
+
+```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\label{fig:qerwerwer}....", echo = FALSE}
+
+all_goods <- unique(df_engel$Good)
+not_these <- all_goods[grep("[0-9]", all_goods)]
+not_these <- c(not_these, "Food")
+df_engelOther <- subset(df_engel, !(Good %in% not_these))
+#unique(df_engelOther$Good)
+#colnames(df_engelOther)
+#unique(df_engelOther$Element)
+this_element <- "Food expenditure/capita (USD), logged"
+df_plot <- subset(df_engelOther, Year == 2017 &
+                    Element == this_element &
+                    Region != "Aggregated")
+u <- colnames(df_plot)
+colnames(df_plot)[which(u == "Expenditure, logged")] <- this_element
+these_goods <- unique(df_plot$Good)
+
+facet_labels <- c()
+adjR2_vec <- c()
+for(i in 1:length(these_goods)){
+  this_good <- these_goods[i]
+  this_df_plot <- subset(df_plot, Good == this_good)
+  mod <- lm(`Food expenditure/capita (USD), logged` ~ `GDP/capita (USD), logged`, this_df_plot)
+  #summary(mod)
+  m <- round(mod$coefficients[2], 2)
+  b <- round(mod$coefficients[1], 2)
+  df_out <- as.data.frame(broom::glance(mod))
+  adjR2 <- round(df_out$adj.r.squared, 2)
+  facet_labels[i] <- paste0(this_good, "\nAdj. R-squared = ", adjR2, "\nSlope = ", m, ", Y intercept = ", b)
+  adjR2_vec[i] <- adjR2
+}
+
+names(facet_labels) <- these_goods
+
+gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
+                          y = `Food expenditure/capita (USD), logged`,
+                          #label = label_these,
+                          group = Region, fill = Region, shape = Region))
+gg <- gg + geom_point(alpha = 0.6, size = smallPoint_size, color = "black", stroke = 0.5)
+gg <- gg + scale_fill_manual(values = color_vec)
+gg <- gg + scale_shape_manual(values = shape_vec)
+#gg <- gg + geom_smooth(method = lm, se = F)
+gg <- gg + facet_wrap(~Good, ncol = 4,
+                      labeller = labeller(Good = facet_labels))
+#gg <- gg + geom_text_repel(color = "black", size = smallLabel_size)
+gg <- gg + theme(strip.background = element_blank(),
+                 strip.text.x = element_text(hjust = -0.01, size = facetTitle_size),
+                 #legend.direction = "vertical",
+                 #legend.spacing.y = unit(1, 'cm'),
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = legendText_size),
+                 axis.text = element_text(size = axisText_size),
+                 axis.title = element_text(size = axisTitle_size))
+gg <- gg + guides(fill = guide_legend(#nrow = 2,
+  override.aes = list(linetype = 0)),
+  color = guide_legend(override.aes = list(linetype = 0)))
+gg
+
+
+```
+
+
+Both Engel's Law and Bennett's Law express a log-linear relation between a particular budget (total and food budget, respectively) and demand for a particular good (food and carbohydrates, respectively). Is there something unique about these laws and the goods they cover, or can they be generalized to a single law governing the income elasticity of demand for any good?
+
+At first, it may seem that there is something special about food that sets it apart from other goods. In the early discussion surrounding Engel's Law, analogous laws for clothing, rent, and utilities were also proposed [@zimmerman1932ernst], but did not exhibit the same consistency as Engel's Law, and are no longer discussed today.
+
+While it is true that certain metabolic constraints intrinsically limit the amount of food that the human organism can make use of in any given time period, the same can be said of non-food goods such as toilet paper and exercise equipment. Non-metabolic, but perfectly analagous, constraints similarly limit the usefulness of glue, jet fuel, and diamonds. This is called the Law of Diminishing Marginal Utility, and there is nothing particularly unique about food or carbohydrates in this respect. Astute observers have documented this law, in one guise or another, throughout much of written history [@kauder1953genesis]. In 1738, Daniel Bernoulli put it this way:
+
+>"[i]n the absence of the unusual, the utility resulting from any small increase in wealth will be inversely proportionate to the quantity of goods previously possessed" [@bernoulli1954exposition].
+
+Bernoulli's statement can be formalized as follows.
+
+\begin{equation}
+\frac{\partial U}{\partial x} \sim \frac{1}{x}
+\label{eq:dimUtilDefine}
+\end{equation}
+
+Where, to be clear, the term $\partial U / \partial x$ is the marginal change in utility given a marginal increase in the quantity of good $x$, and "$\sim 1 / x$", means "inversely proportionate to the quantity of good $x$ already acquired". An expression $U(x)$ for the utility of good $x$ can then be obtained by integrating Bernoulli's statement.
+
+\begin{equation}
+\begin{split}
+\int \frac{d U}{d x} \: dx &= \int \alpha \frac{d \ln(x)}{dx} \: dx \\
+U(x)  &= \alpha \ln(x) + k
+\end{split}
+\label{eq:integrate_lnU}
+\end{equation}
+
+Where the proportionality constant $\alpha = dU/d\ln(x)$ regulates the marginal change in utility given a $1$ percent increase in good $x$.
+
+In the multivariate case, an expression $U(\mathbf{x})$ for the utility of a vector of $n$ goods $\mathbf{x} = [x_1,x_2,...,x_n]$ can be obtained as follows.
+
+\begin{equation}
+\begin{split}
+\int \nabla_{\mathbf{x}} U \: d \mathbf{x} &= \int D(\mathbf{\alpha}) \nabla_{\mathbf{x}} \ln(\mathbf{x}) \: d \mathbf{x} \\
+\ln(U(\mathbf{x}))  &= \boldsymbol{\alpha} {'} \ln(\mathbf{x}) + \alpha_0
+\end{split}
+\label{eq:cobbDoug}
+\end{equation}
+
+where $\boldsymbol{\alpha}$ is the vector of proportionality constants corresponding to each $x_i$, the notation $D(\boldsymbol{\alpha})$ indicates a diagonal matrix with the elements of $\boldsymbol{\alpha}$ along its diagonal, and
+
+\begin{equation}
+\nabla_{\mathbf{x}} \ln(U) = \left[ \begin{matrix} \frac{\partial \ln(U)}{\partial \ln(x_1)} \\
+\frac{\partial \ln(U)}{\partial \ln(x_2)} \\
+\vdots \\
+\frac{\partial \ln(U)}{\partial \ln(x_n)}
+\end{matrix} \right]
+\end{equation}
+
+Equation \ref{eq:cobbDoug} is well-known to economists as the Cobb-Douglas form, and is also well-known to fit the data across a wide range of contexts and scales.
+
+also... It has often been observed that consumption of different categories of goods increases in different proportions to increases in income. Engel's Law, for example, famously notes that a household's food consumption increases less than proportionately with its income. Others have noted similar relations between income and consumer expenditures on clothing, utilities, rent, and other items [@zimmerman1932ernst; @stigler1954early]. All of this may be viewed as a result of the Law of Diminshing Marginal Utility.
+
+The marginal decrease in the usefulness of income must equal the marginal increase in the usefulness of the good gained in exchange.
+
+\begin{equation}
+\begin{split}
+\frac{\partial U}{\partial B} &= \frac{\partial U}{dx_i} \\
+\alpha_B \frac{d \ln(B)}{d B} &= \alpha_i \frac{d \ln(x_i)}{dx_i}
+\end{split}
+\label{eq:condEqualU}
+\end{equation}
+
+But note that $\frac{d \ln(B)}{d B} = \frac{\partial \ln(B)}{\partial (w_i x_i)}$. And so
+
+\begin{equation}
+\begin{split}
+\alpha_B \frac{\partial \ln(B)}{\partial (w_i x_i)} &= \alpha_i \frac{d \ln(x_i)}{dx_i}
+\end{split}
+\label{eq:margUtilAssump}
+\end{equation}
+
+Rearranging and integrating...
+
+\begin{equation}
+\begin{split}
+\int \alpha_B \frac{\partial \ln(B)}{\partial x_i} \: dx_i &= \int w_i  \alpha_{x_i} \frac{d \ln(x_i)}{dx_i} \: dx_i \\
+\alpha_B \ln(B) + k_B  &= w_i \alpha_i \ln(x_i) + k_i
+\end{split}
+\end{equation}
+
+Which can then be rearranged into a log-linear expression.
+
+\begin{equation}
+\ln(x_i) = m \ln(B) + K
+\label{eq:generalLaw}
+\end{equation}
+
+Where
+
+\begin{equation}
+m = \frac{\alpha_B}{w_i \alpha_i} = \frac{d \ln(x_i)}{d \ln(B)}, \:\: K = \frac{k_B - k_i}{w_i \alpha_i}
+\end{equation}
+
+Engel's Law and Bennett's Law may thus be considered particular instances of this more general principle governing the income elasticity of demand for any good $x$, derived from the Law of Diminishing Marginal Utility (equation \ref{eq:dimUtilDefine}) and the assumption that consumers are utility maximizers (equation \ref{eq:assumption}).
+
+Note that the slope $\beta$ is the ratio $\alpha_B / \alpha_x$. A value of $\beta$ less than $1$ therefore indicates that the percentage increase in utility resulting from from a $1$ percent increase in $x$ is greater than the percentage increase in utility resulting from a $1$ percent increase in income. This can be interpreted as saying that the consumer's need or apetite for $x$ is more quickly satisfied than their need for income. As a consequence, expenditure on $x$ rises less than proportionately with income. This is the case corresponding to Engel's and Bennett's Laws. A value of $\beta$ greater than $1$ indicates that the consumer's need for $x$ is less quickly satisfied than their need for income.^[If $x$ is expressed as an expenditure share, then replace $1$ with $0$.]
+
+Note, moreover, that an increase in the price of $x$ effectively results in a decrease in satisfaction per unit expenditure on $x$, and vice versa. It follows, then, that $\beta$ is largely determined by the price of $x$ relative to other goods, with high values of $\beta$ corresponding to high prices of good $x$ relative to other goods, and vice versa. This may help to explain the geographical variation in slope observed in Figures \ref{fig:fatCarbDisagg} and \ref{fig:Engel0Disagg}; as well as the temporal variation observed in Figures \ref{fig:BennettStability} and \ref{fig:EngelStability}. ...as suggested by Houthakker [-@houthakker1957international].
+
+This also shines a light on the circumstances under which Engel's and Bennett's Laws could be violated. One can conceive of situations of extreme poverty and/or of soaring prices, for example, such that $\beta$ turns greater than $1$ for a wide range of goods, including food. By the same token, the laws for non-food goods discussed in the early literature may not have "caught on" as well as Engel's and Bennett's Laws due to wide variations in their relative prices from one place and time to another.
+
+[@aitchison1954synthesis]: we may reasonably suppose that many commodities begin life as luxuries and eventually become semi-luxuries or necessities as increasing incomes and falling prices bring consumers nearer to an ultimate saturation level. Such we might expect to have been the history of radio sets and to be the future prospects of television, domestic refrigerators and the like.
+
 
 # A new empirical law: expected price and price volatility
 
@@ -1581,6 +1625,14 @@ The empirical relation in Figure \ref{fig:riskRewardByRegion} thus implies that 
 
 Step one in the innovation of smallholder risk mitigating mechanisms is to stop mistaking this absence of classical risk capital for rural poverty. Smallholders are in fact sitting on immense stores of "intangible" value in the form of social capital, environmental services, and informal property (what De Soto calls "dead capital"). The latter category alone may be worth as much as USD USD $10 trillion [@de2000mystery]. The challenge, then, is not to invent smallholder risk capital out of thin air, but to invent new standards and measures by which to monetize the smallholder risk capital already in existence.
 
+# Discussion/Food policy implications
+
+Tilman et al. present an alternative route, fitting their Engel model at the country-year level []. This involves an assumption that the fitted parameters will remain stable as more years of data are added in the future.
+
+Future global food demand studies typically draw upon very sophisticated modeling and/or several rounds of expert consultations and review. These processes are important for building consensus around the plausibility of different future food demand scenarios. However, they can last for years.  re remains an underserved market of . Engel's Law and Bennett's Law suggest a parsimonious alternative. Tilman et al. were the first to exploit this alternative, estimating a 100%-110% increase in 2050 food demand over the 2005 level []. At the UN's projection of a 9.7 billion global population in 2050 [-@desa2019world], this means a global per capita daily food intake of about 3600-3800 kcal, implying that numerous countries would have daily per capita intake in the 4000-5000 kcal range. Such a scenario thus envisions entire populaces of obese persons and/or Olympic body builders consuming more than twice the recommended daily calorie intake for an adult male.
+<!-- `r Tilman_est_trilKcal` per day -->
+
+
 # Conclusion
 
 Bennett's and Engel's Laws remain a very useful but largely unexploited planning and decision support resource. Only recently in their long history have researchers began to apply these laws in rigorous assessments of the quantity and composition of future food demand. In support of these efforts, here I have presented a graphical and theoretical analysis of the laws, which may help to build intuition about their meaning and relevance to modern discussions.
@@ -1683,3 +1735,50 @@ Moreover, the new law holds clear policy implications for smallholder resilience
 <!-- # gg <- ggplotify::as.ggplot(gg) -->
 
 <!-- ``` -->
+
+
+<!-- \begin{equation} -->
+<!-- \frac{\partial U}{\partial x} \sim \frac{1}{x} -->
+<!-- \label{eq:dimUtilDefine} -->
+<!-- \end{equation} -->
+
+<!-- Where, to be clear, the term $\partial U / \partial x$ is the marginal change in utility given a marginal increase in the quantity of good $x$, and "$\sim 1 / x$", means "inversely proportionate to the quantity of good $x$ already acquired". An expression $U(x)$ for the utility of good $x$ can then be obtained by integrating Bernoulli's statement. -->
+
+<!-- \begin{equation} -->
+<!-- \begin{split} -->
+<!-- \int \frac{d U}{d x} \: dx &= \int \alpha \frac{d \ln(x)}{dx} \: dx \\ -->
+<!-- U(x)  &= \alpha \ln(x) + k -->
+<!-- \end{split} -->
+<!-- \label{eq:integrate_lnU} -->
+<!-- \end{equation} -->
+
+<!-- Where the proportionality constant $\alpha = dU/d\ln(x)$ regulates the marginal change in utility given a $1$ percent increase in good $x$. -->
+
+<!-- Assuming that consumers want to maximize utility, then the marginal utility of the good must be equal to the marginal utility of the consumer's budget (income), $B$, for a marginal increment in $x$. -->
+
+<!-- \begin{equation} -->
+<!-- \frac{\partial \ln(B)}{\partial x} = \frac{d \ln(x)}{dx} -->
+<!-- \label{eq:assumption} -->
+<!-- \end{equation} -->
+<!-- <!-- If $x$ is defined as an expenditure, and other expenditures are held constant, then $dB = dx$, and --> -->
+<!-- By which it then follows -->
+
+<!-- \begin{equation} -->
+<!-- \begin{split} -->
+<!-- \int \alpha_B \frac{\partial \ln(B)}{\partial x} \: dx &= \int \alpha_x \frac{d \ln(x)}{dx} \: dx \\ -->
+<!-- \alpha_B \ln(B) + k_B  &= \alpha_x \ln(x) + k_x -->
+<!-- \end{split} -->
+<!-- \end{equation} -->
+
+<!-- Which can then be rearranged into a log-linear expression. -->
+
+<!-- \begin{equation} -->
+<!-- \ln(x) = \beta \ln(B) + c -->
+<!-- \label{eq:general_law} -->
+<!-- \end{equation} -->
+
+<!-- Where -->
+
+<!-- \begin{equation} -->
+<!-- \beta = \alpha_B / \alpha_x = \frac{d \ln(x)}{d \ln(B)}, \:\: c = (k_B - k_x) / \alpha_x -->
+<!-- \end{equation} -->
