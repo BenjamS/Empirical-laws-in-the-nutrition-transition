@@ -812,7 +812,9 @@ df_icp$Year <- 2017
 #unique(df_icp$Element)
 element_vec <- c("Expenditure, market exchange rate-based (US$, billions)",
                  "Expenditure per capita, market exchange rate-based (US$)",
-                 "Expenditure component share of GDP (GDP = 100%)")
+                 "Expenditure component share of GDP (GDP = 100%)",
+                 "Expenditure per capita, PPP-based (US$)",
+                 "Expenditure, PPP-based (US$, billions)")
 # Population
 # "Expenditure, market exchange rate-based (US$, billions)"
 # "Expenditure per capita, PPP-based (US$)"
@@ -849,33 +851,38 @@ df_key <- df_key[-ind_dup, ]
 df_icp <- merge(df_icp, df_key, by = c("Country", "Year"))
 #---
 df_gdpPcap <- subset(df_icp, Good %in% c("1000000:GROSS DOMESTIC PRODUCT") &
-                       Element == "Expenditure per capita, market exchange rate-based (US$)")
+                       Element != "Expenditure component share of GDP (GDP = 100%)")
 #"SP.POP.TOTL.ICP:Population"
-#df_gdpPcap <- df_gdpPcap %>% spread(Good, Value)
 df_gdpPcap$Region <- NULL
-colnames(df_gdpPcap)[ncol(df_gdpPcap)] <- c("GDP/capita (USD)")#, "Population")
-df_gdpPcap$`GDP/capita (USD), logged` <- log(df_gdpPcap$`GDP/capita (USD)`)
+df_gdpPcap <- df_gdpPcap %>% spread(Element, Value)
+u <- colnames(df_gdpPcap)
+colnames(df_gdpPcap) <- gsub("Expenditure", "GDP", u)
 df_gdpPcap$Good <- NULL
-df_gdpPcap$Element <- NULL
 #---
-these_elements <- c("Expenditure component share of GDP (GDP = 100%)",
-                    "Expenditure per capita, market exchange rate-based (US$)")
-df_engel <- subset(df_icp, Element %in% these_elements)# &
-                          #Good == "1101100:FOOD")
-df_engel$Value <- log(df_engel$Value)
-ind_rm <- which(is.nan(df_engel$Value)|is.infinite(df_engel$Value)|is.na(df_engel$Value))
-df_engel <- df_engel[-ind_rm, ]
-colnames(df_engel)[(ncol(df_engel) - 1)] <- "Expenditure, logged"
-# df_engel$Good <- NULL
-# df_engel$Element <- NULL
+#unique(df_icp$Good)
+df_foodGdpPcap <- subset(df_icp, Good %in% c("1101100:FOOD")  &
+                           Element != "Expenditure component share of GDP (GDP = 100%)")
+df_foodGdpPcap$Region <- NULL
+df_foodGdpPcap <- df_foodGdpPcap %>% spread(Element, Value)
+u <- colnames(df_foodGdpPcap)
+colnames(df_foodGdpPcap) <- gsub("Expenditure", "Food GDP", u)
+df_foodGdpPcap$Good <- NULL
 #---
-df_engel <- merge(df_engel, df_gdpPcap, by = c("Country", "Year"))
+df_gdpPcap <- merge(df_gdpPcap, df_foodGdpPcap, by = c("Country", "Year"))
+#---
+colnames(df_icp)[(ncol(df_icp) - 1)] <- "Expenditure"
+df_icp$`Expenditure, logged` <- log(df_icp$Expenditure)
+ind_rm <- which(is.nan(df_icp$`Expenditure, logged`)|is.infinite(df_icp$`Expenditure, logged`)|is.na(df_icp$`Expenditure, logged`))
+df_icp <- df_icp[-ind_rm, ]
+df_icp <- subset(df_icp, Good != "1000000:GROSS DOMESTIC PRODUCT")
+#---
+df_icp <- merge(df_icp, df_gdpPcap, by = c("Country", "Year"))
 #--------------------------------------------------------------------------
 # Write
 this_folder <- "C:/Users/bensc/OneDrive/Documents/Empirical laws, old and new, in the nutrition transition/"
 this_file <- "Engels Law WB ICP data.csv"
 this_filepath <- paste0(this_folder, this_file)
-write.csv(df_engel, this_filepath, row.names = F)
+write.csv(df_icp, this_filepath, row.names = F)
 #--------------------------------------------------------------------------
 # Check
 shape_vec <- c(21:24, 4)
@@ -891,7 +898,7 @@ axisTitle_size <- 7
 facetTitle_size <- 7
 shape_vec <- c(21:24, 4)
 
-df_plot <- subset(df_engel, Good == "1101100:FOOD" & Year == 2017)
+df_plot <- subset(df_icp, Good == "1101100:FOOD" & Year == 2017)
 
 df_plot$Element[grep("share", df_plot$Element)] <- "Expenditure as % of GDP"
 df_plot$Element[grep("per capita", df_plot$Element)] <- "Expenditure/capita (USD, market exchange rate-based)"
@@ -962,7 +969,7 @@ these_goods <- c("1111000:RESTAURANTS AND HOTELS", "9120000:ACTUAL EDUCATION",
                 # "1101120:Meat",
                 # "1101150:Oils and fats",
                 "9060000:ACTUAL HOUSING, WATER, ELECTRICITY, GAS AND OTHER FUELS")
-df_plot <- subset(df_engel, Good %in% these_goods & Year == 2017 &
+df_plot <- subset(df_icp, Good %in% these_goods & Year == 2017 &
                     Element == "Expenditure per capita, market exchange rate-based (US$)")
 
 colnames(df_plot)[5] <- "Expenditure/capita, logged"
@@ -1040,3 +1047,20 @@ gg
 # gg <- shift_legend2(gg)
 # gg <- ggplotify::as.ggplot(gg)
 #==========================================================================
+# Scrape data from Houthakker paper
+# library(tabulizer)
+# this_folder <- "C:/Users/bensc/OneDrive/Documents/Empirical laws, old and new, in the nutrition transition/"
+# this_file <- "HouthakkerEngelCentEC1957.pdf"
+# this_filepath <- paste0(this_folder, this_file)
+# outlist <- extract_tables(this_filepath, pages = c(11), method = "stream")
+# #View(outlist[[1]])
+# df_raw <- as.data.frame(outlist[[2]])
+# df_raw <- df_raw %>% mutate_if(is.factor, as.character)
+# df_raw <- df_raw[-c(1, 2, 15:nrow(df_raw)), ]
+# replace_this <- "-|_|, | ,|,"; with_this <- ""
+# df_raw <- as.data.frame(apply(df_raw,
+#                               2, function(x) gsub(replace_this, with_this, x)))
+# replace_this <- "\\. | \\."; with_this <- "\\."
+# df_raw <- as.data.frame(apply(df_raw,
+#                               2, function(x) gsub(replace_this, with_this, x)))
+
