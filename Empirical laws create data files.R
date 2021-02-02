@@ -165,42 +165,83 @@ rm(df_raw, df_pop); gc()
 this_folder <- "C:/Users/bensc/OneDrive/Documents/Data/FAO Data/"
 this_file <- "Macro-Statistics_Key_Indicators_E_All_Data.csv"
 this_filepath <- paste0(this_folder, this_file)
-df_gdp <- read.csv(this_filepath, stringsAsFactors = F)
+df_gdpRaw <- read.csv(this_filepath, stringsAsFactors = F)
 rm_cols <- c("Area.Code", "Item.Code", "Element.Code")
-rm_cols <- which(colnames(df_gdp) %in% rm_cols)
-df_gdp <- df_gdp[, -rm_cols]
-#unique(df_gdp$Item)
-df_gdp$Item <- as.character(df_gdp$Item)
-df_gdp$Area <- as.character(df_gdp$Area)
-u <- colnames(df_gdp)
-df_gdp <- df_gdp[, -grep("F", u)]
-u <- colnames(df_gdp)
-df_gdp <- df_gdp[, -grep("N", u)]
-v <- colnames(df_gdp)[5:ncol(df_gdp)]
-colnames(df_gdp)[5:ncol(df_gdp)] <- gsub("Y", "", v)
+rm_cols <- which(colnames(df_gdpRaw) %in% rm_cols)
+df_gdpRaw <- df_gdpRaw[, -rm_cols]
+#unique(df_gdpRaw$Item)
+df_gdpRaw$Item <- as.character(df_gdpRaw$Item)
+df_gdpRaw$Area <- as.character(df_gdpRaw$Area)
+u <- colnames(df_gdpRaw)
+df_gdpRaw <- df_gdpRaw[, -grep("F", u)]
+u <- colnames(df_gdpRaw)
+df_gdpRaw <- df_gdpRaw[, -grep("N", u)]
+v <- colnames(df_gdpRaw)[5:ncol(df_gdpRaw)]
+colnames(df_gdpRaw)[5:ncol(df_gdpRaw)] <- gsub("Y", "", v)
 #---------------------------------------------------------------------------
 # Check available years
-#colnames(df_gdp)
+#colnames(df_gdpRaw)
 #---------------------------------------------------------------------------
 available_yrs <- as.character(c(1970:2018))
-df_gdp <- gather_(df_gdp, "Year", "Value", gather_cols = available_yrs)
-#df_gdp$Unit <- NULL
+df_gdpRaw <- gather_(df_gdpRaw, "Year", "Value", gather_cols = available_yrs)
+#df_gdpRaw$Unit <- NULL
 #---------------------------------------------------------------------------
-#unique(df_gdp$Item)
-#unique(df_gdp$Element)
+#unique(df_gdpRaw$Item)
+#unique(df_gdpRaw$Element)
 item_vec <- c("Gross Domestic Product per capita", "Gross Domestic Product")
-this_element <- "Value US$" #"Value US$, 2015 prices"
-df_gdp <- subset(df_gdp, Item %in% item_vec &
+this_element <- "Value US$, 2015 prices" #"Value US$" #Use 2015 constant prices to see linear relation between Bennett's Law (and carbohydrate law) slope and y intercept.
+df_gdpRaw <- subset(df_gdpRaw, Item %in% item_vec &
                    Element == this_element)
-df_gdp <- df_gdp[, c("Area", "Year", "Item", "Unit", "Value")]
-df_gdp$Unit <- NULL
-df_gdp <- df_gdp %>% spread(Item, Value)
-colnames(df_gdp)[3:4] <- c("GDP (million USD)", "GDP/capita (USD) 2")
-df_gdp$`GDP (million USD), logged` <- log(df_gdp$`GDP (million USD)`)
-df_gdp$`GDP/capita (USD) 2, logged` <- log(df_gdp$`GDP/capita (USD) 2`)
-df_gdp$Year <- as.integer(df_gdp$Year)
+df_gdpRaw <- df_gdpRaw[, c("Area", "Year", "Item", "Unit", "Value")]
+df_gdpRaw$Unit <- NULL
+df_gdpRaw <- df_gdpRaw %>% spread(Item, Value)
+colnames(df_gdpRaw)[3:4] <- c("GDP (million USD)", "GDP/capita (USD)")
+df_gdpRaw$`GDP (million USD), logged` <- log(df_gdpRaw$`GDP (million USD)`)
+df_gdpRaw$`GDP/capita (USD), logged` <- log(df_gdpRaw$`GDP/capita (USD)`)
+df_gdpRaw$Year <- as.integer(df_gdpRaw$Year)
+#--------------------------------------------------------------------------
 # Is GDP/capita GDP over pop? (Looks like no.)
-df_gdp$`Population (millions) test` <- df_gdp$`GDP (million USD)` / df_gdp$`GDP/capita (USD) 2`
+#df_gdpRaw$`Population (millions) test` <- df_gdpRaw$`GDP (million USD)` / df_gdpRaw$`GDP/capita (USD)`
+#--------------------------------------------------------------------------
+df_bennett <- merge(df_fbal, df_gdpRaw, by = c("Area", "Year"))
+# unique(df_gdp$Area[grep("China", df_gdp$Area)])
+# unique(df_fbal$Area[grep("Taiwan", df_fbal$Area)])
+# Create simple GDP/capita (as GDP over pop)
+df_bennett$`GDP/capita (USD) test` <- df_bennett$`GDP (million USD)` / df_bennett$`Population (millions)`
+# Is it the same as the GDP/cap provided by FAO?
+# Pretty close but not exact.
+df_bennett$`GDP/capita (USD) test` <- NULL
+#--------------------------------------------------------------------------
+
+
+# item_vec <- c("Gross Domestic Product per capita", "Gross Domestic Product")
+# these_elements <- c("Value US$", "Value US$, 2015 prices")
+# df_gdpRaw <- subset(df_gdpRaw, Item %in% item_vec &
+#                    Element == these_elements)
+# df_gdpRaw <- df_gdpRaw[, c("Area", "Year", "Item", "Element", "Unit", "Value")]
+# #---------------------------------------------------------------------------
+# df_gdpConstPrice <- subset(df_gdpRaw, Element == "Value US$, 2015 prices")
+# df_gdpConstPrice$Element <- NULL
+# df_gdpConstPrice$Unit <- NULL
+# df_gdpConstPrice <- df_gdpConstPrice %>% spread(Item, Value)
+# colnames(df_gdpConstPrice)[3:4] <- c("GDP (million USD), 2015 prices", "GDP/capita (USD), 2015 prices")
+# 
+# df_gdpConstPrice$`GDP (million USD), 2015 prices, logged` <- log(df_gdpConstPrice$`GDP (million USD), 2015 prices`)
+# df_gdpConstPrice$`GDP/capita (USD), 2015 prices, logged` <- log(df_gdpConstPrice$`GDP/capita (USD), 2015 prices`)
+# df_gdpConstPrice$Year <- as.integer(df_gdpConstPrice$Year)
+# #---------------------------------------------------------------------------
+# df_gdpCurrPrice <- subset(df_gdpRaw, Element == "Value US$")
+# df_gdpCurrPrice$Element <- NULL
+# df_gdpCurrPrice$Unit <- NULL
+# df_gdpCurrPrice <- df_gdpCurrPrice %>% spread(Item, Value)
+# colnames(df_gdpCurrPrice)[3:4] <- c("GDP (million USD), current prices", "GDP/capita (USD), current prices")
+# 
+# df_gdpCurrPrice$`GDP (million USD), current prices, logged` <- log(df_gdpCurrPrice$`GDP (million USD), current prices`)
+# df_gdpCurrPrice$`GDP/capita (USD), current prices, logged` <- log(df_gdpCurrPrice$`GDP/capita (USD), current prices`)
+# df_gdpCurrPrice$Year <- as.integer(df_gdpCurrPrice$Year)
+# #---------------------------------------------------------------------------
+# df_gdp <- merge(df_gdpCurrPrice, df_gdpConstPrice, by = c("Area", "Year"), all = T)
+# #---------------------------------------------------------------------------
 #---------------------------------------------------------------------------
 # Check if GDP is lognormal
 # (It is, but GDP/capita is not.)
@@ -262,41 +303,34 @@ df_gdp$`Population (millions) test` <- df_gdp$`GDP (million USD)` / df_gdp$`GDP/
 # df_x$cv <- df_x$s_pop / df_x$m_pop
 # hist(df_x$cv)
 #--------------------------------------------------------------------------
-df_fbal <- merge(df_fbal, df_gdp, by = c("Area", "Year"))
-# unique(df_gdp$Area[grep("China", df_gdp$Area)])
-# unique(df_fbal$Area[grep("Taiwan", df_fbal$Area)])
-# Create simple GDP/capita (as GDP over pop)
-df_fbal$`GDP/capita (USD)` <- df_fbal$`GDP (million USD)` / df_fbal$`Population (millions)`
-# Is it the same as the GDP/cap provided by FAO? Compare to `GDP/capita (USD) 2`
-# Looks like not.
-df_fbal$`GDP/capita (USD), logged` <- log(df_fbal$`GDP/capita (USD)`)
-rm(df_gdp)
+#df_bennett <- merge(df_fbal, df_gdp, by = c("Area", "Year"), all = T)
+#rm(df_gdp, df_gdpRaw, df_gdpConstPrice, df_gdpCurrPrice)
 #--------------------------------------------------------------------------
 # Get region groupings
 this_subfolder <- "region_country_files"
 this_folder <- paste0(this_folder, this_subfolder)
-df_fbal <- FAOdat_createRegionGroups(df_fbal,
+df_bennett <- FAOdat_createRegionGroups(df_bennett,
                                      folder = this_folder)
 #--------------------------------------------------------------------------
 # Correct/modify country names (partly to harmonize with the WB ICP data)
-df_fbal$Area[grep("Tanzania", df_fbal$Area)] <- "Tanzania"
-df_fbal$Area[grep("CÃ´te d'Ivoire", df_fbal$Area)] <- "Côte d'Ivoire"
-df_fbal$Area[grep("Viet Nam", df_fbal$Area)] <- "Vietnam"
-df_fbal$Area[grep("Iran", df_fbal$Area)] <- "Iran"
-df_fbal$Area[grep("Lao", df_fbal$Area)] <- "Lao PDR"
-df_fbal$Area[grep("Venezuela", df_fbal$Area)] <- "Venezuela"
-df_fbal$Area[grep("Bolivia", df_fbal$Area)] <- "Bolivia"
-df_fbal$Area[grep("Democratic Republic of the Congo", df_fbal$Area)] <- "Congo, Dem. Rep."
-df_fbal$Area[grep("Micronesia", df_fbal$Area)] <- "Micronesia"
-df_fbal$Area[which(df_fbal$Area == "Congo")] <- "Congo, Rep."
-df_fbal$Area[which(df_fbal$Area == "Republic of Korea")] <- "Korea, Rep."
-df_fbal$Area[which(df_fbal$Area == "United States of America")] <- "United States"
-df_fbal$Area[grep("Sint Maarten", df_fbal$Area)] <- "Sint Maarten"
-df_fbal$Area[grep("Moldova", df_fbal$Area)] <- "Moldova"
-df_fbal$Area[which(df_fbal$Area == "Czechia")] <- "Czech Republic"
-df_fbal$Area <- gsub("Saint", "St.", df_fbal$Area)
-df_fbal$Unit <- NULL
-#unique(df_fbal$Area[grep("Libya", df_fbal$Area)])
+df_bennett$Area[grep("Tanzania", df_bennett$Area)] <- "Tanzania"
+df_bennett$Area[grep("CÃ´te d'Ivoire", df_bennett$Area)] <- "Côte d'Ivoire"
+df_bennett$Area[grep("Viet Nam", df_bennett$Area)] <- "Vietnam"
+df_bennett$Area[grep("Iran", df_bennett$Area)] <- "Iran"
+df_bennett$Area[grep("Lao", df_bennett$Area)] <- "Lao PDR"
+df_bennett$Area[grep("Venezuela", df_bennett$Area)] <- "Venezuela"
+df_bennett$Area[grep("Bolivia", df_bennett$Area)] <- "Bolivia"
+df_bennett$Area[grep("Democratic Republic of the Congo", df_bennett$Area)] <- "Congo, Dem. Rep."
+df_bennett$Area[grep("Micronesia", df_bennett$Area)] <- "Micronesia"
+df_bennett$Area[which(df_bennett$Area == "Congo")] <- "Congo, Rep."
+df_bennett$Area[which(df_bennett$Area == "Republic of Korea")] <- "Korea, Rep."
+df_bennett$Area[which(df_bennett$Area == "United States of America")] <- "United States"
+df_bennett$Area[grep("Sint Maarten", df_bennett$Area)] <- "Sint Maarten"
+df_bennett$Area[grep("Moldova", df_bennett$Area)] <- "Moldova"
+df_bennett$Area[which(df_bennett$Area == "Czechia")] <- "Czech Republic"
+df_bennett$Area <- gsub("Saint", "St.", df_bennett$Area)
+df_bennett$Unit <- NULL
+#unique(df_bennett$Area[grep("Libya", df_bennett$Area)])
 #--------------------------------------------------------------------------
 # Merge with WDI pop/employment data
 # this_folder <- "C:/Users/bensc/OneDrive/Documents/Data/WDI Data/"
@@ -309,7 +343,7 @@ df_fbal$Unit <- NULL
 # colnames(df_wdi) <- gsub("X", "", colnames(df_wdi))
 # df_wdi[, ncol(df_wdi)] <- NULL
 # df_wdi <- df_wdi %>% gather(Year, Value, `1960`:`2019`)
-# #unique(df_wdi$Indicator[grep("value added", df_wdi$Indicator, ignore.case = T)])
+# unique(df_wdi$Indicator[grep("GDP", df_wdi$Indicator, ignore.case = T)])
 # # df_x <- subset(df_wdi, Year == 2017)
 # # ind <- which(df_x$Indicator == "Population ages 15-64, total")
 # # length(which(!is.na(df_x$Value[ind])))
@@ -345,455 +379,185 @@ df_fbal$Unit <- NULL
 # df_wdi$Country[grep("Hong Kong SAR, China", df_wdi$Country)] <- "China, Hong Kong SAR"
 # df_wdi$Country[grep("Macao SAR, China", df_wdi$Country)] <- "China, Macao SAR"
 # colnames(df_wdi)[1] <- "Area"
-# df_fbal <- merge(df_fbal, df_wdi, by = c("Area", "Year"))
+# df_bennett <- merge(df_bennett, df_wdi, by = c("Area", "Year"))
 # rm(df_wdi)
 #---------------------------------------------------------------------------
 # Write
 this_folder <- "C:/Users/bensc/OneDrive/Documents/Empirical laws, old and new, in the nutrition transition/"
 this_file <- "Bennetts Law FAO FBS and WDI data.csv"
 this_filepath <- paste0(this_folder, this_file)
-write.csv(df_fbal, this_filepath, row.names = F)
+write.csv(df_bennett, this_filepath, row.names = F)
 #--------------------------------------------------------------------------
 # Check (classic Bennett analysis)
-these_indic <- c("GDP (million USD), logged",
+gdpPop_vars <- c("GDP (million USD), logged",
                  "GDP (million USD)",
                  "GDP/capita (USD), logged",
                  "GDP/capita (USD)",
                  "Population (millions), logged",
                  "Population (millions)")
-               #   "Population ages 15-64, total",
-               # "Age dependency ratio (% of working-age population)",
-               # "Unemployment, total (% of total labor force) (modeled ILO estimate)",
-               # "Employment in agriculture (% of total employment) (modeled ILO estimate)",
-               # "Employment in industry (% of total employment) (modeled ILO estimate)",
-               # "Employment in services (% of total employment) (modeled ILO estimate)")
-these_cols <- c("Area", "Region", "Year", "Item", "Element", "Value", these_indic)
-#setdiff(these_cols, colnames(df_fbal))
-df_foodGroups <- subset(df_fbal[, these_cols], Element == "Food supply (kcal/capita/day)")# &
-#                          Year == 2017)
-df_foodGroups$Year <- as.integer(df_foodGroups$Year)
-df_tot <- subset(df_foodGroups[, c("Area", "Year", "Item", "Value", these_indic)], Item == "Grand Total")
-colnames(df_tot)[which(colnames(df_tot) == "Value")] <- "Total (kcal/capita/day)"
+
+these_cols <- c("Area", "Year", "Region", "Element",
+                "Item", "Value", gdpPop_vars)
+# these_items <- c("Cereals - Excluding Beer", "Starchy Roots",
+#                  "Grand Total")
+exclude_items <- c("Animal fats", "Meat")
+#unique(df_bennett$Item)
+#setdiff(these_cols, colnames(df_bennett))
+df_foodShare <- subset(df_bennett[, these_cols], !(Item %in% exclude_items) &
+                         Element == "Food supply (kcal/capita/day)")
+
+df_tot <- subset(df_foodShare[, c("Area", "Year", "Item", gdpPop_vars, "Value")], Item == "Grand Total")
+
 df_tot$Item <- NULL
-df_foodGroups <- subset(df_foodGroups, Item != "Grand Total")
-#---
-# Consolidate cereals and starchy roots into one category
-df_foodGroups$Item[grep("Starchy Roots", df_foodGroups$Item)] <- "Cereals & starchy roots"
-df_foodGroups$Item[grep("Cereals - Excluding Beer", df_foodGroups$Item)] <- "Cereals & starchy roots"
-# df_foodGroups$Item[grep("Fruits", df_foodGroups$Item)] <- "Fruits & vegetables"
-# df_foodGroups$Item[grep("Vegetables", df_foodGroups$Item)] <- "Fruits & vegetables"
-#df_foodGroups$Item[grep("Pulses", df_foodGroups$Item)] <- "Cereals & starchy roots"
-df_foodGroups <- subset(df_foodGroups, Item == "Cereals & starchy roots")
-df_foodGroups <- df_foodGroups %>% 
+colnames(df_tot)[ncol(df_tot)] <- "Total (kcal/capita/day)"
+df_foodShare <- subset(df_foodShare, Item != "Grand Total")
+df_foodShare$Item[grep("Cereals|Starchy", df_foodShare$Item)] <- "Cereals & starchy roots"
+df_foodShare$Item[grep("Fruits|Vegetables", df_foodShare$Item)] <- "Fruits & vegetables"
+df_foodShare$Item[grep("Animal Products", df_foodShare$Item)] <- "Animal products"
+df_foodShare$Item[grep("Sugar", df_foodShare$Item)] <- "Sugar & sweeteners"
+df_foodShare <- df_foodShare %>% 
   group_by(Region, Area, Year, Item) %>%
   summarise(Value = sum(Value, na.rm = T)) %>% as.data.frame()
 #---
-df_foodGroups <- merge(df_foodGroups, df_tot, by = c("Area", "Year"))
-colnames(df_foodGroups)[which(colnames(df_foodGroups) == "Value")] <- "Food supply (kcal/capita/day)"
-df_foodGroups$`Food supply (% of total)` <- 100 * df_foodGroups$`Food supply (kcal/capita/day)` /
-  df_foodGroups$`Total (kcal/capita/day)`
-df_foodGroups$`Food supply (% of total), logged` <- 
-  log(df_foodGroups$`Food supply (% of total)`)
-df_foodGroups$`Food supply (kcal/capita/day), logged` <- 
-  log(df_foodGroups$`Food supply (kcal/capita/day)`)
-
-# df_foodGroups$`Dependent pop.` <- 1 / 100 * df_foodGroups$`Age dependency ratio (% of working-age population)` *
-#   df_foodGroups$`Population ages 15-64, total` +
-#   1 / 100 * df_foodGroups$`Unemployment, total (% of total labor force) (modeled ILO estimate)` * 
-#   df_foodGroups$`Population ages 15-64, total`
-# df_foodGroups$`Dependent pop., logged` <- log(df_foodGroups$`Dependent pop.`)
-# df_foodGroups$`Population ages 15-64, logged` <- log(df_foodGroups$`Population ages 15-64, total`)
-# df_foodGroups$`Unemployment (%), logged` <- log(df_foodGroups$`Unemployment, total (% of total labor force) (modeled ILO estimate)`)
-# df_foodGroups$`Dependency (%), logged` <- log(df_foodGroups$`Age dependency ratio (% of working-age population)`)
-
-df_foodGroups$`Total (kcal/capita/day), logged` <- log(df_foodGroups$`Total (kcal/capita/day)`)
-df_foodGroups$`Total (kcal/day)` <- 10^6 * df_foodGroups$`Total (kcal/capita/day)` * df_foodGroups$`Population (millions)`
-df_foodGroups$`Total (kcal/day), logged` <- log(df_foodGroups$`Total (kcal/day)`)
-df_foodGroups$`Food supply (kcal/day)` <- 10^6 * df_foodGroups$`Food supply (kcal/capita/day)` * df_foodGroups$`Population (millions)`
-df_foodGroups$`Food supply (kcal/day), logged` <- log(df_foodGroups$`Food supply (kcal/day)`)
-
-df_foodGroups$`GDP/1000 kcal (USD)` <- 1000 * 10^6 / 365 * df_foodGroups$`GDP (million USD)` / df_foodGroups$`Total (kcal/day)`
-df_foodGroups$`GDP/1000 kcal (USD), logged` <- log(df_foodGroups$`GDP/1000 kcal (USD)`)
-
-colnames(df_foodGroups) <- gsub("Food supply", "Cereals & starchy roots", colnames(df_foodGroups))
-colnames(df_foodGroups) <- gsub("% of total", "% of diet", colnames(df_foodGroups))
-
-
-# hist(df_foodGroups$`Dependent pop., logged`)
-# hist(df_foodGroups$`Population (millions), logged`)
-# shapiro.test(df_foodGroups$`Dependent pop., logged`)
-# library(mclust)
-# df_gm <- subset(df_foodGroups[, c("Area", "Year",
-#                            "GDP/capita (USD), logged",
-#                            "Population (millions), logged",
-#                            "GDP (million USD), logged")],
-#                 Year == 2017)
-# 
-# # fit <- Mclust(df_gm$`GDP/capita (USD), logged`, 2, model = "V")
-# # # summary(fit)
-# # # plot(fit, what="density")
-# # # rug(df_gm$`GDP/capita (USD), logged`)
-# # mu_vec <- fit$parameters$mean
-# # sd_vec <- sqrt(fit$parameters$variance$sigmasq)
-# # df_gm$clust <- fit$classification
-# 
-# gm <- mixtools::normalmixEM(df_gm$`GDP/capita (USD), logged`, k = 3)
-# mu_vec <- gm$mu
-# sd_vec <- gm$sigma
-# gm$lambda
-# mat_prob <- gm$posterior
-# clust_vec <- apply(mat_prob, 1, FUN = function(x) which(x == max(x)))
-# df_gm$clust <- clust_vec
-# gg <- ggplot(df_gm)
-# gg <- gg + geom_histogram(aes(x = `GDP/capita (USD), logged`, y = after_stat(density)), bins = 15)
-# gg <- gg + stat_density(aes(x = `GDP/capita (USD), logged`,  linetype = as.factor(clust)), position = "stack", geom = "line", show.legend = F, color = "red") +
-#   stat_density(aes(x = `GDP/capita (USD), logged`,  linetype = as.factor(clust)), position = "identity", geom = "line")
-# gg
-# 
-# gg <- ggplot(df_gm)
-# gg <- gg + geom_histogram(aes(x = `GDP/capita (USD), logged`, y = after_stat(density)), bins = 15)
-# gg <- gg + stat_function(fun = dnorm, args = list(mean = mu_vec[1], sd = sd_vec[1]))
-# gg <- gg + stat_function(fun = dnorm, args = list(mean = mu_vec[2], sd = sd_vec[2]))
-# gg <- gg + stat_function(fun = dnorm, args = list(mean = mu_vec[3], sd = sd_vec[3]))
-# gg
-# 
-# df_gm$Area[which(df_gm$clust == 1)]
-# df_gm$Area[which(df_gm$clust == 2)]
-# df_gm$Area[which(df_gm$clust == 3)]
-# shapiro.test(df_gm$`GDP/capita (USD), logged`[which(df_gm$clust == 1)])
-# shapiro.test(df_gm$`GDP/capita (USD), logged`[which(df_gm$clust == 2)])
-# shapiro.test(df_gm$`GDP/capita (USD), logged`[which(df_gm$clust == 3)])
-# 
-# df_gm$clust <- as.character(df_gm$clust)
-# gg <- ggplot(df_gm, aes(x = `GDP/capita (USD), logged`,
-#                         y = `GDP (million USD), logged`,
-#                         group = clust, color = clust))
-# gg <- gg + geom_point()
-# gg
-# 
-# gg <- ggplot(df_foodGroups, aes(x = `GDP/capita (USD), logged`))
-# gg <- gg + geom_histogram(aes(y = after_stat(density)), bins = 30)
-# gg <- gg + stat_function(fun = dnorm, args = list(mean = gm$mu[1], sd = gm$sigma[1]))
-# gg <- gg + stat_function(fun = dnorm, args = list(mean = gm$mu[2], sd = gm$sigma[2]))
-# gg
-#---
-df_plot <- subset(df_foodGroups, Year == 2017 & Region != "Aggregated")
-mod <- lm(`Cereals & starchy roots (% of diet), logged` ~ `GDP/capita (USD), logged`, df_plot)
-#mod <- lm(`Food supply (% of total), logged` ~ `GDP/1000 kcal (USD), logged`, df_plot)
+df_foodShare <- merge(df_foodShare, df_tot, by = c("Area", "Year"))
+colnames(df_foodShare)[which(colnames(df_foodShare) == "Value")] <- "Diet share (kcal/capita/day)"
+df_foodShare$`Diet share (%)` <- 100 * df_foodShare$`Diet share (kcal/capita/day)` /
+  df_foodShare$`Total (kcal/capita/day)`
+df_foodShare$`Diet share (%), logged` <- 
+  log(df_foodShare$`Diet share (%)`)
+df_foodShare$`Diet share (kcal/capita/day), logged` <- 
+  log(df_foodShare$`Diet share (kcal/capita/day)`)
+#-----------------------------------------------------------------------------
+# Subset data for just cereals and starchy roots
+df_plot <- subset(df_foodShare, Item == "Cereals & starchy roots" &
+                    Year == 2017 & Region != "Aggregated")
+colnames(df_plot) <- gsub("Diet share", "Cereals & starchy roots", colnames(df_plot))
+colnames(df_plot) <- gsub("%", "% of diet", colnames(df_plot))
+#-----------------------------------------------------------------------------
+# Fit parameters
+mod <- lm(`Cereals & starchy roots (% of diet), logged` ~ `GDP/capita (USD), logged`, data = df_plot)
 #summary(mod)
-#car::vif(mod)
-#cov(df_plot$`GDP (million USD), logged`, df_plot$`Population (millions), logged`)
+#plot(mod$fitted.values, mod$residuals)
+#ind_rm <- which(mod$residuals == min(mod$residuals))
+#df_plot$Area[ind_rm]
 m <- round(mod$coefficients[2], 4)
 b <- round(mod$coefficients[1], 4)
 df_out <- as.data.frame(broom::glance(mod))
 adjR2 <- round(df_out$adj.r.squared, 2)
-facet_labels <- paste0("Adj. R-squared = ", adjR2, ", Slope = ", m, ", Y intercept = ", b)
-# adjR2_vec[i] <- adjR2
-# names(facet_labels) <- these_elements
-
-shape_vec <- c(21:24, 4)
+#-----------------------------------------------------------------------------
+# Get colors for region groupings and title
 n <- length(unique(df_plot$Region))
 bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
 color_vec <- sample(bag_of_colors, n)
-
-# Rsq slightly better by modeling gdp and pop as separate terms (as opposed to gdp/capita).
-# Stands to reason that dependent pop better control var than pop, but there is almost no difference.
-
+this_subtitle <- paste0("Adj. R-squared = ", adjR2, "\nSlope = ", m, ", Y intercept = ", b)
+#-----------------------------------------------------------------------------
+shape_vec <- c(21:24, 4)
+point_size <- 1.5
+smallPoint_size <- 1
+label_size <- 2.5
+smallLabel_size <- 2
+title_size <- 8
+subtitle_size <- 7
+legendText_size <- 7
+axisText_size <- 6
+axisTitle_size <- 7
+facetTitle_size <- 7
+#-----------------------------------------------------------------------------
 gg <- ggplot(df_plot, aes(x = `GDP/capita (USD), logged`,
-                          #x = `GDP/1000 kcal (USD), logged`,
                           y = `Cereals & starchy roots (% of diet), logged`,
-                          #y = `Cereals & starchy roots (kcal/capita/day), logged`,
                           group = Region, fill = Region,
                           shape = Region))
-gg <- gg + geom_point(alpha = 0.6, color = "black", stroke = 0.5)
+gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
+gg <- gg + geom_point(alpha = 0.6, size = point_size, color = "black", stroke = 0.5)
 gg <- gg + scale_fill_manual(values = color_vec)
 gg <- gg + scale_shape_manual(values = shape_vec)
-gg <- gg + labs(subtitle = facet_labels)
-#gg <- gg + facet_wrap(~Item, scales = "free_y")
-# gg <- gg + guides(fill = guide_legend(nrow = 2, byrow = T, override.aes = list(linetype = 0)),
-#                   color = guide_legend(override.aes = list(linetype = 0)))
-gg
-
-
-mod <- lm(`Total (kcal/capita/day), logged` ~ `GDP/capita (USD), logged`, df_plot)
-#mod <- lm(`Total (kcal/capita/day), logged` ~ `GDP/1000 kcal (USD), logged`, df_plot)
-#summary(mod)
-a_2017 <- round(mod$coefficients[2], 4)
-b_2017 <- round(mod$coefficients[1], 4)
-df_out <- as.data.frame(broom::glance(mod))
-adjR2 <- round(df_out$adj.r.squared, 2)
-facet_labels <- paste0("Adj. R-squared = ", adjR2, ", Slope = ", a_2017, ", Y intercept = ", b_2017)
-# adjR2_vec[i] <- adjR2
-# names(facet_labels) <- these_elements
-
-shape_vec <- c(21:24, 4)
-n <- length(unique(df_plot$Region))
-bag_of_colors <- randomcoloR::distinctColorPalette(k = 2 * n)
-color_vec <- sample(bag_of_colors, n)
-
-gg <- ggplot(df_plot, aes(#x = `GDP/1000 kcal (USD), logged`,
-                          x = `GDP/capita (USD), logged`,
-                          y = `Total (kcal/capita/day), logged`,
-                          group = Region, fill = Region,
-                          shape = Region))
-gg <- gg + geom_point(alpha = 0.6, color = "black", stroke = 0.5)
-gg <- gg + scale_fill_manual(values = color_vec)
-gg <- gg + scale_shape_manual(values = shape_vec)
-gg <- gg + labs(subtitle = facet_labels)
-#gg <- gg + facet_wrap(~Item, scales = "free_y")
-# gg <- gg + guides(fill = guide_legend(nrow = 2, byrow = T, override.aes = list(linetype = 0)),
-#                   color = guide_legend(override.aes = list(linetype = 0)))
-gg
-#---
-# Check demand
-# getDemEst <- function(slope, yint, N, gdp_vec, var_vec){
-#   a <- slope
-#   b <- yint
-#   #---
-#   shapTest_lgdpPa <- round(shapiro.test(log(gdp_vec^a * var_vec^(1 - a)))[[2]], 3)
-#   shapTest_lgdp <- round(shapiro.test(log(gdp_vec))[[2]], 3)
-#   shapTest_lvar <- round(shapiro.test(log(var_vec))[[2]], 3)
-#   cov_lvarGdp <- cov(log(gdp_vec), log(var_vec))#, use = "complete.obs")
-#   #---
-#   mu_gdpPa_samp <- mean(gdp_vec^a * var_vec^(1 - a))
-#   m_gdp <- mean(log(gdp_vec))
-#   s_gdp <- sd(log(gdp_vec))
-#   m_var <- mean(log(var_vec))
-#   s_var <- sd(log(var_vec))
-#   #---
-#   dem_samp <- N * exp(b) * mu_gdpPa_samp
-#   mu_gdpa <- exp(a * m_gdp + a^2 * s_gdp^2 / 2)
-#   mu_varam1 <- exp((1 - a) * m_var + (1 - a)^2 * s_var^2 / 2)
-#   mu_gdpPa_est <- mu_gdpa * mu_varam1 * exp(a * (1 - a) * cov_lvarGdp)
-#   mu_gdpPa_est_corrct <- mu_gdpa * mu_varam1 * exp(a * (1 - a) * cov_lvarGdp / 2)
-#   dem_est <- N * exp(b) * mu_gdpPa_est
-#   dem_est_corrct <- N * exp(b) * mu_gdpPa_est_corrct
-#   pctDiff_muSamp <- (mu_gdpPa_est - mu_gdpPa_samp) / mu_gdpPa_samp * 100
-#   #---
-#   tot_var <- sum(var_vec, na.rm = T)
-#   tot_gdp <- sum(gdp_vec, na.rm = T)
-#   #---
-#   dem_est2 <- exp(b) * tot_gdp^a * tot_var^(1 - a)
-#   #---
-#   outvec <- c(dem_samp, dem_est, dem_est_corrct, dem_est2,
-#               m_gdp, s_gdp,
-#               m_var, s_var, mu_gdpPa_samp,
-#               shapTest_lvar, shapTest_lgdp, shapTest_lgdpPa,
-#               a, b, N, tot_var, tot_gdp, cov_lvarGdp, pctDiff_muSamp)
-#   names(outvec) <- c("dem_samp", "dem_est", "dem_est_corrct", "dem_est2",
-#                      "m_gdp", "s_gdp", "m_var", "s_var", "mu_gdpPa_samp",
-#                      "shapTest_lvar", "shapTest_lgdp", "shapTest_lgdpPa",
-#                      "a", "b", "N", "tot_var", "tot_gdp", "cov_lvarGdp",
-#                      "pctDiff_muSamp")
-#   return(outvec)
-# }
-
-getDemEst <- function(df_dem){
-#  df_dem <- df_foodGroups
-n_yrs <- length(unique(df_dem$Year))
-yr_min <- min(df_dem$Year)
-list_DemTot <- list()
-list_DemStarch <- list()
-  for(i in 1:n_yrs){
-    this_year <- yr_min + i - 1
-    df_mod <- subset(df_dem, Year == this_year & Region != "Aggregated")
-    df_world <- subset(df_dem, Year == this_year & Area == "World")
-    worldGDP <- 10^6 * df_world$`GDP (million USD)`
-    worldPop <- 10^6 * df_world$`Population (millions)`
-    worldGDPpCap <- df_world$`GDP/capita (USD)`
-    #---Total kcal demand
-    mod <- lm(`Total (kcal/capita/day), logged` ~ `GDP/capita (USD), logged`, df_mod)
-    #summary(mod)
-    a <- round(mod$coefficients[2], 4)
-    b <- round(mod$coefficients[1], 4)
-    df_out <- as.data.frame(broom::glance(mod))
-    adjR2 <- round(df_out$adj.r.squared, 2)
-    #facet_labels <- paste0("Adj. R-squared = ", adjR2, ", Slope = ", a_2017, ", Y intercept = ", b_2017)
-    worldDemTot <- df_world$`Total (kcal/day)`
-    worldDemTot_est <- exp(b) * worldGDP^a * worldPop^(1 - a)
-    pctDiff_DemTot <- 100 * (worldDemTot_est - worldDemTot) / worldDemTot
-    outDemTot <- c(this_year, a, b, adjR2, worldDemTot_est, worldDemTot, pctDiff_DemTot)
-    list_DemTot[[i]] <- outDemTot
-    #---Cereal and starchy root demand
-    mod <- lm(`Cereals & starchy roots (% of diet)` ~ `GDP/capita (USD), logged`, df_mod)
-    #summary(mod)
-    a <- round(mod$coefficients[2], 4)
-    b <- round(mod$coefficients[1], 4)
-    df_out <- as.data.frame(broom::glance(mod))
-    adjR2 <- round(df_out$adj.r.squared, 2)
-    #facet_labels <- paste0("Adj. R-squared = ", adjR2, ", Slope = ", a_2017, ", Y intercept = ", b_2017)
-    worldDemStarch <- df_world$`Cereals & starchy roots (kcal/day)`
-    worldDemStarchPctShare <- df_world$`Cereals & starchy roots (% of diet)`
-    #worldDemStarchPctShare_est <- exp(b) * worldGDPpCap^a
-    worldDemStarchPctShare_est <- b + a * log(worldGDPpCap)
-    worldDemStarch_est <- worldDemTot_est * worldDemStarchPctShare_est / 100
-    pctDiff_DemStarch <- 100 * (worldDemStarch_est - worldDemStarch) / worldDemStarch
-    ppDiff_DemStarchPctShare <- worldDemStarchPctShare_est - worldDemStarchPctShare
-    outDemStarch <- c(this_year, a, b, adjR2,
-                      #worldDemStarch_est, worldDemStarch,
-                      worldDemStarchPctShare_est, worldDemStarchPctShare,
-                      ppDiff_DemStarchPctShare)
-    list_DemStarch[[i]] <- outDemStarch
-    
-  }
-  df_DemTot <- as.data.frame(do.call(rbind, list_DemTot))
-  colnames(df_DemTot) <- c("Year", "Slope", "Y intercept", "Adj. R-squared",
-                        "Estimated",
-                        "Real",
-                        "Pct. Difference")
-  df_DemTot$Item <- "Total"
-  df_DemStarch <- as.data.frame(do.call(rbind, list_DemStarch))
-  colnames(df_DemStarch) <- c("Year", "Slope", "Y intercept", "Adj. R-squared",
-                           "Estimated",
-                           "Real",
-                           "Pct. Difference")
-  df_DemStarch$Item <- "Cereals & starchy roots"
-  df_out <- as.data.frame(rbind(df_DemTot, df_DemStarch))
+gg <- gg + labs(subtitle = this_subtitle)#,
+gg <- gg + guides(fill = guide_legend(nrow = 2, byrow = T, override.aes = list(linetype = 0)),
+                  color = guide_legend(override.aes = list(linetype = 0)))
+gg <- gg + theme(legend.position = "bottom",
+                 legend.spacing.x = unit(0.25, 'cm'),
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = legendText_size),
+                 plot.title = element_text(size = title_size),
+                 plot.subtitle = element_text(size = subtitle_size),
+                 axis.title = element_text(size = axisTitle_size),
+                 axis.text = element_text(size = axisText_size))
+gg_bennett <- gg
+#---------------------------------------------------------------------------
+these_cols <- c("Area", "Year", "Region", "Item", "Diet share (%), logged",
+                gdpPop_vars)
+df_cerRootShare <- subset(df_foodShare, Item == "Cereals & starchy roots")
+u <- colnames(df_cerRootShare)
+colnames(df_cerRootShare) <- gsub("Diet share", "Cereals & starchy roots", u)
+u <- colnames(df_cerRootShare)
+colnames(df_cerRootShare) <- gsub("%", "% of diet", u)
+df_cerRootShare$Item <- NULL
+df_params <- df_cerRootShare
+df_params <- subset(df_params, Region != "Aggregated")
+yr_vec <- unique(df_params$Year)
+n_yrs <- length(yr_vec)
+mBennett_vec <- c()
+bBennett_vec <- c()
+adjR2Bennett_vec <- c()
+NBennett_vec <- c()
+for(i in 1:n_yrs){
+  this_year <- yr_vec[i]
+  this_df <- subset(df_params, Year == this_year)
+  this_df$Year <- NULL
+  #---------------------------------------------------
+  mod <- lm(`Cereals & starchy roots (% of diet), logged` ~ `GDP/capita (USD), logged`, this_df)
+  mBennett_vec[i] <- round(mod$coefficients[2], 6)
+  bBennett_vec[i] <- round(mod$coefficients[1], 6)
+  df_out <- as.data.frame(broom::glance(mod))
+  adjR2Bennett_vec[i] <- df_out$adj.r.squared
+  NBennett_vec[i] <- length(mod$fitted.values)
   
-  return(df_out)
 }
+df_plotBennett <- data.frame(Year = yr_vec, Slope = mBennett_vec, bBennett_vec, adjR2Bennett_vec, NBennett_vec)
+colnames(df_plotBennett)[3:5] <- c("Y intercept", "Adj. R-squared", "Sample size")
+df_plotBennett$Year <- as.integer(as.character(df_plotBennett$Year))
 
 
-df_out <- getDemEst(df_dem = df_foodGroups)
-
-df_plotTot <- subset(df_out, Item == "Total")
-df_plotStarch <- subset(df_out, Item == "Cereals & starchy roots")
-
-df_plotTot1 <- df_plotTot
-df_plotTot1$Item <- NULL
-df_plotTot1$`Pct. Difference` <- NULL
-df_plotTot1 <- df_plotTot1 %>% gather(Type, `Demand (kcal/day)`, Estimated:Real)
-df_plotTot2 <- df_plotTot[, c("Year", "Pct. Difference")]
-gg <- ggplot(df_plotTot1, aes(x = Year, y = `Demand (kcal/day)`,
-                          group = Type, color = Type))
-gg <- gg + geom_line(lwd = 1)
-ggTot <- gg
-
-gg <- ggplot(df_plotTot2, aes(x = Year, y = `Pct. Difference`))
-gg <- gg + geom_line(lwd = 1)
-ggTotDiff <- gg
-
-ggTot + ggTotDiff + plot_layout(ncol = 1, heights = c(1, 1 / 4))
-
-# df_plotStarch1 <- df_plotStarch
-# df_plotStarch1$Item <- NULL
-# df_plotStarch1$`Pct. Difference` <- NULL
-# df_plotStarch1 <- df_plotStarch1 %>% gather(Type, `Demand (kcal/day)`, Estimated:Real)
-# df_plotStarch2 <- df_plotStarch[, c("Year", "Pct. Difference")]
-# gg <- ggplot(df_plotStarch1, aes(x = Year, y = `Demand (kcal/day)`,
-#                               group = Type, color = Type))
-# gg <- gg + geom_line(lwd = 1)
-# ggStarch <- gg
-# 
-# gg <- ggplot(df_plotStarch2, aes(x = Year, y = `Pct. Difference`))
-# gg <- gg + geom_line(lwd = 1)
-# ggStarchDiff <- gg
-# 
-# ggStarch + ggStarchDiff + plot_layout(ncol = 1, heights = c(1, 1 / 4))
-
-df_plotSlopeYint <- subset(df_plotTot, Year >= 1980)
-gg <- ggplot(df_plotSlopeYint, aes(x = Slope, y = `Y intercept`,
-                          label = Year))
-gg <- gg + geom_point()
-gg <- gg + ggrepel::geom_text_repel()
-gg
-
-mod <- lm(`Y intercept`~Slope, df_plotSlopeYint)
-summary(mod)
-m_b <- mod$coefficients["Slope"]
-b_b <- mod$coefficients["(Intercept)"]
-# Estimate total kcal demand in 2050
-a_fut <- 0.08
-b_fut <- m_b * a_fut + b_b
-
-annual_growth <- 0.04
-n_yrs <- 2050 - 2020
-pctChng_GDP <- (1 + annual_growth)^n_yrs
-worldGDP2017 <- 10^6 * subset(df_dem, Area == "World" &
-                                Year == 2017)$`GDP (million USD)`
-worldGDP2050 <- worldGDP2017 * pctChng_GDP
-worldPop2050 <- 9.7 * 10^9
-worldPop2017 <- 10^6 * subset(df_dem, Area == "World" &
-                                Year == 2017)$`Population (millions)`
-DemTot2017 <- subset(df_dem, Area == "World" &
-                       Year == 2017)$`Total (kcal/day)`
-DemTot2050_est <- exp(b_fut) * worldGDP2050^a_fut * worldPop2050^(1 - a_fut)
-(DemTot2050_est - DemTot2017) / DemTot2017
-
-#--------------------------------------------------------------------------
-# Same analysis this time with macronutrient groups (fat, protein, carbs)
-these_cols <- c("Area", "Region", "Year", "Element", "Item", "Value", "GDP/capita (USD, 2015 prices), logged")
-df_kcalGroups <- subset(df_fbal[, these_cols], Item == "Grand Total")
-df_kcalGroups$Item <- NULL
-# Convert g to kcal
-df_kcalGroups$Value[grep("Protein", df_kcalGroups$Element)] <- 4 *
-  df_kcalGroups$Value[grep("Protein", df_kcalGroups$Element)]
-df_kcalGroups$Value[grep("Fat", df_kcalGroups$Element)] <- 9 *
-  df_kcalGroups$Value[grep("Fat", df_kcalGroups$Element)]
-df_kcalGroups$Element[grep("Protein", df_kcalGroups$Element)] <- "Protein supply (kcal/capita/day)"
-df_kcalGroups$Element[grep("Fat", df_kcalGroups$Element)] <- "Fat supply (kcal/capita/day)"
-# Calculate carb kcal
-df_kcalGroups <- df_kcalGroups %>% spread(Element, Value)
-df_kcalGroups$`Carb supply (kcal/capita/day)` <- df_kcalGroups$`Food supply (kcal/capita/day)` -
-  df_kcalGroups$`Protein supply (kcal/capita/day)` - df_kcalGroups$`Fat supply (kcal/capita/day)`
-# Create % of diet variable
-df_tot <- df_kcalGroups[, c("Area", "Year", "Food supply (kcal/capita/day)")]
-df_kcalGroups$`Food supply (kcal/capita/day)` <- NULL
-gathercols <- colnames(df_kcalGroups)[5:ncol(df_kcalGroups)]
-df_kcalGroups <- df_kcalGroups %>% gather_("Item", "Value", gathercols)
-df_kcalGroups$Item[grep("Protein", df_kcalGroups$Item)] <- "Protein"
-df_kcalGroups$Item[grep("Fat", df_kcalGroups$Item)] <- "Fat"
-df_kcalGroups$Item[grep("Carb", df_kcalGroups$Item)] <- "Carbohydrate"
-df_kcalGroups <- merge(df_kcalGroups, df_tot, by = c("Area", "Year"))
-colnames(df_kcalGroups)[6:7] <- c("Supply (kcal/capita/day)", "Total (kcal/capita/day)")
-df_kcalGroups$`Supply (% of total)` <- 100 * df_kcalGroups$`Supply (kcal/capita/day)` / df_kcalGroups$`Total (kcal/capita/day)`
-df_kcalGroups$`Supply (% of total), logged` <- log(df_kcalGroups$`Supply (% of total)`)
-df_kcalGroups$`Supply (kcal/capita/day), logged` <- log(df_kcalGroups$`Supply (kcal/capita/day)`)
-#---
-df_plot <- subset(df_kcalGroups, Year == 2017)
-
-gg <- ggplot(df_plot, aes(x = `GDP/capita (USD, 2015 prices), logged`,
-                          y = `Supply (% of total), logged`,
-                          #y = `Supply (kcal/capita/day), logged`,
-                          group = Region, fill = Region,
-                          shape = Region))
-gg <- gg + geom_point(alpha = 0.6, color = "black", stroke = 0.5)
-gg <- gg + scale_fill_manual(values = color_vec)
-gg <- gg + scale_shape_manual(values = shape_vec)
-gg <- gg + facet_wrap(~Item, ncol = 2, scales = "free_y")
-# gg <- gg + guides(fill = guide_legend(nrow = 2, byrow = T, override.aes = list(linetype = 0)),
-#                   color = guide_legend(override.aes = list(linetype = 0)))
-gg
-
-# df_plot2 <- df_plot[, c("Area", "Region", "Item", "Supply (kcal/capita/day)")]
-# df_plot2$`Supply (kcal/capita/day)` <- log(df_plot2$`Supply (kcal/capita/day)`)
-# df_plot2 <- df_plot2 %>% spread(Item, `Supply (kcal/capita/day)`)
-
-df_plot2 <- df_plot[, c("Area", "Region", "Item", "Supply (% of total)")]
-df_plot2 <- df_plot2 %>% spread(Item, `Supply (% of total)`)
-
-mod <- lm(`Fat`~`Carbohydrate`, df_plot2)
+df_plot <- df_plotBennett %>% gather(Type, Value, Slope:`Sample size`)
+gg <- ggplot(df_plot, aes(x = Year, y = Value))
+gg <- gg + geom_line()
+# gg <- gg + scale_x_continuous(breaks = seq(yr_vec[1], yr_vec[n_yrs - 1], length.out = 24))
+gg <- gg + facet_wrap(~Type, ncol = 1, scales = "free_y")
+gg <- gg + labs(subtitle = "Bennet's Law parameter trajectory")
+gg <- gg + theme(axis.title = element_blank(),
+                 #axis.text.x = element_text(angle = 60, hjust = 1),
+                 strip.background = element_blank(),
+                 strip.text = element_text(size = facetTitle_size),
+                 plot.title = element_text(size = title_size),
+                 plot.subtitle = element_text(size = subtitle_size),
+                 axis.text = element_text(size = axisText_size))
+gg_bennettStab <- gg
+#----------------------------------------------------------------------------
+gg_bennett + gg_bennettStab + plot_layout(ncol = 2, guides = "collect") & theme(legend.position = 'bottom')
+#----------------------------------------------------------------------------
+# If using GDP/capita in USD at constant prices (2010 or 2015), then there is a
+# linear relation between the slope and y-intercept of Bennett's Law.
+# Works for the Carbohydrate Law as well.
+# Works for the fat carb frontier at current or constant prices
+df_plotBen <- subset(df_plotBennett, Year >= 1980)
+mod <- lm(Slope ~ `Y intercept`, df_plotBen)
 #summary(mod)
-m <- round(mod$coefficients[2], 2)
-b <- round(mod$coefficients[1], 2)
+mBen <- round(mod$coefficients[2], 3)
+bBen <- round(mod$coefficients[1], 3)
 df_out <- as.data.frame(broom::glance(mod))
-adjR2 <- round(df_out$adj.r.squared, 2)
-facet_labels <- paste0("The fat-carb frontier", "\nAdj. R-squared = ", adjR2, ", Slope = ", m, ", Y intercept = ", b)
+adjR2Ben <- round(df_out$adj.r.squared, 2)
+this_subtitleBen <- paste0("Adj. R-squared = ", adjR2Ben, "\nSlope = ", mBen, ", Y intercept = ", bBen)
 
-#colnames(df_plot2)[3:5] <- paste(colnames(df_plot2)[3:5], "(kcal/capita/day)")
-colnames(df_plot2)[3:5] <- paste(colnames(df_plot2)[3:5], "(% of diet)")
-
-gg <- ggplot(df_plot2, aes(x = `Carbohydrate (% of diet)`,
-                          y = `Fat (% of diet)`,
-                          group = Region, fill = Region,
-                          shape = Region))
-gg <- gg + geom_point(alpha = 0.6, color = "black", stroke = 0.5)
-gg <- gg + scale_fill_manual(values = color_vec)
-gg <- gg + scale_shape_manual(values = shape_vec)
-gg <- gg + labs(subtitle = facet_labels)
+gg <- ggplot(df_plotBen, aes(x = Slope, y = `Y intercept`,
+                             label = Year))
+gg <- gg + geom_point()
+gg <- gg + geom_text_repel(size = label_size)
+gg <- gg + labs(subtitle = this_subtitleBen)
+gg <- gg + theme(axis.title = element_text(size = axisTitle_size),
+                 axis.text = element_text(size = axisText_size),
+                 plot.subtitle = element_text(size = subtitle_size))
 gg
-#--------------------------------------------------------------------------
-rm(df_foodGroups, df_kcalGroups, df_plot, df_plot2, df_tot); gc()
+
 #==========================================================================
 #==========================================================================
 #==========================================================================
@@ -838,12 +602,12 @@ df_icp$Country[grep("Virgin Islands, British", df_icp$Country)] <- "British Virg
 df_icp$Country[grep("Hong Kong SAR, China", df_icp$Country)] <- "China, Hong Kong SAR"
 df_icp$Country[grep("Macao SAR, China", df_icp$Country)] <- "China, Macao SAR"
 #---------------------------------------------------------------------------
-# Merge with df_fbal to get Region groupings
-df_key <- subset(df_fbal[, c("Area", "Region", "Year")], Year == 2017)
+# Merge with df_bennett to get Region groupings
+df_key <- subset(df_bennett[, c("Area", "Region", "Year")], Year == 2017)
 colnames(df_key)[1] <- "Country"
 ind_dup <- which(duplicated(df_key$Country))
 df_key <- df_key[-ind_dup, ]
-# length(unique(df_fbal$Country))
+# length(unique(df_bennett$Country))
 # length(unique(df_icp$Country))
 # setdiff(unique(df_key$Country), unique(df_icp$Country))
 # setdiff(unique(df_icp$Country), unique(df_key$Country))
