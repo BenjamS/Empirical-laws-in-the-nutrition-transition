@@ -735,8 +735,7 @@ Note that the slope and y intercept trajectories in the right panels of Figures 
 ```{r, fig.show = "hold", fig.width = 6, fig.height=3, fig.align="center", fig.cap="\\label{fig:mAffineY}Slopes plotted against respective y intercepts of (left) Bennett's Law, (middle) the carbohydrate law, and (right) the fat-carb frontier, for the years 1980-2017.", echo = FALSE}
 
 df_plotBen <- subset(df_plotBennett, Year >= 1980)
-#df_plotBen <- subset(df_plotBennett, `Adj. R-squared` > 0.7)
-mod <- lm(Slope ~ `Y intercept`, df_plotBen)
+mod <- lm(`Y intercept` ~ Slope, df_plotBen)
 #summary(mod)
 mBen <- round(mod$coefficients[2], 3)
 bBen <- round(mod$coefficients[1], 3)
@@ -799,9 +798,11 @@ gg <- gg + theme(axis.title.y = element_blank(),
                  plot.subtitle = element_text(size = subtitle_size))
 gg_carb <- gg
 
-
+this_plotTitle <- "Linear relation between slope and y intercept"
 gg_Ben + gg_carb + gg_FC + plot_layout(ncol = 3) +
-  plot_annotation(title = "Linear relation between slope and y intercept")
+  plot_annotation(title = this_plotTitle) &
+  theme(plot.title = element_text(size = title_size))
+
 
 
 ```
@@ -1066,7 +1067,8 @@ gg <- gg + theme(axis.title = element_blank(),
                  strip.background = element_blank(),
                  strip.text = element_text(size = facetTitle_size),
                  axis.text = element_text(size = axisText_size),
-                 plot.subtitle = element_text(size = subtitle_size))
+                 plot.subtitle = element_text(size = subtitle_size),
+                 plot.title = element_text(size = title_size))
 gg_engelStab <- gg
 
 ```
@@ -1135,7 +1137,8 @@ gg <- gg + geom_text_repel(size = label_size)
 gg <- gg + labs(title = "Linear relation between slope and y intercept, Engel's law", subtitle = this_subtitle)
 gg <- gg + theme(axis.title = element_text(size = axisTitle_size),
                  axis.text = element_text(size = axisText_size),
-                 plot.subtitle = element_text(size = subtitle_size))
+                 plot.subtitle = element_text(size = subtitle_size),
+                 plot.title = element_text(size = title_size))
 gg_mAffineYengel <- gg
 
 
@@ -1290,10 +1293,10 @@ df_worldStarDemShare <- data.frame(Year = df_world$Year,
                                    mod_worldStarDemShare_vec)
 colnames(df_worldDemKcalPcap)[2:3] <- c("Real",
                                         "Modeled")
-df_worldDemKcalPcap <- df_worldDemKcalPcap %>% gather(Type, `Food demand (kcal/capita/day)`, Real:Modeled)
+df_worldDemKcalPcap <- df_worldDemKcalPcap %>% gather(Type, `Food demand\n(kcal/capita/day)`, Real:Modeled)
 colnames(df_worldStarDemShare)[2:3] <- c("Real",
                                          "Modeled")
-df_worldStarDemShare <- df_worldStarDemShare %>% gather(Type, `Cereal & starchy root demand (% of diet)`, Real:Modeled)
+df_worldStarDemShare <- df_worldStarDemShare %>% gather(Type, `Cereal & starchy\nroot demand (% of diet)`, Real:Modeled)
 
 df_worldDemKcalPcapPctDiff <- data.frame(Year = df_world$Year,
                                          worldDemTrilKcalPctDiff_vec)
@@ -1308,7 +1311,7 @@ df_worldCarbDemShare <- data.frame(Year = df_world$Year,
                                   mod_worldCarbDemShare_vec)
 colnames(df_worldCarbDemShare)[2:3] <- c("Real",
                                         "Modeled")
-df_worldCarbDemShare <- df_worldCarbDemShare %>% gather(Type, `Carbohydrate demand (% of diet)`, Real:Modeled)
+df_worldCarbDemShare <- df_worldCarbDemShare %>% gather(Type, `Carbohydrate\ndemand (% of diet)`, Real:Modeled)
 df_worldCarbDemSharePPdiff <- data.frame(Year = df_world$Year,
                                          worldCarbDemSharePPdiff_vec)
 colnames(df_worldCarbDemSharePPdiff)[2] <- "Percentage point\ndifference"
@@ -1338,33 +1341,39 @@ colnames(df_worldProtDemSharePPdiff)[2] <- "Percentage point\ndifference"
 # Engel's law backtest
 gg <- ggplot(df_worldDemKcalPcap,
              aes(x = Year,
-                 y = `Food demand (kcal/capita/day)`,
+                 y = `Food demand\n(kcal/capita/day)`,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line(lwd = 1)
 gg <- gg + theme(legend.position = "none",
-                 legend.title = element_blank(),
                  axis.title.x = element_blank(),
-                 axis.text.x = element_blank())
+                 axis.text.x = element_blank(),
+                 legend.text = element_text(size = legendText_size),
+                 axis.title.y = element_text(size =axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggTot <- gg
 #--------------------------------------------------------------------------
 # Engel's law backtest, percentage difference
 gg <- ggplot(df_worldDemKcalPcapPctDiff, aes(x = Year, y = `Percent\ndifference`))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(axis.title.x = element_blank())
+gg <- gg + theme(axis.title.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggTotDiff <- gg
 #--------------------------------------------------------------------------
 # Bennett's law backtest
 gg <- ggplot(df_worldStarDemShare,
              aes(x = Year,
-                 y = `Cereal & starchy root demand (% of diet)`,
+                 y = `Cereal & starchy\nroot demand (% of diet)`,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(legend.position = "none",
+gg <- gg + theme(legend.text = element_text(size = legendText_size),
                  legend.title = element_blank(),
                  axis.title.x = element_blank(),
-                 axis.text.x = element_blank())
+                 axis.text.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggStar <- gg
 #--------------------------------------------------------------------------
 # Bennett's law backtest, PP difference
@@ -1372,20 +1381,23 @@ gg <- ggplot(df_worldStarDemSharePPdiff,
              aes(x = Year,
                  y = `Percentage point\ndifference`))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(axis.title.x = element_blank())
+gg <- gg + theme(axis.title.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggStarDiff <- gg
 #--------------------------------------------------------------------------
 # Carbohydrate demand, carbohydrate law vs. reality
 gg <- ggplot(df_worldCarbDemShare,
              aes(x = Year,
-                 y = `Carbohydrate demand (% of diet)`,
+                 y = `Carbohydrate\ndemand (% of diet)`,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line(lwd = 1)
 gg <- gg + theme(legend.position = "none",
-                 legend.title = element_blank(),
                  axis.title.x = element_blank(),
-                 axis.text.x = element_blank())
+                 axis.text.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggCarb <- gg
 #--------------------------------------------------------------------------
 # Carbohydrate demand model backtest, PP difference
@@ -1393,7 +1405,9 @@ gg <- ggplot(df_worldCarbDemSharePPdiff,
              aes(x = Year,
                  y = `Percentage point\ndifference`))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(axis.title.x = element_blank())
+gg <- gg + theme(axis.title.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggCarbDiff <- gg
 #--------------------------------------------------------------------------
 # Fat demand model backtest (carbohydrate law & fat-carb frontier)
@@ -1404,9 +1418,10 @@ gg <- ggplot(df_worldFatDemShare,
                  color = Type))
 gg <- gg + geom_line(lwd = 1)
 gg <- gg + theme(legend.position = "none",
-                 legend.title = element_blank(),
                  axis.title.x = element_blank(),
-                 axis.text.x = element_blank())
+                 axis.text.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggFat <- gg
 #--------------------------------------------------------------------------
 # Fat demand model backtest, PP difference
@@ -1414,7 +1429,9 @@ gg <- ggplot(df_worldFatDemSharePPdiff,
              aes(x = Year,
                  y = `Percentage point\ndifference`))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(axis.title.x = element_blank())
+gg <- gg + theme(axis.title.x = element_blank(),
+                 axis.title.y = element_blank(),
+                 axis.text.y = element_blank())
 ggFatDiff <- gg
 #--------------------------------------------------------------------------
 # Protein demand model backtest (residual of carbohydrate law & fat-carb frontier)
@@ -1424,10 +1441,12 @@ gg <- ggplot(df_worldProtDemShare,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(legend.position = "none",
+gg <- gg + theme(legend.text = element_text(size = legendText_size),
                  legend.title = element_blank(),
                  axis.title.x = element_blank(),
-                 axis.text.x = element_blank())
+                 axis.text.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text.y = element_text(size = axisText_size))
 ggProt <- gg
 #--------------------------------------------------------------------------
 # Protein demand model backtest, PP difference
@@ -1435,7 +1454,9 @@ gg <- ggplot(df_worldProtDemSharePPdiff,
              aes(x = Year,
                  y = `Percentage point\ndifference`))
 gg <- gg + geom_line(lwd = 1)
-gg <- gg + theme(axis.title.x = element_blank())
+gg <- gg + theme(axis.title.x = element_blank(),
+                 axis.title.y = element_blank(),
+                 axis.text.y = element_blank())
 ggProtDiff <- gg
 #==========================================================================
 #==========================================================================
@@ -1449,7 +1470,7 @@ bEngel_fut <- m_engelKcal * mEngel_fut + b_engelKcal
 #--------------------------------------------------------------------------
 # Future Bennett's law parameters
 # Slope
-mBen_fut <- mean(df_plotBen$Slope)
+mBen_fut <- mean(df_plotBen$Slope) #mBennett_vec
 # Y intercept
 bBen_fut <- mBen * mBen_fut + bBen
 # Error correction term
@@ -1508,15 +1529,15 @@ starDemTrilKcal2017_FAOSTAT <- 10^-3 * starDemKcalPcap2017_FAOSTAT * worldPopBil
 # Carbohydrate baseline demand
 carbDemShare2017_FAOSTAT <- df_worldCarb$`Diet share (%)`[i_2017]
 carbDemKcalPcap2017_FAOSTAT <- df_worldCarb$`Carbohydrates (kcal/capita/day)`[i_2017]
-carbDemTrilKcal2017_FAOSTAT <- 10^-3 * carbDemKcalPcap2017  * worldPopBil2017_FAOSTAT
+carbDemTrilKcal2017_FAOSTAT <- 10^-3 * carbDemKcalPcap2017_FAOSTAT  * worldPopBil2017_FAOSTAT
 # Fat baseline demand
 fatDemShare2017_FAOSTAT <- df_worldFat$`Diet share (%)`[i_2017]
 fatDemKcalPcap2017_FAOSTAT <- df_worldFat$`Supply (kcal/capita/day)`[i_2017]
-fatDemTrilKcal2017_FAOSTAT <- 10^-3 * fatDemKcalPcap2017  * worldPopBil2017_FAOSTAT
+fatDemTrilKcal2017_FAOSTAT <- 10^-3 * fatDemKcalPcap2017_FAOSTAT  * worldPopBil2017_FAOSTAT
 # Protein baseline demand
 protDemShare2017_FAOSTAT <- df_worldProt$`Diet share (%)`[i_2017]
 protDemKcalPcap2017_FAOSTAT <- df_worldProt$`Supply (kcal/capita/day)`[i_2017]
-protDemTrilKcal2017_FAOSTAT <- 10^-3 * protDemKcalPcap2017  * worldPopBil2017_FAOSTAT
+protDemTrilKcal2017_FAOSTAT <- 10^-3 * protDemKcalPcap2017_FAOSTAT  * worldPopBil2017_FAOSTAT
 #==========================================================================
 #==========================================================================
 # Model future demand based on above inputs
@@ -1555,13 +1576,15 @@ protDemPctChg_me <- 100 * (protDemTrilKcal2050_me - protDemTrilKcal2017_FAOSTAT)
 
 ## Using Engel's and Bennett's laws to estimate 2050 food and starchy staple demand
 
-Before using an empirical model to estimate future demand, it is instructive to first examine how well the model approximates past demand. Historically, Engel's law has approximated world food demand quite well, diverging just 3%-9% from the measured value (left panel, Figure \ref{fig:backTest}). Bennett's law, on the other hand, has diverged considerably from the measured value of global starchy staple demand---by 9-15 percentage points (right panel, Figure \ref{fig:backTest}). It may be possible to reduce this error by including more variables in the model. For back-of-the-envelope projections, however, it may also be sufficient to notice that the error is fairly consistent across years, and to apply an error correction term on this basis. In the parsimonious calculation here, the Bennett model is corrected by subtracting `r errCorrctnBen`, which is the average percentage point error since 1980.
+Before using an empirical model to estimate future demand, it is instructive to first examine how well the model approximates past demand. Historically, Engel's law has approximated world food demand quite well, diverging just 3%-9% from the measured value (left panel, Figure \ref{fig:backTest}). Bennett's law, on the other hand, has diverged considerably from the measured value of global starchy staple demand---by 9-15 percentage points (right panel, Figure \ref{fig:backTestEngBen}). It may be possible to reduce this error by including more variables in the model. For back-of-the-envelope projections, however, it may also be sufficient to notice that the error is fairly consistent across years, and to apply an error correction term on this basis. In the parsimonious calculation here, the Bennett model is corrected by subtracting `r errCorrctnBen`, which is the average percentage point error since 1980.
 
-```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:backTest}....", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:backTestEngBen}Comparison of modeled to historical food and starchy staple demand.", echo = FALSE}
 
 # Plot Engel's and Bennett's laws "backtests" generated in the previous chunk 
 ggTot + ggStar + ggTotDiff + ggStarDiff +
-  plot_layout(ncol = 2, heights = c(1, 1 / 3), guides = "collect") & theme(legend.position = "top")
+    plot_layout(ncol = 2, heights = c(1, 1 / 3))
+
+  # plot_layout(ncol = 2, heights = c(1, 1 / 3), guides = "collect") & theme(legend.position = "top")
 
 
 ```
@@ -1575,7 +1598,6 @@ Evaluating Engel's law at these values returns a 2050 world food demand estimate
 ```{r, echo = FALSE}
 
 # Compare food demand estimate to other studies
-# Other food demand estimates for context; direct comparison problematic due to different units for GDP.
 # From FAOSTAT
 kcalPcapPday2005 <- 2761
 pop2005 <- 10^3 * 6388641
@@ -1743,8 +1765,11 @@ colnames(df_table)[3:ncol(df_table)] <- c("2050 Population (billion)",
                                           "2050 food demand\n(kcal/capita/day)")
 
 
-
-kable(df_table) %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+table_title <- "Table 1: A selection of published 2050 world food demand projections."
+table_caption <- "These projections are provided for context. Direct comparison of different estimates is problematic due to varying assumptions regarding population and GDP growth, as well as to varying approaches to GDP deflation, exchange rates, and prices."
+kable(df_table, caption = table_title) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+  footnote(general = table_caption)
 
 
 
@@ -1769,14 +1794,19 @@ Evaluating Bennett's law at the chosen parameters and GDP per capita returns a 2
 
 Point estimates such as these are of limited value since they offer no indication of sensitivity to changes or inaccuracy in the input values. With some basic programming skills, it is possible to generate a heatmap that facilitates consideration of a wide range of future scenarios at a single glance. In Figure \ref{fig:heatMapEngBen}, heatmaps allow exploration of food demand estimate sensitivity to changes or inaccuracy in GDP per capita and income elasticity projections.
 
-```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:heatMapEngBen}....", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=3, fig.align="center", fig.cap="\\label{fig:heatMapEngBen}Heatmaps of variation in the 2050 demand projection for (left) food and (right) starchy staples, with respect to assumptions regarding their respective income elasticities and future GDP per capita.", echo = FALSE}
 #==========================================================================
 # Heat map
+#--------------------------------------------------------------------------
+# heat map parameters
 n_res <- 25
-gdpPcap_vec <- seq(10000, 20000, length.out = n_res)
+gdpPcapMin_hm <- 10000
+gdpPcapMax_hm <- 21000
+#--------------------------------------------------------------------------
+gdpPcap_vec <- seq(gdpPcapMin_hm, gdpPcapMax_hm, length.out = n_res)
 #pop_vec <- seq(9.1, 10, length.out = n_res) * 10^9
-mEng_vec <- seq(0.07, 0.1, length.out = n_res)
-mBen_vec <- seq(-0.21, -0.18, length.out = n_res)
+mEng_vec <- seq(mEngel_fut - 0.02, mEngel_fut + 0.02, length.out = n_res)
+mBen_vec <- seq(mBen_fut - 0.02, mBen_fut + 0.02, length.out = n_res)
 
 mat_starDemShare <- matrix(NA, n_res, n_res)
 mat_foodDemKcalPcap <- matrix(NA, n_res, n_res)
@@ -1794,7 +1824,7 @@ for(i in 1:n_res){
     this_starDemShare2050 <- (exp(this_bBenFut) * this_gdpPcap^this_mBenFut + errCorrctnBen)
     this_starDemKcalPcap2050 <- foodDemKcalPcap2050_me * this_starDemShare2050 / 100
     #---------
-mat_starDemShare[i, j] <- this_starDemShare2050
+mat_starDemShare[i, j] <- round(this_starDemShare2050, 2)
 mat_foodDemKcalPcap[i, j] <- this_foodDemKcalPcap2050
 mat_starDemKcalPcap[i, j] <- this_starDemKcalPcap2050
     
@@ -1818,38 +1848,46 @@ row.names(mat_starDemShare) <- as.character(gdpPcap_vec)
 df_starDemShare <- reshape2::melt(mat_starDemShare)
 colnames(df_starDemShare) <- c("GDP/capita (USD)",
                               "Income elasticity of\ncereal & starchy root demand",
-                              "2050 cereal & starchy\nroot demand\n(% of diet)")
+                              "Cereals & starchy\nroots (% of diet)")
 
 df_plot <- df_starDemShare
 gg <- ggplot(df_plot, aes(x = `Income elasticity of\ncereal & starchy root demand`,
                           y = `GDP/capita (USD)`,
-                          fill = `2050 cereal & starchy\nroot demand\n(% of diet)`))
+                          fill = `Cereals & starchy\nroots (% of diet)`))
 gg <- gg + geom_tile()
 gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
 gg <- gg + theme(legend.position = "top",
                  axis.title.y = element_blank(),
-                 axis.text.y = element_blank())
+                 axis.text.y = element_blank(),
+                axis.title.x = element_text(size = axisTitle_size),
+                 axis.text.x = element_text(size = axisText_size),
+                 legend.text = element_text(size = legendText_size),
+                legend.title = element_text(size = axisTitle_size))
 gg_starDemShare <- gg
 
 
 df_foodDemKcalPcap <- reshape2::melt(mat_foodDemKcalPcap)
 colnames(df_foodDemKcalPcap) <- c("GDP/capita (USD)",
                               "Income elasticity of\nfood demand",
-                              "2050 food demand\n(kcal/capita/day)")
+                              "Food\n(kcal/capita/day)")
 
 df_plot <- df_foodDemKcalPcap
 gg <- ggplot(df_plot, aes(x = `Income elasticity of\nfood demand`,
                           y = `GDP/capita (USD)`,
-                          fill = `2050 food demand\n(kcal/capita/day)`))
+                          fill = `Food\n(kcal/capita/day)`))
 gg <- gg + geom_tile()
 gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
 gg <- gg + theme(legend.position = "top",
-                 axis.title.y = element_blank(),
-                 axis.text.y = element_blank())
+                 axis.title = element_text(size = axisTitle_size),
+                 axis.text = element_text(size = axisText_size),
+                 legend.text = element_text(size = legendText_size),
+                 legend.title = element_text(size = axisTitle_size))
 gg_foodDemKcalPcap <- gg
 
-gg_foodDemKcalPcap + gg_starDemShare + plot_layout(ncol = 2)
-
+this_plotTitle <- "2050 food demand"
+gg_foodDemKcalPcap + gg_starDemShare + plot_layout(ncol = 2) +
+  plot_annotation(title = this_plotTitle) &
+  theme(plot.title = element_text(size = title_size))
 
 
 
@@ -1875,14 +1913,13 @@ gg_foodDemKcalPcap + gg_starDemShare + plot_layout(ncol = 2)
 
 ## Using the carbohydrate law and the fat-carb frontier to estimate 2050 macronutrient demand
 
-The carbohydrate law and fat-carb frontier can be applied in a similar fashion to estimate future macronutrient demand. Again, it is instructive to first look at the empirical law's agreement with past data (Figure \ref{fig:backTestMacronut}).
+The carbohydrate law and fat-carb frontier can be applied in a similar fashion to estimate future macronutrient demand. Historically, the carbohydrate law has agreed well with demand, diverging just .... The modeled fat demand using the fat-carb frontier has also agreed well...protein most of all... (Figure \ref{fig:backTestMacronut}).
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=3, fig.align="center", fig.cap="\\label{fig:backTest}....", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 6, fig.height = 3, fig.align="center", fig.cap="\\label{fig:backTestMacronut}Comparison of modeled and historical demand for (left) carbohydrates, (middle) fats, and (right) proteins.", echo = FALSE}
 
 # Plot Engel's and Bennett's laws "backtests" generated in the previous chunk 
-ggCarb + ggFat + ggProt + ggCarbDiff + ggFatDiff + ggProtDiff
-  plot_layout(ncol = 3, heights = c(1, 1 / 3), guides = "collect") & theme(legend.position = "top")
-
+ggCarb + ggFat + ggProt + ggCarbDiff + ggFatDiff + ggProtDiff +
+  plot_layout(ncol = 3, heights = c(1, 1 / 3))
 
 ```
 
@@ -1897,14 +1934,13 @@ The fat share of diet ($x_f$) can then be obtained via the fat-carb frontier (eq
 <!-- The agricultural sector equilibrium models implement exogenously determined trajectories in their estimate of food demand. Bodirsky et al. model future parameters using a novel ... taken from biochemistry....converge to a particular value. There is no rationale for  empirical argument in favor of their approach, but that has since deteriorated (Figure ...). -->
 <!-- These results are in line with Gouel et al.'s estimate of a 46% increase in food demand, including an 18% increase in demand for starchy staples [-@gouel2019nutrition]. -->
 <!-- The 16% increase in cereal demand may not include livestock feed? -->
-```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:heatMapMacronut}....", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 6, fig.height = 3, fig.align="center", fig.cap="\\label{fig:heatMapMacronut}Heatmaps of variation in the 2050 demand projection for (left) carbohydrates, (middle) fats, and (right) proteins, with respect to assumptions regarding GDP per capita and the income elasticity of carbohydrate demand.", echo = FALSE}
 #==========================================================================
 # Heat map for macronutrient demand
-n_res <- 25
-gdpPcap_vec <- seq(10000, 20000, length.out = n_res)
+gdpPcap_vec <- seq(gdpPcapMin_hm, gdpPcapMax_hm, length.out = n_res)
 #pop_vec <- seq(9.1, 10, length.out = n_res) * 10^9
-mCarb_vec <- seq(-0.1, -0.06, length.out = n_res)
-mFatCarb_vec <- seq(-1, -0.6, length.out = n_res)
+mCarb_vec <- seq(mCarb_fut - 0.02, mCarb_fut + 0.02, length.out = n_res)
+# mFatCarb_vec <- seq(mFatCarb_fut - 0.2, mFatCarb_fut + 0.2, length.out = n_res)
 
 mat_carbDemShare <- matrix(NA, n_res, n_res)
 mat_fatDemShare <- matrix(NA, n_res, n_res)
@@ -1914,20 +1950,22 @@ for(i in 1:n_res){
   this_gdpPcap <- gdpPcap_vec[i]
   for(j in 1:n_res){
     this_mCarbFut <- mCarb_vec[j]
-    this_mFatCarbFut <- mFatCarb_vec[j]
+    #this_mFatCarbFut <- mFatCarb_vec[j]
     this_bCarbFut <- this_mCarbFut * mC + bC
-    this_bFatCarbFut <- this_mFatCarbFut * mFC + bFC
+    #this_bFatCarbFut <- this_mFatCarbFut * mFC + bFC
     #---------
-    this_carbDemKcalPcap2050 <- exp(this_bCarbFut) * this_gdpPcap^this_mCarbFut
-    this_carbDemShare2050 <- this_carbDemKcalPcap2050 / foodDemKcalPcap2050_me
+    this_carbDemShare2050 <- exp(this_bCarbFut) * this_gdpPcap^this_mCarbFut
+    # this_foodDemKcalPcap2050 <- exp(bEngel_fut) * this_gdpPcap^mEngel_fut
+    # this_carbDemKcalPcap2050 <- this_foodDemKcalPcap2050 * this_carbDemShare2050 / 100
+    # print(this_carbDemKcalPcap2050)
     #---------
     this_fatDemShare2050 <- this_carbDemShare2050 * mFatCarb_fut + bFatCarb_fut
     #---------
     this_protDemShare2050 <- 100 - this_fatDemShare2050 - this_carbDemShare2050
     #---------
-mat_carbDemShare[i, j] <- this_starDemShare2050
-mat_fatDemShare[i, j] <- this_foodDemKcalPcap2050
-mat_protDemShare[i, j] <- this_starDemKcalPcap2050
+mat_carbDemShare[i, j] <- round(this_carbDemShare2050, 2)
+mat_fatDemShare[i, j] <- round(this_fatDemShare2050, 2)
+mat_protDemShare[i, j] <- round(this_protDemShare2050, 2)
     
   }
 }
@@ -1935,67 +1973,81 @@ mat_protDemShare[i, j] <- this_starDemKcalPcap2050
 colnames(mat_carbDemShare) <- as.character(mCarb_vec)
 row.names(mat_carbDemShare) <- as.character(gdpPcap_vec)
 
-colnames(mat_fatDemShare) <- as.character(mFatCarb_vec)
+colnames(mat_fatDemShare) <- as.character(mCarb_vec)
 row.names(mat_fatDemShare) <- as.character(gdpPcap_vec)
 
-colnames(mat_protDemShare) <- as.character(mFatCarb_vec)
+colnames(mat_protDemShare) <- as.character(mCarb_vec)
 row.names(mat_protDemShare) <- as.character(gdpPcap_vec)
 
 df_carbDemShare <- reshape2::melt(mat_carbDemShare)
 colnames(df_carbDemShare) <- c("GDP/capita (USD)",
                               "Income elasticity of\ncarbohydrate demand",
-                              "2050 carbohydrate demand\n(% of diet)")
+                              "Carbohydrate")
 
 df_plot <- df_carbDemShare
 gg <- ggplot(df_plot, aes(x = `Income elasticity of\ncarbohydrate demand`,
                           y = `GDP/capita (USD)`,
-                          fill = `2050 carbohydrate demand\n(% of diet)`))
+                          fill = `Carbohydrate`))
 gg <- gg + geom_tile()
 gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
 gg <- gg + theme(legend.position = "top",
-                 axis.title.y = element_blank(),
-                 axis.text.y = element_blank())
+                 axis.title.x = element_blank(),
+                 axis.title.y = element_text(size = axisTitle_size),
+                 axis.text = element_text(size = axisText_size),
+                 legend.title = element_text(size = axisTitle_size),
+                 legend.text = element_text(size = legendText_size))
 gg_carbDemShare <- gg
 
 
 df_fatDemShare <- reshape2::melt(mat_fatDemShare)
 colnames(df_fatDemShare) <- c("GDP/capita (USD)",
                               "Income elasticity of\ncarbohydrate demand",
-                              "2050 fat demand\n(% of diet)")
+                              "Fat")
 
 df_plot <- df_fatDemShare
 gg <- ggplot(df_plot, aes(x = `Income elasticity of\ncarbohydrate demand`,
                           y = `GDP/capita (USD)`,
-                          fill = `2050 fat demand\n(% of diet)`))
+                          fill = `Fat`))
 gg <- gg + geom_tile()
 gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
 gg <- gg + theme(legend.position = "top",
                  axis.title.y = element_blank(),
-                 axis.text.y = element_blank())
+                 axis.text.y = element_blank(),
+                 axis.text.x = element_text(size = axisText_size),
+                 axis.title.x = element_text(size = axisTitle_size),
+                 legend.title = element_text(size = axisTitle_size),
+                 legend.text = element_text(size = legendText_size))
 gg_fatDemShare <- gg
 
 
 df_protDemShare <- reshape2::melt(mat_protDemShare)
 colnames(df_protDemShare) <- c("GDP/capita (USD)",
                               "Income elasticity of\ncarbohydrate demand",
-                              "2050 protein demand\n(% of diet)")
+                              "Protein")
 
 df_plot <- df_protDemShare
 gg <- ggplot(df_plot, aes(x = `Income elasticity of\ncarbohydrate demand`,
                           y = `GDP/capita (USD)`,
-                          fill = `2050 protein demand\n(% of diet)`))
+                          fill = `Protein`))
 gg <- gg + geom_tile()
 gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
 gg <- gg + theme(legend.position = "top",
-                 axis.title.y = element_blank(),
-                 axis.text.y = element_blank())
+                 axis.title = element_blank(),
+                 axis.text.y = element_blank(),
+                 axis.text.x = element_text(size = axisText_size),
+                 legend.title = element_text(size = axisTitle_size),
+                 legend.text = element_text(size = legendText_size))
 gg_protDemShare <- gg
 
+# gg_fatDemShare + gg_carbDemShare + gg_protDemShare + guide_area() + plot_layout(ncol = 2, guides = "collect")
+
+this_plotTitle <- "2050 macronutrient demand (% of diet)"
+gg_carbDemShare + gg_fatDemShare + gg_protDemShare +
+  plot_layout(ncol = 3) + plot_annotation(title = this_plotTitle) &
+  theme(plot.title = element_text(size = title_size))
 
 
-gg_carbDemShare + gg_fatDemShare + gg_protDemShare + plot_layout(ncol = 2, guides = "collect")
-
-#  
+#
 # xtick_labs <- -beta_change_vec * 100
 # ytick_labs <- mu_Cq_change_vec * 100
 # inMat <- mat_demMap
@@ -2015,9 +2067,9 @@ gg_carbDemShare + gg_fatDemShare + gg_protDemShare + plot_layout(ncol = 2, guide
 
 # Different laws, or different manifestations of a single law?
 
-It is tempting to attribute Engel's Law to some special characteristic of food that sets it apart from other goods. However, this approach to explaining Engel's Law runs into problems on both empirical and purely argumentative grounds. Empirically, analogous laws can be discerned for a wide range of goods (Figure ...), not just food. The laws for clothing, utilities, and rent were noted in Engel's time [@zimmerman1932ernst; @stigler1954early].
+It is tempting to attribute Engel's Law to some special characteristic of food that sets it apart from other goods. However, this approach to explaining Engel's Law runs into problems on both empirical and purely argumentative grounds. Empirically, analogous laws can be discerned for a wide range of goods (Figure \ref{fig:otherLaws}), not just food. The laws for clothing, utilities, and rent were noted in Engel's time [@zimmerman1932ernst; @stigler1954early].
 
-```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\label{fig:qerwerwer}....", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\label{fig:otherLaws}A log-linear relation exists between demand and GDP per capita for all major consumer good categories. Source: Author's creation using World Bank ICP data.", echo = FALSE}
 
 all_goods <- unique(df_engel$Good)
 not_these <- all_goods[grep("[0-9]", all_goods)]
