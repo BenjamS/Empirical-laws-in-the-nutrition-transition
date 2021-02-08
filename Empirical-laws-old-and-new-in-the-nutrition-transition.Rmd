@@ -10,10 +10,11 @@ address:
     address: Alliance Bioversity-CIAT, Km 17 Recta Cali-Palmira, Valle del Cauca, Colombia
 abstract: |
   Much of the Nutrition Transition literature implicitly rests upon Engel's Law and Bennett's Law. However, rarely are these key empirical laws explicitly referenced or visualized in a straightforward manner. There is evidence that this may be due to a general lack of familiarity with these old laws and their relevance to modern discussions of dietary transitions, food security, and resilient food systems. Here I address this gap with an in-depth, graphical review of Engel's and Bennett's Laws, including analysis of their stability across time and space. Animations (provided as supplemental materials) offer further striking visualization of the laws' evolution over time. I then propose a theoretical framework by which to unify the two laws as separate manifestations of the single underlying principle of diminishing marginal utility. Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear corresponance between the mean prices of agricultural commodities and their respective volatilities.
-keywords: Nutrition transition, Bennett's Law, Engel's Law, food demand, food price volatility, food security, food systems
+keywords: Nutrition transition, Bennett's law, Engel's law, income elasticity of food demand, food price volatility, food security
 journal: Food Policy
 bibliography: Empirical laws, old and new, in the nutrition transition.bib
 header-includes:
+  - \usepackage{setspace}\doublespacing
   - \usepackage{float}
   - \floatplacement{figure}{H}
 #linenumbers: true
@@ -33,6 +34,8 @@ library(tidyverse)
 library(patchwork)
 library(ggrepel)
 library(kableExtra)
+library(flextable)
+
 shape_vec <- c(21:24, 4)
 point_size <- 1.5
 smallPoint_size <- 1
@@ -68,6 +71,11 @@ shift_legend2 <- function(p) {
 #==========================================================================
 
 ```
+<!-- abstract:  -->
+<!--     - \usepackage{setspace}\singlespacing -->
+<!-- "My abstract" -->
+<!--     - \end{singlespacing} -->
+\pagebreak
 
 # Introduction
 
@@ -205,7 +213,7 @@ Bennett presented this finding not in terms of a regression analysis or a scatte
 <!-- FBSs are constructed by the FAO from nationalaccounts of the supply and use of foods, and are calcu-lated from the food produced in and imported intocountries minus the food exported net of imports,fed to animals or otherwise not available for humanconsumption, divided by the population size. FBSdata provide information about average availabilityper person, that is they relate simply to the quantitiesof food reaching the consumer (i.e. a measure ofavailability). FBSs, while describing consumption offoods per capita of the population for a country, donot represent the amount of food actually consumedand will almost invariably result in an overestimationin food consumption compared with dietary surveysat the individual level (Serra-Majemet al. 2003).This point is also clearly illustrated in another driverreview (Hawkesworthet al. 2010). -->
 <!-- [@serra2003comparative; @hawkesworth2010feeding] -->
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:BennettsLaw}(Left) Bennett's law fitted to 2017 FBS data. GDP is expressed in USD at constant 2015 prices. (Right) Trajectory of the slope and y intercept parameters of Bennett's law, 1970-2017. The trajectory of sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:BennettsLaw}(Left) Bennett's law fitted to 2017 FBS data. GDP is expressed in USD at constant 2015 prices. (Right) Trajectory of the slope and y intercept parameters of Bennett's law, 1970-2017. The trajectory of sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
 # 4 calories in a gram of protein or carbohydrate, 9 calories in a gram of fat.
 # https://www.nal.usda.gov/fnic/how-many-calories-are-one-gram-fat-carbohydrate-or-protein
 #===========================================================================
@@ -388,10 +396,10 @@ Numerous studies of future food demand, on the other hand, do mention Bennett [@
 <!-- Bennett's Law characterized as ...towards "a more diverse diet that includes alarger share of animal protein and fats and oils" [@valin2014future].  -->
 <!-- However, this not found in the Mahammed et al. study. The Florida PI model fails to reproduce this [@muhammad2011international]. -->
 
-Thanks to the FAO FBS data, it is now clear that the former of Bennett's two hypothetical nations is closer to the true trajectory of most nations moving from low and middle income to upper income status. Starchy carbohydrate calories are replaced primarily by fat calories (of vegetable or animal origin), sugary carbohydrates, and other sweeteners [@kearney2010food]. However, the clear cut, log-linear relation between diet share and income that Bennett observed for cereals and starchy roots does not hold for the other main food groups, with the possible exception of animal products (Figure \ref{fig:whatReplaces1}).
+Thanks to the FAO FBS data, it is now clear that the former of Bennett's two hypothetical nations is closer to the true trajectory of most nations moving from low and middle income to upper income status. Starchy carbohydrate calories are replaced primarily by fat calories (of vegetable or animal origin), sugary carbohydrates, and other sweeteners [@kearney2010food]. However, the clear cut, log-linear relation between diet share and income that Bennett observed for cereals and starchy roots does not hold for the other main food groups, with the possible exception of animal products (see Figure \ref{fig:whatReplaces1} in the Appendix).
 <!-- "protective foodstuffs rich in high-quality proteins, mineral salts, and vitamins" -->
 ```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:whatReplaces1}Relation between non-starchy food group dietary shares and GDP/capita, 2017 FBS data covering 170 countries.", echo = FALSE}
-
+# (this plot moved to Appendix)
 # Plot dietary share vs income for all major food groups
 df_plot <- subset(df_foodShare, Year == 2017 &
                     Region != "Aggregated")
@@ -421,8 +429,7 @@ gg <- gg + theme(legend.position = "bottom",
 gg_foodGroupLaws <- gg
 # gg <- shift_legend2(gg)
 # gg <- ggplotify::as.ggplot(gg)
-gg_foodGroupLaws <- gg
-gg_foodGroupLaws
+gg_foodGroupLaws <- gg # (Moved this to appendix)
 #===========================================================================
 #===========================================================================
 # Create macronutrient analogue to Bennett's law graphic
@@ -573,7 +580,7 @@ Dietary transitions may also be examined in terms of macronutrient shares. In th
 
 Log-linear relations between macronutrient shares and income are explored in Figure \ref{fig:macronutLaws}. Of the three macronutrient categories in the left panel, the "carbohydrate law" exhibits the best fit (in terms of the adjusted R-squared value). This is not surprising since the carbohydrate law is essentially a macronutrient analogue of Bennett's law. In this case, the slope indicates the income elasticity of the carbohydrate share of a country's food demand. As with Bennett's law, the carbohydrate law parameters exhibit stability over time, especially since 1980 (right panel). Over this period, the slope has ranged narrowly between `r mCarb_min` and `r mCarb_max`.
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:macronutLaws}(Left) Macronutrient laws, 2017 FBS data. (Right) Slope and y intercept trajectories for the carbohydrate law, 1970-2017. The sample size and model fit (adjusted R-squared) are also indicated for each year.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:macronutLaws}(Left) Macronutrient laws, 2017 FBS data. (Right) Slope and y intercept trajectories for the carbohydrate law, 1970-2017. The sample size and model fit (adjusted R-squared) are also indicated for each year.", echo = FALSE}
 #===========================================================================
 #===========================================================================
 # Plot macronutrient analogue to Bennett's law graphic created in previous chunk
@@ -698,7 +705,7 @@ The points in Figure \ref{fig:fatCarbFront} are sized according to GDP per capit
 <!-- A question remains as to how much of the carbohydrates are replaced by proteins and how much are replaced by fats, as income rises. Cursory exploration of the data suggests that the carbohydrates are replaced almost exclusively by fats (right panel, Figure \ref{fig:Bennett01}). Drewnowski and Popkin [-@drewnowski1997nutrition] dispute this, claiming that globalization has led to increased fat intake regardless of income level. While there may be some truth to their argument in an absolute sense, Figure \ref{fig:Bennett01} seems to suggest quite clearly that relative fat intake is still highly coupled with income level, despite "globalized diets". -->
 <!--  The slope on the fat-carb frontier is nearly -1, which supports this finding (although the y intercept (~91%) implies a constant protein share of 9%, slightly lower than Perisse et al.'s estimate). Metabolically speaking, constant protein intake in the face of declining carbohydrate intake implies increased consumption of animal products.^[The increased fat intake also implies this to some degree, although not necessarily, since fats may be acquired from non-animal sources.] The often mentioned dietary transition to animal products that accompanies rising incomes and urbanization may thus be considered a corrollary of Bennett's Law. -->
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="left", fig.cap="\\label{fig:fatCarbFront}(Left) The fat-carb frontier, 2017 FBS data. The size of the points are congruent with GDP per capita, which is expressed in USD at constant 2015 prices. Grams are converted to calories assuming a ratio of 4 calories per gram of protein or carbohydrate, and 9 calories per gram of fat, in accordance with U.S. Dept. of Agriculture guidelines. (Right) Fat carb frontier slope and y intercept trajectory, 1970-2017. The sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="left", fig.cap="\\label{fig:fatCarbFront}(Left) The fat-carb frontier, 2017 FBS data. The size of the points are congruent with GDP per capita, which is expressed in USD at constant 2015 prices. Grams are converted to calories assuming a ratio of 4 calories per gram of protein or carbohydrate, and 9 calories per gram of fat, in accordance with U.S. Dept. of Agriculture guidelines. (Right) Fat carb frontier slope and y intercept trajectory, 1970-2017. The sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
 
 #---------------------------------------------------------------------------
 gg_fatcarb + gg_fatcarbStab + plot_layout(ncol = 2, guides = "collect") & theme(legend.position = 'bottom')
@@ -1035,7 +1042,7 @@ gg_engelStab <- gg
 ```
 An example of Engel's law is given in the top left panel of Figure \ref{fig:EngelsLaw}. Food demand may also be expressed in terms of food expenditure (bottom left graphic) or food quantity (upper left panel) [@Browning2018]. The expenditure and expenditure share versions of Engel's law exhibit an excellent empirical fit in terms of the adjusted R-squared value. The food quantity consumed version exhibits the poorest fit of the three, but is still respectable. A practical benefit of the food consumption version of Engel's law is that it is fit to the FBS data, which extends back several decades, making it possible to track the law's empirical fit and parameter values across time. As with the other empirical laws discussed in the previous section, the consumption version of Engel's law exhibits a good empirical fit and remarkably stable parameter values across time, especially since 1980. Over this period, the slope has ranged narrowly between `r mEngel_min` and `r mEngel_max` (right panel, Figure \ref{fig:EngelsLaw}).
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:EngelsLaw}(Left) Three formulations of Engel's law using 2017 data. The top graphic is based on FAO FBS data, while the bottom two are based on World Bank ICP data. GDP is at current prices in the ICP plots, and at 2015 prices in the FBS plot. (Right) Parameter trajectory of the consumption formulation of Engel's law.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:EngelsLaw}(Left) Three formulations of Engel's law using 2017 data. The top graphic is based on FAO FBS data, while the bottom two are based on World Bank ICP data. GDP is at current prices in the ICP plots, and at 2015 prices in the FBS plot. (Right) Parameter trajectory of the consumption formulation of Engel's law.", echo = FALSE}
 #===========================================================================
 # Plot the Engel's law graphic created in the previous chunk
 #===========================================================================
@@ -1122,7 +1129,9 @@ b \approx `r m_engelKcal` \alpha + `r b_engelKcal`
 
 Again, this can be useful when estimating future food demand, reducing the number of estimated parameters in an $n$ year projection from $2n$ to $2 + n$. However, such shortcuts must be applied with caution, as it is not immediately clear why this relation exists, nor under what circumstances it might change.
 
-```{r, fig.show = "hold", fig.width = 4, fig.height=3, fig.align="center", fig.cap="\\label{fig:mAffineYengel}Linear relation between the slope and y intercept of Engel's law.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 3, fig.height=3, fig.align="center", fig.cap="\\label{fig:mAffineYengel}Linear relation between the slope and y intercept of Engel's law.", echo = FALSE}
+
+# MOVE TO APPENDIX
 
 gg_mAffineYengel
 
@@ -1559,7 +1568,7 @@ It only remains to settle upon an estimate of future GDP per capita. Estimates o
 
 Evaluating Engel's law at these values returns a 2050 world food demand estimate of `r round(foodDemKcalPcap2050_me)` kcal/capita/day, or `r round(foodDemTrilKcal2050_me, 3)` trillion kcal/day, a `r round(foodDemPctChg_me, 1)`$%$ increase over the 2017 level. As a point of reference, a selection of published food demand estimates is presented in Table 1.
 
-```{r, echo = FALSE}
+```{r, ft.align = "center", echo = FALSE}
 
 # Compare food demand estimate to other studies
 # From FAOSTAT
@@ -1668,7 +1677,7 @@ estTrilKcal_vec <- c(ValinEstTrilKcal_vec,
                      Tilman_estTrilKcal,
                      Bodirsky_estTrilKcal,
                      foodDemTrilKcal2050_me)
-estTrilKcal_vec <- round(estTrilKcal_vec, 2)
+estTrilKcal_vec <- round(estTrilKcal_vec, 3)
 
 estKcalPcap_vec <- c(ValinEstKcalPcap_vec,
                      Gouel_estKcalPcap,
@@ -1677,6 +1686,7 @@ estKcalPcap_vec <- c(ValinEstKcalPcap_vec,
                      Tilman_estKcalPcap,
                      Bodirsky_estKcalPcap,
                      foodDemKcalPcap2050_me)
+estKcalPcap_vec <- round(estKcalPcap_vec)
 
 popProject_vec <- c(rep(worldPopBil2050_Valin, n_valin),
                     worldPopBil2050_Gouel,
@@ -1689,7 +1699,7 @@ popProject_vec <- c(rep(worldPopBil2050_Valin, n_valin),
 worldGDPpCap2050_me <- round(worldGDPpCap2050_me)
 modGDPpCap_vec <- c(rep(worldGDPpCap2050_Valin, n_valin),
                     worldGDPpCap2050_Gouel,
-                                        worldGDPpCap2050_FAO,
+                    worldGDPpCap2050_FAO,
                     worldGDPpCap2050_Bijl,
                     worldGDPpCap2050_Tilman,
                     worldGDPpCap2050_Bodirsky,
@@ -1722,23 +1732,57 @@ df_table <- data.frame(Model = modName_vec,
                        estTrilKcal_vec,
                        estKcalPcap_vec)
 
-colnames(df_table)[3:ncol(df_table)] <- c("2050\nPopulation\n(billion)",
-                                          "2050\nGDP/capita",
+colnames(df_table)[3:ncol(df_table)] <- c("2050 Population (billion)",
+                                          "2050 GDP/capita",
                                           "GDP units",
                                           "Notes",
-                                          "2050\nfood demand\n(trillion kcal/day)",
-                                          "2050\nfood demand\n(kcal/capita/day)")
+                                          "2050 food demand (trillion kcal/day)",
+                                          "2050 food demand (kcal/capita/day)")
 
 
-table_title <- "A selection of published 2050 world food demand projections"
+table_title <- "Table 1: A selection of published 2050 world food demand projections"
 table_caption <- "These projections are provided for context. Direct comparison of different estimates is problematic due to varying assumptions regarding population and GDP growth, as well as to varying approaches to GDP deflation, exchange rates, and prices."
-kable(df_table, caption = table_title, format = "latex") %>% 
-  kable_styling(latex_options="scale_down", bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 7, full_width = F) %>%
-  footnote(general = table_caption)
+
+fnote_col5 <- "MER = market exchange rate, PPP = purchasing power parity exchange rate"
+fnote_col6 <- "SSP = shared socioeconomic pathway, SRES = special report on emissions scenarios; for details, see corresponding articles in column 2."
+
+# kable(df_table, caption = table_title, format = "latex") %>% 
+#   kable_styling(latex_options="scale_down", bootstrap_options = c("striped", "hover", "condensed", "responsive"), font_size = 7, full_width = F) %>%
+#   footnote(general = table_caption)
 
 #knitr::kable(x, format = "html", table.attr = "style='width:30%;'")
 
+#library(flextable)
+#library(magrittr)
+df_table %>% regulartable() %>% autofit() %>%
+    add_header_lines(values = table_title, top = TRUE) %>%
+#   set_caption(
+#   table_title,
+#   autonum = NULL,
+#   style = "Table Caption"#,
+#   #html_escape = TRUE
+# ) %>%
+  # footnote(i = 1, j = 1,
+  #          value = as_paragraph(this_cap),
+  # ref_symbols = c("a", "b"),
+  # part = "header")
+  footnote(
+  i = 2,
+  j = c(1, 5, 6),
+  value = as_paragraph(c(table_caption, fnote_col5, fnote_col6)),
+  ref_symbols = c("a", "b", "c"),
+  part = "header",
+  #inline = FALSE,
+  sep = "; "
+)  %>%
+  knitr::knit_print()
 
+#this_table <- width(this_table, width = 1.5)
+#fontsize(i = NULL, j = NULL, size = 8, part = "header") %>%
+
+#knitr::knit_print(this_table)
+
+# %>% width(j=~x,width=1) %>% width(j=~y,width=1)
 
 # kcalPday2005 * 1.59
 # kcalPday2005 * 1.98
@@ -1880,6 +1924,7 @@ gg_foodDemKcalPcap + gg_starDemShare + plot_layout(ncol = 2) +
 The carbohydrate law and fat-carb frontier can be applied in a similar fashion to estimate future macronutrient demand. Historically, the carbohydrate law has agreed well with global demand, diverging just 5 to 6 percentage points. Approximations of fat and protein demand using the fat-carb frontier has also agreed well, diverging from the historical values by just 4 to 5 and less than a percentage point, respectively (Figure \ref{fig:backTestMacronut}).
 
 ```{r, fig.show = "hold", fig.width = 7, fig.height = 2, fig.align="center", fig.cap="\\label{fig:backTestMacronut}Comparison of modeled and historical demand for (left) carbohydrates, (middle) fats, and (right) proteins.", echo = FALSE}
+# MOVE TO APPENDIX
 
 # Plot Engel's and Bennett's laws "backtests" generated in the previous chunk 
 ggCarb + ggFat + ggProt + ggCarbDiff + ggFatDiff + ggProtDiff +
@@ -1899,8 +1944,10 @@ The fat share of diet ($x_f$) can then be obtained via the fat-carb frontier (eq
 <!-- These results are in line with Gouel et al.'s estimate of a 46% increase in food demand, including an 18% increase in demand for starchy staples [-@gouel2019nutrition]. -->
 <!-- The 16% increase in cereal demand may not include livestock feed? -->
 ```{r, fig.show = "hold", fig.width = 6, fig.height = 3, fig.align="center", fig.cap="\\label{fig:heatMapMacronut}Heatmaps of variation in the 2050 demand projection for (left) carbohydrates, (middle) fats, and (right) proteins, with respect to assumptions regarding GDP per capita and the income elasticity of carbohydrate demand.", echo = FALSE}
+
+# MOVE TO APPENDIX
 #==========================================================================
-# Heat map for macronutrient demand
+# Heat map for mac8ronutrient demand
 gdpPcap_vec <- seq(gdpPcapMin_hm, gdpPcapMax_hm, length.out = n_res)
 #pop_vec <- seq(9.1, 10, length.out = n_res) * 10^9
 mCarb_vec <- seq(mCarb_fut - 0.02, mCarb_fut + 0.02, length.out = n_res)
@@ -2475,6 +2522,9 @@ gg
 The law also fits the data well at geographically disaggregated scales (Figure \ref{fig:riskRewardByRegion}). The slopes at the disaggregated scale parameters are considerably lower than at the globally aggregated level. At the globally aggregated level, the mean price of a given agricultural commodity increases roughly proportionately to the increase in volatility, while at the geographically disaggrgated level, mean prices increase less than proportionately with volatility. From the producer's standpoint, this means that market risk grows exponentially with expected reward.
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:riskRewardByRegion}Logged mean price plotted against logged standard deviation, by region.", echo = FALSE}
+
+# MOVE TO APPENDIX
+
 this_file <- "FAO export data regions.csv"
 df_export_regions <- read.csv(this_file, stringsAsFactors = F)
 df_export_regions$X <- NULL
@@ -2602,7 +2652,10 @@ In the last section, above, I presented a new empirical law relating agricultura
 
 # Appendix
 
-```{r, results = "markup", echo = F}
+```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:whatReplaces1}Relation between non-starchy food group dietary shares and GDP/capita, 2017 FBS data covering 170 countries.", echo = FALSE}
+
+gg_foodGroupLaws
+
 
 # unique(df_bennettRegion$Region)
 # df_asia <- subset(df_bennettRegion[, c("Country")], Region == "Asia\n(excluding W. Asia)")
