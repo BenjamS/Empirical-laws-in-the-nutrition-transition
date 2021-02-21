@@ -9,7 +9,7 @@ address:
   - code: Alliance Bioversity-CIAT
     address: Alliance Bioversity-CIAT, Km 17 Recta Cali-Palmira, Valle del Cauca, Colombia
 abstract: |
-  Much of the Nutrition Transition literature implicitly rests upon Engel's Law and Bennett's Law. However, rarely are these key empirical laws explicitly referenced or visualized in a straightforward manner. There is evidence that this may be due to a general lack of familiarity with these old laws and their relevance to modern discussions of dietary transitions, food security, and resilient food systems. Here I address this gap with an in-depth, graphical review of Engel's and Bennett's Laws, including analysis of their stability across time and space. Animations (provided as supplemental materials) offer further striking visualization of the laws' evolution over time. I then propose a theoretical framework by which to unify the two laws as separate manifestations of the single underlying principle of diminishing marginal utility. Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear corresponance between the mean prices of agricultural commodities and their respective volatilities.
+  Much of the Nutrition Transition literature implicitly rests upon Engel's law and Bennett's law. However, rarely are these key empirical laws explicitly referenced or visualized in a straightforward manner. There is evidence that this may be due to a general lack of familiarity with these old laws and their relevance to modern discussions of dietary transitions, food security, and resilient food systems. Here I address this gap with an in-depth, graphical review of Engel's and Bennett's laws, including analysis of their stability across time and space. Animations (provided as supplemental materials) offer further striking visualization of the laws' evolution over time. I then propose a theoretical framework by which to unify the two laws as separate manifestations of the single underlying principle of diminishing marginal utility. Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear corresponance between the mean prices of agricultural commodities and their respective volatilities.
 keywords: Nutrition transition, Bennett's law, Engel's law, income elasticity of food demand, food price volatility, food security
 journal: Food Policy
 bibliography: Empirical laws, old and new, in the nutrition transition.bib
@@ -85,21 +85,21 @@ To address this lack of familiarity with a cornerstone of the modern discussion,
 
 Finally, I present a new empirical law that appears to have gone unnoticed until now: a log-linear relation between a commodity's expected price and its price risk. This may serve to open up new perspectives on the role of price volatility in food system resilience and nutritional security---a topic which has so far received little attention.
 <!-- [@popkin1993nutritional; @kearney2010food; @popkin2012global; bodirsky2015global].@muhammad2011international -->
-<!-- The FAO takes Engel's Law as a starting point in its expert-based estimates of future food demand [@alexandratos2012world], and four of the ... most prominent agricultural sector equilibrium models have Engel's Law at their core [@valin2014future]. -->
+<!-- The FAO takes Engel's law as a starting point in its expert-based estimates of future food demand [@alexandratos2012world], and four of the ... most prominent agricultural sector equilibrium models have Engel's law at their core [@valin2014future]. -->
 <!-- Instances of rediscoveryof Engel: Brown, Tilman -->
 <!-- Instances of rediscovery of Bennett: The entire nutrition transition literature -->
 <!-- Mischaracterizaton of Engel: Valin et al. -->
 <!-- Mischaracterization of Bennett: Valin et al. (move toward fats and sugars) -->
-<!-- which potentially sheds light on the economic meaning of the law's parameters, the circumstances under which the parameter values may change, and why Bennett's and Engel's Laws have remained relatively popular compared to analogous laws for other food and non-food goods. -->
+<!-- which potentially sheds light on the economic meaning of the law's parameters, the circumstances under which the parameter values may change, and why Bennett's and Engel's laws have remained relatively popular compared to analogous laws for other food and non-food goods. -->
 <!-- @stigler1954early -->
 <!-- @clements2018engel -->
 <!-- @theil1989international -->
 <!-- @pope2012 -->
-<!-- continue to focus resources on starchy crops in excess of what would be justified by Bennett's Law [@wiebe2020modeling; @finplan2018]. -->
+<!-- continue to focus resources on starchy crops in excess of what would be justified by Bennett's law [@wiebe2020modeling; @finplan2018]. -->
 
 # What are empirical laws?
 
-The word "law" connotes a binding, absolute character that is ill-suited to the social sciences. In this article, the phrase "empirical laws" (also known as "stylized facts") simply refers to observed historical tendencies. As Houthakker put it:
+The word "law" connotes a binding, absolute character that is ill-suited to the social sciences. In this article, the phrase "empirical laws" (also sometimes referred to as "stylized facts") simply refers to observed historical tendencies. As Houthakker put it:
 
 >"[Empirical] laws are in the first instance empirical regularities, which may originally have been observed without much theoretical basis.... A large part of the business of the empirical sciences is to develop theories within which already discovered laws have their place and new regularities can be explored" [@houthakker1992there].
 
@@ -203,21 +203,17 @@ gg <- ggplotify::as.ggplot(gg)
 
 ```
 
-Bennett did not have the advantage of the FAO Food Balance Sheets at his disposal, and so had to painstakingly assemble his data from diverse sources. Having done so for 34 countries, he noticed that the cereal and starchy root content of diets varied widely across countries---from 30% to 90%. And he noticed that this percentage tended to be greater in countries where incomes were relatively low. After considering a number of alternative explanations for the variation such as climate, preference, and religious taboo, he concluded that "explanation of the differences in the degree of dependence on cereal-potato calories is to be found chiefly in the relative economic status of nations or of families". And, more specifically, "irregularities and exceptions [aside], a rough inverse relation between level of income and dependence upon cereal-potato calories seems to exist and to have a rational causal basis, whether comparisons refer to families, localities, or nations" [@bennett1941international]. (Bennett used "potato" as a shorthand for "starchy roots and tubers" in general. In this article, I follow FAO in using "starchy roots" as the shorthand.)
+Bennett did not have the advantage of the FAO Food Balance Sheets at his disposal, and so had to painstakingly assemble his data from diverse sources. Having done so for 34 countries, he noticed that the cereal and starchy root content of diets varied widely across countries---from 30% to 90%. And he noticed that this percentage tended to be greater in countries where incomes were relatively low. After considering a number of alternative explanations for the variation such as climate, preference, and religious taboo, he concluded that "explanation of the differences in the degree of dependence on cereal-potato calories is to be found chiefly in the relative economic status of nations or of families". And, more specifically, "irregularities and exceptions [aside], a rough inverse relation between level of income and dependence upon cereal-potato calories seems to exist and to have a rational causal basis, whether comparisons refer to families, localities, or nations" [@bennett1941international]. (Bennett used "potato" as a shorthand for "starchy roots and tubers" in general. In this article, I follow FAO in using "starchy roots" as the shorthand. Occasionally, "starchy staples" is used to refer to both cereals and starchy roots.)
 
-Bennett presented this finding not in terms of a regression analysis or a scatterplot of country income against country cereal and starchy root intake, but rather as a world map, with the 34 countries for which he had data shaded according to their respective cereal and starchy root intake. In subsequent work, he extended this to 52 countries, and presented results in a bar chart [@bennett1941wheat]. Drawing on FAO's Food Balance Sheets, it is now possible to extend Bennett's analysis to between 144 and 170 countries, depending upon the year of analysis. A scatterplot of logged country cereal and starchy root intake against logged country income (GDP in USD at the market exchange rate) for 2017 in Figure \ref{fig:BennettsLaw} confirms the inverse relation he documented. This empirical relation, now known as Bennett's law, indicates that, regardless of differences in culture, climate, and preference, cereals and starchy roots constitute a declining portion of the diet as income rises.
-<!-- [Bennett's Law can also be approximated using the World Bank's International Comparison Project (ICP) data, by combining the "bread and cereals " with the "vegetable" category.] -->
+Bennett presented this finding not in terms of a regression analysis or a scatterplot of country income against country cereal and starchy root intake, but rather as a world map, with the 34 countries for which he had data shaded according to their respective cereal and starchy root intake. In subsequent work, he extended this to 52 countries, and presented results in a bar chart [@bennett1941wheat]. Drawing on FAO's Food Balance Sheets (FBS), it is now possible to extend Bennett's analysis to between 144 and 170 countries, depending upon the year of analysis. A scatterplot of logged country cereal and starchy root intake against logged country income (GDP in USD, market exchange rate, at 2015 prices) for 2017 in Figure \ref{fig:BennettsLaw} confirms the inverse relation he documented. (See Appendix for details regarding the FAO FBS and GDP data.) This empirical relation, now known as Bennett's law, indicates that, regardless of differences in culture, climate, and preference, cereals and starchy roots constitute a declining portion of the diet as income rises.
+<!-- [Bennett's law can also be approximated using the World Bank's International Comparison Project (ICP) data, by combining the "bread and cereals " with the "vegetable" category.] -->
 <!-- "All over the world, the important groups of foods may be classified as (1) cereals and "potatoes" ; (2) sugars; (3) vegetable oils; (4) fruits, nuts, legumes, and relatively non-starchy and leafy vegetables; and (5) meats, animal fats, dairy products, eggs, and fish. Of these five groups, the first and second are rich in carbohydrate calories, but relatively poor in proteins, certain vitamins, and cer-tain minerals. The third, vegetable oils, are rich in fat but again not in proteins, vitamins, or minerals. The so-called protective foods are usually those found in the fourth and fifth groups, and the fifth group is a major source of the better proteins" [@bennett1941wheat]. -->
 <!-- "The indicator is a very rough one. Hypothetically, of two nations each deriving 50 per cent of its total calories from cereals and potatoes, one of the nations might conceivably derive the remainder of its total calories from sugars and vegetable oils. In this case the diet would be qualitatively poor. The other na-tion might derive the remainder of its calories from meats, milk, leafy vegetables, fruits, and nuts. In this case the diet would be qualitatively good" [@bennett1941wheat]. -->
-<!-- Food balance data  provide  information  about  a  country's  average  percapita dietary energy supply, which indicates the amount offood available for human consumption in the country. This isa  measure  of  food  production,  taking  account  of  importsminus  exports, losses  for  animal  feed, wastage  and  millingextraction rates. It ignores food lost at the retail and house-hold  level  and  is  an  approximation  of  average  intake.  Ingeneral,  this  is  approximately  10-14%  above  actual  foodavailable  for  intake  at  the  household  level [@popkin1993nutritional],  but  the  overallstructure of diet is remarkably similar to that seen with foodbalance data. -->
-<!-- FBSs are constructed by the FAO from nationalaccounts of the supply and use of foods, and are calcu-lated from the food produced in and imported intocountries minus the food exported net of imports,fed to animals or otherwise not available for humanconsumption, divided by the population size. FBSdata provide information about average availabilityper person, that is they relate simply to the quantitiesof food reaching the consumer (i.e. a measure ofavailability). FBSs, while describing consumption offoods per capita of the population for a country, donot represent the amount of food actually consumedand will almost invariably result in an overestimationin food consumption compared with dietary surveysat the individual level (Serra-Majemet al. 2003).This point is also clearly illustrated in another driverreview (Hawkesworthet al. 2010). -->
-<!-- [@serra2003comparative; @hawkesworth2010feeding] -->
-
 ```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:BennettsLaw}(Left) Bennett's law fitted to 2017 FBS data. GDP is expressed in USD at constant 2015 prices. (Right) Trajectory of the slope and y intercept parameters of Bennett's law, 1970-2017. The trajectory of sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
 # 4 calories in a gram of protein or carbohydrate, 9 calories in a gram of fat.
 # https://www.nal.usda.gov/fnic/how-many-calories-are-one-gram-fat-carbohydrate-or-protein
 #===========================================================================
-# Bennett's Law
+# Bennett's law
 # Create data set for all food categories.
 #colnames(df_bennett)
 gdpPop_vars <- c("GDP/capita (USD), logged", "GDP (million USD)", "Population (millions)")
@@ -384,16 +380,20 @@ gg_bennett + gg_bennettStab + plot_layout(ncol = 2, guides = "collect") & theme(
 ```
 The log-linear formulation of Bennett's law fits the FBS data well, especially since 1980; and the fitted parameters have remained remarkably stable over this period. The slope, which has ranged narrowly from `r mBen_min` to `r mBen_max` (Figure \ref{fig:BennettsLaw}, right panel), may be interpreted as the income elasticity of the starchy staple share of food demand. It indicates the percentage change in the starchy staple food share of a country's diet given a $1%$ increase in per capita income.
 
-[illustrative equation here?]
+$$
+\alpha = \frac{\partial \ln(\text{starchy staple demand})}{\partial \ln(\text{income})} = \frac{\%\Delta \: \text{starchy staple demand}}{\%\Delta \: \text{income}}
+$$
 
-The modern discussion of nutrition transitions is mostly concerned with the question of what replaces starchy staple calories as incomes rise. Bennett was also interested in this question, but could only speculate as data were scarce. Considering that starchy staples are generally deficient in proteins and some key vitamins and minerals, he was tempted to interpret the starch share of diet as an inverse measure of the "relative qualitative adequacy of national diets" [-@bennett1941international]. However, he acknowledged that
+## Bennett's law and modern discussions of dietary transitions
+
+The modern discussion of nutrition transitions is mostly concerned with the question of what replaces starchy staple calories as incomes rise. Bennett was also interested in this question, but could only speculate, as data were scarce. Considering that starchy staples are generally deficient in proteins and some key vitamins and minerals, he was tempted to interpret the starch share of diet as an inverse measure of the "relative qualitative adequacy of national diets" [-@bennett1941international]. However, he acknowledged that
 
 >"[t]he indicator is a very rough one. Hypothetically, of two nations each deriving 50 per cent of its total calories from cereals and potatoes, one of the nations might conceivably derive the remainder of its total calories from sugars and vegetable oils. In this case the diet would be qualitatively poor. The other nation might derive the remainder of its calories from meats, milk, leafy vegetables, fruits, and nuts. In this case the diet would be qualitatively good" [@bennett1941wheat].
 
-Two influential works of the food crisis literature picked up this question again in the 1960s, rediscovering Bennett's Law in the process (without citing Bennett) [@Browning2018; @perisse1969effect]. The modern discussion of nutrition transitions then picked up the topic again from the 1990s onwards. A review of the seminal works and surveys of this literature likewise turns up no mention of Bennett [@popkin1993nutritional; @drewnowski1997nutrition; @kearney2010food; @popkin2012global].
+Two influential works of the food crisis literature picked up this question again in the 1960s, rediscovering Bennett's law in the process (without citing Bennett) [@Browning2018; @perisse1969effect]. The modern discussion of nutrition transitions then picked up the topic again from the 1990s onwards. A review of the seminal works and surveys of this literature likewise turns up no mention of Bennett [@popkin1993nutritional; @drewnowski1997nutrition; @kearney2010food; @popkin2012global].
 
-Numerous studies of future food demand, on the other hand, do mention Bennett [@valin2014future; @cirera2010income; @bodirsky2015global; @gouel2019nutrition; @timmer1983food]. In this literature, Bennett's Law is sometimes characterized as a dietary shift towards animal products as incomes rise [@valin2014future; @bodirsky2015global]. Again, Bennett himself defined the relation exclusively in terms of a dietary shift _away_ from starchy cereals and roots, not as a shift _towards_ any particular food group. He did not have the data necessary to answer the question of what replaces starchy staples as incomes rise.
-<!-- Bennett's Law characterized as ...towards "a more diverse diet that includes alarger share of animal protein and fats and oils" [@valin2014future].  -->
+Numerous studies of future food demand, on the other hand, do mention Bennett [@valin2014future; @cirera2010income; @bodirsky2015global; @gouel2019nutrition; @timmer1983food]. In this literature, Bennett's law is sometimes characterized as a dietary shift towards animal products as incomes rise [@valin2014future; @bodirsky2015global]. Again, Bennett himself defined the relation exclusively in terms of a dietary shift _away_ from starchy cereals and roots, not as a shift _towards_ any particular food group. He did not have the data necessary to answer the question of what replaces starchy staples as incomes rise.
+<!-- Bennett's law characterized as ...towards "a more diverse diet that includes alarger share of animal protein and fats and oils" [@valin2014future].  -->
 <!-- However, this not found in the Mahammed et al. study. The Florida PI model fails to reproduce this [@muhammad2011international]. -->
 
 Thanks to the FAO FBS data, it is now clear that the former of Bennett's two hypothetical nations is closer to the true trajectory of most nations moving from low and middle income to upper income status. Starchy carbohydrate calories are replaced primarily by fat calories (of vegetable or animal origin), sugary carbohydrates, and other sweeteners [@kearney2010food]. However, the clear cut, log-linear relation between diet share and income that Bennett observed for cereals and starchy roots does not hold for the other main food groups, with the possible exception of animal products (see Figure \ref{fig:whatReplaces1} in the Appendix).
@@ -574,7 +574,7 @@ gg_carbStab <- gg
 
 ```
 
-## A macronutrient analogue to Bennett's law
+## A macronutrient analogue of Bennett's law
 
 Dietary transitions may also be examined in terms of macronutrient shares. In this approach, food groups are conflated into one of three categories: carbohydrates, proteins, or fats; and the central question is reduced to: "what replaces carbohydrate consumption as income rises?" This simplification thus comes at the cost of sacrificing fine distinctions between starchy carbohydrate and sugary or complex carbohydrate consumption, or distinctions between vegetable and animal fat and protein consumption, which are known to respond differently to increases in income [@drewnowski1997nutrition; @popkin2012global].
 
@@ -692,18 +692,18 @@ bFatCarb_mu <- round(mean(bFatCarb_vec[ind]), 4)
 
 
 ```
-The positive slope value for the fat law suggets that carbohydrates are mostly replaced by fat calories as incomes rise. There is also a positive slope on the protein law, but the low magnitude and the low R-squared value makes interpretation problematic. Brown [-@brown1963man] looks at a similar plot of the 1961 FBS data and concludes that "[p]rotein intake is quite responsive to income". However, Perisse et al. [-@perisse1969effect] subsequently fit a model with more control variables to the 1965 FBS data, and find that the protein share of diet remains constant at about 11% across all income levels.
+The positive slope value for the fat law suggets that carbohydrates are mostly replaced by fat calories as incomes rise. There is also a positive slope on the protein law, but the low magnitude and the low R-squared value makes interpretation problematic. Brown [-@brown1963man] looks at a similar plot of the 1961 FBS data and concludes that "[p]rotein intake is quite responsive to income". However, Perisse et al. [-@perisse1969effect] subsequently fit a model with more control variables to the 1965 FBS data, and find that the protein share of diet remains constant at about 11% across all income levels. This prediction has withstood the test of time, agreeing closely with the FBS world protein demand trajectory since 1965.
 
-Popkin and Drewnowski [-@drewnowski1997nutrition] later present an update of Perisse et al.'s study using 1990 FBS data. Their analysis results in a somewhat lower estimated response of fat intake to income than that found by Perisse et al. Popkin and Drewnowski interpret this in rather strong terms, calling the lower slope "a major shift in the structure of the global diet marked by an uncoupling of the classic relationship between incomes and fat intakes". One might be misled by this into thinking that fat intake and income are no longer correlated from 1990 onwards. Such a conclusion would, in the first place, be self-contradictory. The authors' estimated parameters are statistically significant, which would not be the case if the independent and explanatory variables in their model were unrelated (or "uncoupled"). Secondly, the 2017 FBS data examined in Figure \ref{fig:macronutLaws} suggest that fat intake and income continue to be correlated long after 1990.
+Popkin and Drewnowski [-@drewnowski1997nutrition] later present an update of Perisse et al.'s study using 1990 FBS data. Their analysis results in a somewhat lower estimated response of fat intake to income than that found by Perisse et al. Popkin and Drewnowski interpret this result in rather strong terms, calling the lower slope "a major shift in the structure of the global diet marked by an uncoupling of the classic relationship between incomes and fat intakes". One might be misled by this into thinking that fat intake and income are no longer correlated from 1990 onwards. Such a conclusion would, in the first place, be self-contradictory, as the authors' estimated parameters are statistically significant---which would not be the case if the independent and explanatory variables in their model were unrelated (or "uncoupled"). Secondly, the 2017 FBS data examined in Figure \ref{fig:macronutLaws} suggest that fat intake and income continue to be correlated long after 1990.
 
-## The "fat-carb" frontier
+## The "fat-carb frontier"
 
-A cleaner picture of the macronutrient transition is obtained by plotting carbohydrate diet shares against fat shares, as in Figure \ref{fig:fatCarbFront}. The result is a fat-carbohydrate tradeoff frontier, where the slope of the frontier indicates the marginal change in the fat share of a country's food demand given a marginal change in the carbohydrate share. A country may thus calculate its percentage increase in fat consumption given a $1%$ decrease in carbohydrate intake (i.e., its fat elasticity of carbohydrates) by multiplying the slope of the frontier by its ratio of carbohydrate to fat demand.
+A cleaner picture of the macronutrient transition is obtained by plotting carbohydrate diet shares against fat shares, as in Figure \ref{fig:fatCarbFront}. The result is a fat-carbohydrate tradeoff frontier, where the slope of the frontier indicates the marginal change in the fat share of a country's food demand given a marginal change in the carbohydrate share. It is surprsing that the "fat-carb frontier" has not yet appeared in the literature, considering its remarkable fit, stability over time, and potential applications. A country may use the frontier to calculate its percentage increase in fat consumption given a $1%$ decrease in carbohydrate intake (i.e., its fat elasticity of carbohydrates), for example, by multiplying the frontier slope by the country's ratio of carbohydrate to fat demand.
 
 The points in Figure \ref{fig:fatCarbFront} are sized according to GDP per capita. The graphic thus suggests correlation between fat intake and income. Note also that the slope of the frontier has remained stable over the period 1980-2017, ranging narrowly from `r round(mFatCarb_min, 3)` to `r round(mFatCarb_max, 3)` (right panel). This is further evidence against the notion of a major structural shift in the nutrition transition in 1990 or at any point in the trajectory.
-<!-- It is surprsing that the "fat-carb frontier" has not yet appeared in the literature, considering its remarkable fit and stability over time.    frontier   Again, the best fit occurs over the period 1980-2017.  -->
+<!--     frontier   Again, the best fit occurs over the period 1980-2017.  -->
 <!-- A question remains as to how much of the carbohydrates are replaced by proteins and how much are replaced by fats, as income rises. Cursory exploration of the data suggests that the carbohydrates are replaced almost exclusively by fats (right panel, Figure \ref{fig:Bennett01}). Drewnowski and Popkin [-@drewnowski1997nutrition] dispute this, claiming that globalization has led to increased fat intake regardless of income level. While there may be some truth to their argument in an absolute sense, Figure \ref{fig:Bennett01} seems to suggest quite clearly that relative fat intake is still highly coupled with income level, despite "globalized diets". -->
-<!--  The slope on the fat-carb frontier is nearly -1, which supports this finding (although the y intercept (~91%) implies a constant protein share of 9%, slightly lower than Perisse et al.'s estimate). Metabolically speaking, constant protein intake in the face of declining carbohydrate intake implies increased consumption of animal products.^[The increased fat intake also implies this to some degree, although not necessarily, since fats may be acquired from non-animal sources.] The often mentioned dietary transition to animal products that accompanies rising incomes and urbanization may thus be considered a corrollary of Bennett's Law. -->
+<!--  The slope on the fat-carb frontier is nearly -1, which supports this finding (although the y intercept (~91%) implies a constant protein share of 9%, slightly lower than Perisse et al.'s estimate). Metabolically speaking, constant protein intake in the face of declining carbohydrate intake implies increased consumption of animal products.^[The increased fat intake also implies this to some degree, although not necessarily, since fats may be acquired from non-animal sources.] The often mentioned dietary transition to animal products that accompanies rising incomes and urbanization may thus be considered a corrollary of Bennett's law. -->
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="left", fig.cap="\\label{fig:fatCarbFront}(Left) The fat-carb frontier, 2017 FBS data. The size of the points are congruent with GDP per capita, which is expressed in USD at constant 2015 prices. Grams are converted to calories assuming a ratio of 4 calories per gram of protein or carbohydrate, and 9 calories per gram of fat, in accordance with U.S. Dept. of Agriculture guidelines. (Right) Fat carb frontier slope and y intercept trajectory, 1970-2017. The sample size and model fit (adjusted R-squared) are also indicated.", echo = FALSE}
 
@@ -712,14 +712,14 @@ gg_fatcarb + gg_fatcarbStab + plot_layout(ncol = 2, guides = "collect") & theme(
 
 ```
 
-The fat-carb frontier can also shed light on the question of how the protein share of food demand evolves as incomes rise. First, write down the frontier as an equation relating a country's fat share of diet $x_f$ to its carbohydrate share $x_c$.
+The fat-carb frontier can also shed light on the question of how the protein share of food demand evolves as incomes rise. The frontier, as an equation, relates a country's fat share of diet $x_f$ to its carbohydrate share $x_c$.
 
 \begin{equation}
 x_f \approx `r mFatCarb_mu` x_c + `r bFatCarb_mu`
 \label{eq:fatCarbRelation}
 \end{equation}
 
-where the slope and y intercept values are the mean values since 1980. The protein share $x_p$ can then be deduced by considering that
+where the slope and y intercept values are the mean slope and y intercept values since 1980. The protein share $x_p$ can then be deduced by considering that
 
 \begin{equation}
 x_c + x_f + x_p = 100
@@ -730,14 +730,14 @@ Substituting equation \ref{eq:fatCarbRelation} into this expression and differen
 <!-- \frac{\partial x_p}{\partial x_c} \approx -\alpha - 1 = `r -m - 1` -->
 <!-- \end{equation} -->
 
-The fat-carb frontier thus suggests that there is a net positive change in the protein share of diet as the carbohydrate share decreases, albeit a very slight one compared to the corresponding increase in the fat share.
+The fat-carb frontier thus suggests that there is a positive change in the protein share of diet as the carbohydrate share decreases, albeit an extremely slight one compared to the corresponding increase in the fat share. The predicted change in protein share is so slight as to be virtually in agreement with Perisse et al.'s finding of zero change in protein share.
 <!-- Popkin and Drewnowski have argued that, from 1990 onwards, the "classical" view was no longer valid: Fat intake had come "uncoupled" from income, thanks to newly available vegetable fats that are affordable at all income levels [-@drewnowski1997nutrition]. Figures ... and ... suggest, to the contrary, that fat intake is still correlated with income. -->
 
 ## Linear relation between slopes and y intercepts
 
 Note that the slope and y intercept trajectories in the right panels of Figures \ref{fig:BennettsLaw}, \ref{fig:macronutLaws}, and \ref{fig:fatCarbFront} appear to move in inverse unison. Closer inspection (Figure \ref{fig:mAffineY}) confirms an approximately linear relation between the slopes and their respective y intercepts. As with the empirical laws themselves, it is not immediately clear why this relation should exist. In the case of Bennett's law and the carbohydrate law, the units in which GDP is expressed appear to play some role, as the linear relation between parameters does not hold when GDP is expressed at current prices.
 <!-- The animations provided in the supplemental materials offer further visual confirmation of this stability. -->
-```{r, fig.show = "hold", fig.width = 5, fig.height=3, fig.align="left", fig.cap="\\label{fig:mAffineY}Slopes plotted against respective y intercepts of (left) Bennett's Law, (middle) the carbohydrate law, and (right) the fat-carb frontier, for the years 1980-2017.", echo = FALSE}
+```{r, fig.show = "hold", fig.width = 5, fig.height=3, fig.align="left", fig.cap="\\label{fig:mAffineY}Slopes plotted against respective y intercepts of (left) Bennett's law, (middle) the carbohydrate law, and (right) the fat-carb frontier, for the years 1980-2017.", echo = FALSE}
 
 df_plotBen <- subset(df_plotBennett, Year >= 1980)
 mod <- lm(`Y intercept` ~ Slope, df_plotBen)
@@ -838,7 +838,7 @@ These equations may come in handy when applying the empirical laws discussed abo
 ## Animated plots
 
 In the spirit of Hans Rosling [-@rosling2005new], animations of Bennett's law, the carbohydrate law, and the fat-carb frontier are provided in the supplemental materials. These animations offer a striking visualization of the laws' consistency over time and of the nutrition transition. In particular, it is interesting to observe the progress, regress, fits, and starts of different nations along the frontier. The trajectory of China over the past five decades, from an 80% carb diet to a 40% carb diet, is one of many remarkable examples to behold.
-<!-- Clearly, Bennett's Law can be useful for determining the future composition of food demand as a function of GDP growth. However, only recently have researchers begun to take advantage of this potential. Gouel and Guimbard [-@gouel2019nutrition] introduce a novel demand model that integrates Bennett's Law, and find that demand for starchy crops will grow by just 30.8% in 2050, whereas demand for non-starchy commodities will grow by 35.5% (in the case of pulses, nuts, and oilcrops) to 72.1% (in the case of oils and fats). International agricultural research investment decisions, on the other hand, appear to be made without much regard for Bennett's Law. The largest share of investment continues to go into starchy crop research, with smaller portions invested in the non-starchy commodity groups for which demand is growing most quickly [@ispc2018; @finplan2018]. -->
+<!-- Clearly, Bennett's law can be useful for determining the future composition of food demand as a function of GDP growth. However, only recently have researchers begun to take advantage of this potential. Gouel and Guimbard [-@gouel2019nutrition] introduce a novel demand model that integrates Bennett's law, and find that demand for starchy crops will grow by just 30.8% in 2050, whereas demand for non-starchy commodities will grow by 35.5% (in the case of pulses, nuts, and oilcrops) to 72.1% (in the case of oils and fats). International agricultural research investment decisions, on the other hand, appear to be made without much regard for Bennett's law. The largest share of investment continues to go into starchy crop research, with smaller portions invested in the non-starchy commodity groups for which demand is growing most quickly [@ispc2018; @finplan2018]. -->
 
 # Engel's law
 
@@ -892,7 +892,7 @@ df_icp$Element[grep("share", df_icp$Element)] <- "Expenditure (as % of GDP)"
 # u <- df_engel$Area
 # df_engel$label_these[which(u %in% labelThese_vec)] <- df_engel$Area[which(u %in% labelThese_vec)]
 #===========================================================================
-# Basic Engel's Law plot
+# Basic Engel's law plot
 these_cols <- c("Country", "Year", "Element", "Good", "Region",
                 "Expenditure, logged",
                 "GDP per capita, market exchange rate based, US$")
@@ -1049,7 +1049,7 @@ An example of Engel's law is given in the top left panel of Figure \ref{fig:Enge
 gg_engel + gg_engelStab + plot_layout(ncol = 2, guides = "collect") & theme(legend.position = "bottom")
 
 # (gg_EngelKcal + plot_layout(guides = "collect") & theme(legend.position = "bottom")) + (gg_EngelsLawStab + theme(legend.position = "none")) +
-#    plot_annotation(title = "The calorie demand formulation of Engel's Law") & 
+#    plot_annotation(title = "The calorie demand formulation of Engel's law") & 
 #   theme(text = element_text(size = title_size))
 
 
@@ -1120,7 +1120,7 @@ Apart from a few outliers, Houthakker's household level estimates of the income 
 
 which is not far from the slope on the expenditure version of Engel's law presented in the lower left graphic of Figure \ref{fig:EngelsLaw}.
 
-As with the other empirical laws explored above, a linear relation exists between the parameters of Engel's law (Figure \ref{fig:mAffineYengel}). The y intercept of Engel's law can be modeled as a linear function of its slope.
+As with the other empirical laws explored above, a linear relation exists between the parameters of Engel's law (Figure \ref{fig:mAffineYengel} in Appendix). The y intercept of Engel's law can be modeled as a linear function of its slope.
 
 \begin{equation}
 b \approx `r m_engelKcal` \alpha + `r b_engelKcal`
@@ -1129,54 +1129,46 @@ b \approx `r m_engelKcal` \alpha + `r b_engelKcal`
 
 Again, this can be useful when estimating future food demand, reducing the number of estimated parameters in an $n$ year projection from $2n$ to $2 + n$. However, such shortcuts must be applied with caution, as it is not immediately clear why this relation exists, nor under what circumstances it might change.
 
-```{r, fig.show = "hold", fig.width = 3, fig.height=3, fig.align="center", fig.cap="\\label{fig:mAffineYengel}Linear relation between the slope and y intercept of Engel's law.", echo = FALSE}
-
-# MOVE TO APPENDIX
-
-gg_mAffineYengel
-
-```
-
 Engel's law now forms the implicit or explicit basis of most published assessments of future food demand. It is hard coded into the most prominent agricultural sector equilibrium models (IMPACT, GCAM, GLOBIOM, and MAgPIE) [@valin2014future], and figures centrally in more recent econometric approaches [@gouel2019nutrition; @bodirsky2015global]. The FAO takes Engel's law as a point of departure when conducting its expert based assessments of future food demand [@alexandratos2012world]. In a much cited parsimonious food demand study, Tilman et al. [-@tilman2011global] rediscover Engel's law without citing Engel. Brown likewise rediscovers Engel's law in his influential book [-@brown1963man].
 
-The functional form employed in Figure \ref{fig:EngelsLaw} is the log-linear or double log formulation of Engel's Law, first employed by Engel himself [@houthakker1957international]. The slope $\alpha$ is the income elasticity of food demand. That is,
+The functional form employed in Figure \ref{fig:EngelsLaw} is the log-linear or double log formulation of Engel's law, first employed by Engel himself [@houthakker1957international]. The slope is the income elasticity of food demand. That is,
 
 $$
-\alpha = \frac{\partial \ln(\text{food demand})}{\partial \ln(\text{income})} = \frac{\%\Delta \: \text{food demand}}{\%\Delta \: \text{income}}
+\frac{\partial \ln(\text{food demand})}{\partial \ln(\text{income})} = \frac{\%\Delta \: \text{food demand}}{\%\Delta \: \text{income}}
 $$
 Alternative functional forms have also been explored [@aitchison1954synthesis; @prais1952non; @prais1971analysis]. The empirical fit can usually be improved by adding price and demographic control variables to the model.
 
 The verbal definition of Engel's law [@Browning2018; @zimmerman1932ernst] is a statement about the first order relation of food expenditures to income. When selecting a functional form by which to model Engel's law, the question of second order behavior must be addressed; but this is a matter left to the modeler and the data in any particular given study. Engel's law itself makes no explicit assertion regarding the second order evolution of food expenditures with respect to income.
 
-In the food demand modeling literature, it has nonetheless become commonplace to mischaracterize or (to put it charitably) reinvent Engel's law as a statement about second order behavior. This tendency appears to be rooted in the work of Timmer, who argues that
+In the food demand modeling literature, it has nonetheless become commonplace to mischaracterize or reinvent Engel's law as a statement about second order behavior. This tendency appears to be rooted in the work of Timmer, who argues that
 <!-- [-@timmer1981there; see also Timmer and Alderman ...] -->
 
->"[b]ecause the income component of own-price elasticities is likely to be at least a significant factor for food, Engel's Law strongly suggests that Cournot own-price elasticities should decline in absolute size for higher income households" [@timmer1981there].
+>"[b]ecause the income component of own-price elasticities is likely to be at least a significant factor for food, Engel's law strongly suggests that Cournot own-price elasticities should decline in absolute size for higher income households" [@timmer1981there].
 
 Timmer's argument is tantamount to saying (via the Slutsky equation) that Engel's law strongly suggests that the income elasticity of food demand should decline with income. Elsewhere, Timmer surmises that
 <!-- [Timmer here is reacting to an earlier household budget study reporting own price elasticities of food demand---and, by Timmer's implication, income elasticity of food demand---that increase with income. Timmer remarks that these results "fly in the face of all economic logic" [@timmer1981there].] -->
 
 >"[a] logical corollary of Engel's law is that the income elasticity of demand for food...is likely to be relatively large for low-income consumers and to decline to very small levels for upper-income consumers" [@timmer1983food].
 
-Again, Engel's law implies no such corrollary. Engel leaves the issue of second order behavior to be addressed by the modeler. Engel himself specified a log-linear model, which implies zero second order variation. Timmer specifies a model allowing for second order variation, but this is his own surmise, not a "logical corrollary" of Engel's law. Seale and Regmi [-@seale2006modeling] later enlist Timmer's surmise in support of the following mischaracterization of Engel's law (in italics):
+Again, Engel's law implies no such corrollary. Engel leaves the issue of second order behavior to be addressed by the modeler. Engel himself specified a log-linear model, which implies zero second order variation. Timmer specifies a model allowing for second order variation, but this is his own surmise, not a "logical corrollary" of Engel's law. Seale and Regmi [-@seale2006modeling] later equate Timmer's surmise with Engel's law as follows:
 
 >"Engel's law states that the budget share of food decreases with increasing income. Accordingly, the budget share of food should be larger in Vietnam than in the U.S., and _the income elasticity of demand for food is expected to be greater in Vietnam than in the U.S._" [@seale2006modeling].
 
-To be clear, this is an accurate representation of Engel's law up until the last clause in italics, where the authors misattribute Timmer's surmise to Engel. Valin et al. later carry this mischaracterization forward by equating Timmer's surmise with Engel's law as follows:
+To be clear, this is an accurate representation of Engel's law up until the last clause (in italics, mine), where the authors misattribute Timmer's surmise to Engel. Valin et al. later attempt to equate Timmer's surmise with Engel's law in still more unequivocal terms:
 
->"[T]here is overwhelming evidence that income elasticities for most food commodities decline as consumer income increases, a relationship known as Engel's Law" [@valin2014future].
+>"[T]here is overwhelming evidence that income elasticities for most food commodities decline as consumer income increases, a relationship known as Engel's law" [@valin2014future].
 
 No reference to the "overwhelming evidence" is given, but the authors presumably refer to the aforementioned articles by Timmer and Seale and Regmi, and to Muhammad et al. [-@muhammad2011international], who update Seale and Regmi's work with new data. In each of these studies, the authors specify increasingly sophisticated empirical models that allow for second order variation in the income elasticity of food demand. Timmer's seminal study [-@timmer1981there; see also @timmer1979estimating], is limited to maize, rice, and cassava consumption, and so is more properly an inquiry into the second order variation of Bennett's law.
 
 The question of how overwhelming this evidence may or may not be lies beyond the scope of this review. However, Figure \ref{fig:EngelsLaw} is effectively submitted as evidence in favor of the log-linear model originally specified by Engel himself and later by Houthakker. If there is a logical corrollary to be drawn from this figure regarding second order behavior, it is that the income elasticty of food demand is unresponsive to changes in income: Over the period 1980 to 2017, world GDP per capita rose by $328\%$ [@WDIgdp], while the income elasticty in the graphic declined by just two percentage points. Houthakker's empirical results likewise indicate very little second order variation of food demand with respect to income across a diverse range of countries and time periods, and Houthakker expressly concludes that "there is not much support for this thesis" [-@houthakker1957international].
 <!-- from $\$2533$  to $\$10,828$ -->
-<!-- However, by now it should be clear that there is considerable evidence supporting zero second order variation. A further cursory exploration of the FBS reveals that  Augmenting the double log consumption formulation of Engel's Law with a squared logged income term to allow for second order variation, as Timmer does in his study, results in statistically insignificant coefficients on the squared term across all years of FBS data. A similar augmentation of the double log expenditure per capita formulation of Engel's Law using the 2017 ICP data results in a statistically significant coefficient on the squared term, but leaves the adjusted R-squared unchanged to the third decimal place. -->
+<!-- However, by now it should be clear that there is considerable evidence supporting zero second order variation. A further cursory exploration of the FBS reveals that  Augmenting the double log consumption formulation of Engel's law with a squared logged income term to allow for second order variation, as Timmer does in his study, results in statistically insignificant coefficients on the squared term across all years of FBS data. A similar augmentation of the double log expenditure per capita formulation of Engel's law using the 2017 ICP data results in a statistically significant coefficient on the squared term, but leaves the adjusted R-squared unchanged to the third decimal place. -->
 <!-- There is also considerable opacity surrounding the determination of the income elasticity of demand trajectories for each country. No indication of how this is done is given in the IMPACT documentation, for example. -->
-<!-- Timmer's surmise is not a logical corrollary to Engel's Law, much less Engel's Law itself. Attempts to construe Timmer's surmise as more or less synonymous with Engel's Law have leant the surmise an authoritative weight it does not in fact possess. -->
+<!-- Timmer's surmise is not a logical corrollary to Engel's law, much less Engel's law itself. Attempts to construe Timmer's surmise as more or less synonymous with Engel's law have leant the surmise an authoritative weight it does not in fact possess. -->
 <!-- The authors report a good empirical fit, which appears to constitute evidence in favor of Timmer's surmise.  of negative second order variation of food demand with respect to income. However,  -->
 <!-- Moreover, evidence of a relation between income elasticity and income has not always been "overwhelming". There was no clear relation in the early literature [@zimmerman1932ernst], and Houthakker found that "an explanation of the differences between the elasticities...seems difficult. It is conceivable, and indeed probable, that relative prices may influence the elasticities; thus it has sometimes been suggested that the income elasticity of a commodity is an increasing function of its price relative to other commodities" [-@houthakker1957international]. Subsequently, evidence of a relation bewteen income and income elasticity materialized with the report by Muhammad et al. and Seale and Regmi [-@muhammad2011international; @seale2006modeling]. -->
 <!-- Engel went so far as to conclude that "[t]he proportion of the outgo used for food, other things being equal, is the best measure of the material standard of living of a population" [-@zimmerman1932ernst]. -->
-<!-- An example of the calorie demand formulation of Engel's Law is given in the left panel of Figure \ref{fig:EngelStability}. The fit is reasonable, but not quite as good as the fit observed in the original formulation. Like Bennett's Law, Engel's Law fits the data well across time, particularly since 1980 (right panel). -->
+<!-- An example of the calorie demand formulation of Engel's law is given in the left panel of Figure \ref{fig:EngelStability}. The fit is reasonable, but not quite as good as the fit observed in the original formulation. Like Bennett's law, Engel's law fits the data well across time, particularly since 1980 (right panel). -->
 <!-- After rising to a peak value of about 0.11 in 1980, the slope has gradually decreased to about 0.09. The Y intercept, meanwhile, has risen from about 6.9 to about 7.2. -->
 
 # Using empirical laws to make parsimonious calculations of future food demand
@@ -1185,7 +1177,7 @@ Future food demand estimation exercises tend to be highly academic, technical, e
 <!-- Can also refer to Bodirsky (or Bijl'S?) discussion of SRES divergence from reality. And the opacity surrounding estimation of exogenous income elasticities (compounded in second order models where elasticities vary from year to year). IMPACT does not indicate how these elasticities are estimated in the model documenation. -->
 
 The empirical laws examined above point towards a much simpler, more demand driven, transparent, and parsimonious approach---i.e., one that does not require a large investment of time and human capital, and that gives the practitioner control over parameter values, assumptions regarding population and GDP growth, and time horizons. Below I sketch out one such application to generate back-of-the-envelope projections of 2050 world food demand, starchy staple demand, carbohydrate demand, and fat demand. The same approach may be used to generate projections for any geographical focus or time horizon of interest to the practitioner.
-<!-- demand for any given year and geographical focus can be approximated by evaluating the calorie formulation of Engel's Law at the corresponding GDP/capita. -->
+<!-- demand for any given year and geographical focus can be approximated by evaluating the calorie formulation of Engel's law at the corresponding GDP/capita. -->
 
 ```{r, echo = FALSE}
 
@@ -1363,11 +1355,13 @@ gg <- ggplot(df_worldCarbDemShare,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line()
+gg <- gg + labs(y = "Demand (% of diet)", title = "Carbohydrate")
 gg <- gg + theme(legend.position = "none",
                  axis.title.x = element_blank(),
                  axis.text.x = element_blank(),
                  axis.title.y = element_text(size = axisTitle_size),
-                 axis.text.y = element_text(size = axisText_size))
+                 axis.text.y = element_text(size = axisText_size),
+                 plot.title = element_text(size = subtitle_size))
 ggCarb <- gg
 #--------------------------------------------------------------------------
 # Carbohydrate demand model backtest, PP difference
@@ -1388,11 +1382,13 @@ gg <- ggplot(df_worldFatDemShare,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line()
+gg <- gg + labs(title = "Fat")
 gg <- gg + theme(legend.position = "none",
                  axis.title.x = element_blank(),
                  axis.text.x = element_blank(),
-                 axis.title.y = element_text(size = axisTitle_size),
-                 axis.text.y = element_text(size = axisText_size))
+                 axis.title.y = element_blank(),
+                 axis.text.y = element_text(size = axisText_size),
+                 plot.title = element_text(size = subtitle_size))
 ggFat <- gg
 #--------------------------------------------------------------------------
 # Fat demand model backtest, PP difference
@@ -1413,12 +1409,14 @@ gg <- ggplot(df_worldProtDemShare,
                  group = Type,
                  color = Type))
 gg <- gg + geom_line()
+gg <- gg + labs(title = "Protein")
 gg <- gg + theme(legend.text = element_text(size = legendText_size),
                  legend.title = element_blank(),
                  axis.title.x = element_blank(),
                  axis.text.x = element_blank(),
-                 axis.title.y = element_text(size = axisTitle_size),
-                 axis.text.y = element_text(size = axisText_size))
+                 axis.title.y = element_blank(),
+                 axis.text.y = element_text(size = axisText_size),
+                 plot.title = element_text(size = subtitle_size))
 ggProt <- gg
 #--------------------------------------------------------------------------
 # Protein demand model backtest, PP difference
@@ -1549,15 +1547,17 @@ protDemPctChg_me <- 100 * (protDemTrilKcal2050_me - protDemTrilKcal2017_FAOSTAT)
 
 ## Using Engel's and Bennett's laws to estimate 2050 food and starchy staple demand
 
-Before using an empirical model to estimate future demand, it is instructive to first examine how well the model approximates past demand. Historically, Engel's law has approximated world food demand quite well, diverging just 3%-7% from the measured value (left panel, Figure \ref{fig:backTestEngBen}). Bennett's law, on the other hand, has diverged considerably from the measured value of global starchy staple demand---by 9-15 percentage points (right panel). It may be possible to reduce this error by including more variables in the model. For back-of-the-envelope projections, however, it may also be sufficient to notice that the error is fairly consistent across years, and to apply an error correction term on this basis. In the parsimonious calculation here, the Bennett model is corrected by subtracting `r round(errCorrctnBen, 1)`, which is the average percentage point error since 1980.
+Before using an empirical model to estimate future demand, it is instructive to first examine how well the model approximates past demand. Historically, Engel's law has approximated world food demand quite well, diverging just 3%-7% from the measured value (left panel, Figure \ref{fig:backTestEngBen}). Bennett's law, on the other hand, has diverged considerably from the measured value of global starchy staple demand---by 9-15 percentage points (right panel). It may be possible to reduce this error by including more variables in the model. For back-of-the-envelope projections, however, it may also suffice to notice that the error is fairly consistent across years, and to apply an error correction term on this basis. In the parsimonious calculation here, the Bennett model is corrected by subtracting `r round(errCorrctnBen, 1)`, which is the average percentage point error since 1980.
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=2, fig.align="center", fig.cap="\\label{fig:backTestEngBen}Comparison of modeled to historical food and starchy staple demand.", echo = FALSE}
 
 # Plot Engel's and Bennett's laws "backtests" generated in the previous chunk 
-ggTot + ggStar + ggTotDiff + ggStarDiff +
-    plot_layout(ncol = 2, heights = c(1, 1 / 3))
+ggTot <- ggTot + guides(color = "none")
 
-  # plot_layout(ncol = 2, heights = c(1, 1 / 3), guides = "collect") & theme(legend.position = "top")
+# ggTot + ggStar + ggTotDiff + ggStarDiff +
+#     plot_layout(ncol = 2, heights = c(1, 1 / 3))
+ggTot + ggStar + ggTotDiff + ggStarDiff +
+  plot_layout(ncol = 2, heights = c(1, 1 / 3), guides = "collect") & theme(legend.position = "top")
 
 
 ```
@@ -1589,9 +1589,9 @@ valinNames <- c("AIM", "IMPACT", "GLOBIOM", "MAgPIE")
 n_valin <- length(valinNames)
 modName_vec <- c(valinNames, "MAIDADS", "FAO",
                  "Physical flow",
-                 "Engel's Law",
-                 "Engel's Law",
-                 "Engel's Law")
+                 "Engel's law",
+                 "Engel's law",
+                 "Engel's law")
 
 modSource_vec <- c(rep("Valin et al. 2014", n_valin),
                    "Gouel and Guimbard 2017",
@@ -1637,6 +1637,8 @@ FAO_gdpUnits <- "2005/2007 MER USD at 2005/2007 prices"
 FAO_notes <- "Assumes 2.11% annualized world GDP growth from 2005/2007 to 2050"
 
 Gouel_estTrilKcal <- kcalPday2010 * 1.41 * 10^-12 #MAIDADS - Modified Implicitly Directly Additive Demand System
+Gouel_estStarchTrilKcal <- starchKcalPday2010 * 1.122 * 10^-12 #SSP2
+Gouel_estStarchShare <- 100 * Gouel_estStarchTrilKcal / Gouel_estTrilKcal
 worldPopBil2050_Gouel <- 9.166 #From the SSP2 pop projection in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5310112/ Same as Bijl et al.
 worldGDPTril2010_WDI <- 66.126
 worldGDPpCap2050_Gouel <- worldGDPTril2010_WDI * (1 + 0.0237)^(2050 - 2010) / worldPopBil2050_Gouel * 10^3
@@ -1798,9 +1800,9 @@ df_table %>% regulartable() %>% autofit() %>%
 
 ```
 
-Evaluating Bennett's law at the chosen parameters and GDP per capita returns a 2050 cereal and starchy root share of `r round(starDemShare2050_me, 1)`$\%$. Multiplying this by the food demand estimate obtained above returns a 2050 starchy staple demand of `r round(starDemKcalPcap2050_me)` kcal/capita/day, or `r round(starDemTrilKcal2050_me, 3)` trillion kcal/day, a `r round(starDemPctChg_me, 1)`$\%$ increase over the 2017 level. This range of estimates roughly agrees with Gouel et al.'s projection of starchy staple demand [-@gouel2019nutrition].
+Evaluating Bennett's law at the chosen parameters and GDP per capita returns a 2050 cereal and starchy root share of `r round(starDemShare2050_me, 1)`$\%$. Multiplying this by the food demand estimate obtained above returns a 2050 starchy staple demand of `r round(starDemKcalPcap2050_me)` kcal/capita/day, or `r round(starDemTrilKcal2050_me, 3)` trillion kcal/day, a `r round(starDemPctChg_me, 1)`$\%$ increase over the 2017 level.
 
-Point estimates such as these are of limited value since they offer no indication of sensitivity to changes or inaccuracy in the input values. With some basic programming skills, it is possible to generate a heatmap that facilitates consideration of a wide range of future scenarios at a single glance. In Figure \ref{fig:heatMapEngBen}, heatmaps allow exploration of food demand estimate sensitivity to changes or inaccuracy in GDP per capita and income elasticity projections.
+Point estimates such as these are of limited value since they offer no indication of sensitivity to changes or inaccuracy in the input values. With some basic programming skills, it is possible to generate a heatmap that facilitates consideration of a wide range of future scenarios at a single glance. In Figure \ref{fig:heatMapEngBen}, heatmaps allow exploration of food demand estimate sensitivity to changes or inaccuracy in GDP per capita and income elasticity projections. The range of projections in the left panel of this Figure is in rough agreement with most of the published 2050 food demand estimates in Table 1. The range of 2050 starchy staple demand projections in the right panel is in rough agreement with Gouel et al.'s 2050 projection of starchy staple demand (under an SSP2 scenario), which works out to `r Gouel_estStarchShare`$\%$ of total calorie demand [-@gouel2019nutrition].
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=3, fig.align="center", fig.cap="\\label{fig:heatMapEngBen}Heatmaps of variation in the 2050 demand projection for (left) food and (right) starchy staples, with respect to assumptions regarding their respective income elasticities and future GDP per capita.", echo = FALSE}
 #==========================================================================
@@ -1863,7 +1865,10 @@ gg <- ggplot(df_plot, aes(x = `Income elasticity of\ncereal & starchy root deman
                           y = `GDP/capita (USD)`,
                           fill = `Cereals & starchy\nroots (% of diet)`))
 gg <- gg + geom_tile()
-gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
+gg <- gg + scale_fill_gradient2(high = "orange",
+                                mid = "white",
+                                low = "cyan",
+                                midpoint = starDemShare2017_FAOSTAT)
 gg <- gg + theme(legend.position = "top",
                  axis.title.y = element_blank(),
                  axis.text.y = element_blank(),
@@ -1884,7 +1889,10 @@ gg <- ggplot(df_plot, aes(x = `Income elasticity of\nfood demand`,
                           y = `GDP/capita (USD)`,
                           fill = `Food\n(kcal/capita/day)`))
 gg <- gg + geom_tile()
-gg <- gg + scale_fill_gradient(high = "orange", low = "cyan")
+gg <- gg + scale_fill_gradient2(high = "cyan",
+                                mid = "white",
+                                low = "orange",
+                                midpoint = foodDemKcalPcap2017_FAOSTAT)
 gg <- gg + theme(legend.position = "top",
                  axis.title = element_text(size = axisTitle_size),
                  axis.text = element_text(size = axisText_size),
@@ -1921,16 +1929,7 @@ gg_foodDemKcalPcap + gg_starDemShare + plot_layout(ncol = 2) +
 
 ## Using the carbohydrate law and the fat-carb frontier to estimate 2050 macronutrient demand
 
-The carbohydrate law and fat-carb frontier can be applied in a similar fashion to estimate future macronutrient demand. Historically, the carbohydrate law has agreed well with global demand, diverging just 5 to 6 percentage points. Approximations of fat and protein demand using the fat-carb frontier has also agreed well, diverging from the historical values by just 4 to 5 and less than a percentage point, respectively (Figure \ref{fig:backTestMacronut}).
-
-```{r, fig.show = "hold", fig.width = 7, fig.height = 2, fig.align="center", fig.cap="\\label{fig:backTestMacronut}Comparison of modeled and historical demand for (left) carbohydrates, (middle) fats, and (right) proteins.", echo = FALSE}
-# MOVE TO APPENDIX
-
-# Plot Engel's and Bennett's laws "backtests" generated in the previous chunk 
-ggCarb + ggFat + ggProt + ggCarbDiff + ggFatDiff + ggProtDiff +
-  plot_layout(ncol = 3, heights = c(1, 1 / 3))
-
-```
+The carbohydrate law and fat-carb frontier can be applied in a similar fashion to estimate future macronutrient demand. Historically, the carbohydrate law has agreed well with global demand, diverging just 5 to 6 percentage points. Approximations of fat and protein demand using the fat-carb frontier has also agreed well, diverging from the historical values by just 4 to 5 and less than a percentage point, respectively (see Figure \ref{fig:backTestMacronut} in the Appendix).
 
 The choice of 2050 parameter values is again facilitated by the parameters' remarkable stability over time observed in the right panels of Figures \ref{fig:macronutLaws} and \ref{fig:fatCarbFront}, and by the linear relation between slopes and y intercepts observed in Figure \ref{fig:mAffineY}. For the present exercise, the 2050 carbohydrate law slope is set at `r round(mCarb_fut, 3)`, and the corresponding y intercept is calculated to be `r round(bCarb_fut, 3)` using equation \ref{eq:mAffineYcarb}. The fat-carb frontier is set to `r round(mFatCarb_fut, 3)` and then the y intercept is calculated to be `r round(bFatCarb_fut, 3)` using equation \ref{eq:mAffineYfatCarb}. These choices again reflect an assumption that the parameters will continue their stable trajectory into the future.
 
@@ -1945,7 +1944,6 @@ The fat share of diet ($x_f$) can then be obtained via the fat-carb frontier (eq
 <!-- The 16% increase in cereal demand may not include livestock feed? -->
 ```{r, fig.show = "hold", fig.width = 6, fig.height = 3, fig.align="center", fig.cap="\\label{fig:heatMapMacronut}Heatmaps of variation in the 2050 demand projection for (left) carbohydrates, (middle) fats, and (right) proteins, with respect to assumptions regarding GDP per capita and the income elasticity of carbohydrate demand.", echo = FALSE}
 
-# MOVE TO APPENDIX
 #==========================================================================
 # Heat map for mac8ronutrient demand
 gdpPcap_vec <- seq(gdpPcapMin_hm, gdpPcapMax_hm, length.out = n_res)
@@ -2050,35 +2048,13 @@ gg <- gg + theme(legend.position = "top",
                  legend.text = element_text(size = legendText_size))
 gg_protDemShare <- gg
 
-# gg_fatDemShare + gg_carbDemShare + gg_protDemShare + guide_area() + plot_layout(ncol = 2, guides = "collect")
-
-this_plotTitle <- "2050 macronutrient demand (% of diet)"
-gg_carbDemShare + gg_fatDemShare + gg_protDemShare +
-  plot_layout(ncol = 3) + plot_annotation(title = this_plotTitle) &
-  theme(plot.title = element_text(size = title_size))
-
-
-#
-# xtick_labs <- -beta_change_vec * 100
-# ytick_labs <- mu_Cq_change_vec * 100
-# inMat <- mat_demMap
-# surface <- list(x = xtick_labs,
-#                 y = ytick_labs,
-#                 z = inMat)
-# library(fields)
-# plot.surface(surface, type = "C",
-#              xlab = "X",
-#              ylab = "y", col = cm.colors(25))
-# title(main = "Pct Change in Factory Net Revenue", cex.main = 1)
-
-# 
-# 
+# Plot moved to appendix
 
 ```
 
 # Different laws, or different manifestations of a single law?
 
-It is tempting to attribute these empirical laws to some special characteristic of food that sets it apart from other goods. However, this approach to explaining Engel's Law runs into problems on both empirical and purely argumentative grounds. Empirically, analogous laws can be discerned for a wide range of goods (Figure \ref{fig:otherLaws}), not just food. The laws for clothing, utilities, and housing were noted in Engel's time [@zimmerman1932ernst; @stigler1954early].
+It is tempting to attribute these empirical laws to some special characteristic of food that sets it apart from other goods. However, this approach to explaining Engel's law runs into problems on both empirical and purely argumentative grounds. Empirically, analogous laws can be discerned for a wide range of goods (Figure \ref{fig:otherLaws}), not just food. The laws for clothing, utilities, and housing were noted in Engel's time [@zimmerman1932ernst; @stigler1954early].
 
 ```{r, fig.show = "hold", fig.width = 6, fig.height=5, fig.align="center", fig.cap="\\label{fig:otherLaws}A log-linear relation exists between demand and GDP per capita for all major consumer good categories. World Bank ICP 2017 data for 152 countries. GDP is at the market exchange rate, current prices.", echo = FALSE}
 
@@ -2316,9 +2292,9 @@ Since an increase in the relative price of $x_i$ effectively results in a decrea
 
 [attenuated by changes in the nominal price]
 
-Viewed from this perspective, "luxury" and "necessity" are relative terms that evolve with relative prices; and one should not fixate on a particular income elasticity value as intrinsically definitive of a particular good or class of goods. The numerous 19th century working class budget studies surveyed by Zimmer [-@zimmerman1932ernst] that seem to disprove Engel's Law merely present a more complete picture of this evolution. During the industrial revolution, most of the world lived in the countryside and produced a lot of their own household goods. The working class who came to the cities faced relative prices that placed most of the goods in Figure \ref{fig:otherLaws} completely out of their reach, and effectively rendered basic goods like clothing and food luxuries. Relative prices would have also varied considerably from one region to another, as the "global village" was yet in its infancy. The wide range of income elasticities reported in Zimmerman's survey, many of them quite high, is consistent with this level of economic disenfranchisement and geographic heterogeneity.
+Viewed from this perspective, "luxury" and "necessity" are relative terms that evolve with relative prices; and one should not fixate on a particular income elasticity value as intrinsically definitive of a particular good or class of goods. The numerous 19th century working class budget studies surveyed by Zimmer [-@zimmerman1932ernst] that seem to disprove Engel's law merely present a more complete picture of this evolution. During the industrial revolution, most of the world lived in the countryside and produced a lot of their own household goods. The working class who came to the cities faced relative prices that placed most of the goods in Figure \ref{fig:otherLaws} completely out of their reach, and effectively rendered basic goods like clothing and food luxuries. Relative prices would have also varied considerably from one region to another, as the "global village" was yet in its infancy. The wide range of income elasticities reported in Zimmerman's survey, many of them quite high, is consistent with this level of economic disenfranchisement and geographic heterogeneity.
 
-For most of the post-WWII period, on the other hand, the relative price of food has been low, stable, and geographically homogeneous; and this is reflected in the stable trajectory of the income elasticity of demand over this period, and in its narrow range of values from place to place. This may also shed light on the popularity of Engel's Law in the post-WWII period compared to the relative obscurity of the other empirical laws observed in Figure \ref{fig:otherLaws}, most of which do not yet even have a name.^[Engel's Law and Schwabe's Law of rent are the only named laws, to my knowledge.] Part of the explanation must be that food is the most vitally important commodity class, by most measures. But it is also true that empirical researchers are more attracted to an empirical law whose parameter values exhibit consistency across time and space.
+For most of the post-WWII period, on the other hand, the relative price of food has been low, stable, and geographically homogeneous; and this is reflected in the stable trajectory of the income elasticity of demand over this period, and in its narrow range of values from place to place. This may also shed light on the popularity of Engel's law in the post-WWII period compared to the relative obscurity of the other empirical laws observed in Figure \ref{fig:otherLaws}, most of which do not yet even have a name.^[Engel's law and Schwabe's Law of rent are the only named laws, to my knowledge.] Part of the explanation must be that food is the most vitally important commodity class, by most measures. But it is also true that empirical researchers are more attracted to an empirical law whose parameter values exhibit consistency across time and space.
 
 # A new empirical law: expected price and price volatility
 
@@ -2439,6 +2415,17 @@ df_riskReward <- merge(df_riskReward, df_groups, by = "Item", all.x = T)
 # unique(df_riskReward$Item[grep("Silk", df_riskReward$Item, ignore.case = T)])
 df_riskReward <- df_riskReward[which(!is.na(df_riskReward$Group)), ]
 #----------------------------------------------------------------------------
+# Fix grouping -- A lot of products ended up in "Sugar, other" category that should go elsewhere. Add cereal cakes, etc. to "Starchy crops" category; add legumes, oilcrop cakes, meal, etc. to "Pulses, nuts, oils"; Etc. for other groups
+u <- df_riskReward$Item
+these_patterns <- "maize|millet|rice|sorghum|wheat|cassava"
+df_riskReward$Group[grep(these_patterns, u, ignore.case = T)] <- "Starchy crops"
+these_patterns <- "linseed|rapeseed|mustard|sesame|sunflower|palm|soybeans|groundnuts|oil"
+df_riskReward$Group[grep(these_patterns, u, ignore.case = T)] <- "Pulses, nuts, oils"
+these_patterns <- c("meat")
+df_riskReward$Group[grep(these_patterns, u, ignore.case = T)] <- "Animal products"
+these_patterns <- "Feed, pulp of fruit|Feed, vegetable products nes"
+df_riskReward$Group[grep(these_patterns, u, ignore.case = T)] <- "Fruit & Veg."
+#----------------------------------------------------------------------------
 df_mod <- df_riskReward[, c("Mean world export price (USD / metric ton), logged", "Stand. dev. world export price (USD / metric ton), logged")]
 #nrow(df_mod)
 row.names(df_mod) <- df_riskReward$Item
@@ -2522,8 +2509,6 @@ gg
 The law also fits the data well at geographically disaggregated scales (Figure \ref{fig:riskRewardByRegion}). The slopes at the disaggregated scale parameters are considerably lower than at the globally aggregated level. At the globally aggregated level, the mean price of a given agricultural commodity increases roughly proportionately to the increase in volatility, while at the geographically disaggrgated level, mean prices increase less than proportionately with volatility. From the producer's standpoint, this means that market risk grows exponentially with expected reward.
 
 ```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:riskRewardByRegion}Logged mean price plotted against logged standard deviation, by region.", echo = FALSE}
-
-# MOVE TO APPENDIX
 
 this_file <- "FAO export data regions.csv"
 df_export_regions <- read.csv(this_file, stringsAsFactors = F)
@@ -2623,9 +2608,7 @@ gg <- gg + theme(legend.title = element_blank(),
                  plot.subtitle = element_text(size = subtitle_size),
                  axis.title = element_text(size = axisTitle_size),
                  axis.text = element_text(size = axisText_size))
-gg <- shift_legend2(gg)
-gg <- ggplotify::as.ggplot(gg)
-
+gg_riskRewardDisagg <- gg
 
 ```
 
@@ -2652,37 +2635,191 @@ In the last section, above, I presented a new empirical law relating agricultura
 
 # Appendix
 
-```{r, fig.show = "hold", fig.width = 5, fig.height=4, fig.align="center", fig.cap="\\label{fig:whatReplaces1}Relation between non-starchy food group dietary shares and GDP/capita, 2017 FBS data covering 170 countries.", echo = FALSE}
+## Note on the data
+
+The "kcal/capita/day" variable provided in the FAO Food Balance Sheets indicates the amount of calories available per capita per day, and not necessarily the amount that is consumed per capita per day. Popkin [-@popkin1993nutritional] estimates that the amount of available calories is generally about 10%-14% greater than the amount of consumed calories, the residual being lost as waste at the retail and household levels. See also Serra-Majem et al. [-@serra2003comparative] and Hawkesworth et al. [-@hawkesworth2010feeding] for careful treatments of this issue. Nonetheless, it is common practice in the food demand and nutrition transition literature to interpret FAO's "kcal/capita/day" variable as a demand variable, and this practice is followed in the present article.
+
+GDP data used in the Bennett's law section is also downloaded from FAO.
+<!-- Food balance data  provide  information  about  a  country's  average  percapita dietary energy supply, which indicates the amount offood available for human consumption in the country. This isa  measure  of  food  production,  taking  account  of  importsminus  exports, losses  for  animal  feed, wastage  and  millingextraction rates. It ignores food lost at the retail and house-hold  level  and  is  an  approximation  of  average  intake.  Ingeneral,  this  is  approximately  10-14%  above  actual  foodavailable  for  intake  at  the  household  level [@popkin1993nutritional],  but  the  overallstructure of diet is remarkably similar to that seen with foodbalance data. -->
+<!-- FBSs are constructed by the FAO from nationalaccounts of the supply and use of foods, and are calcu-lated from the food produced in and imported intocountries minus the food exported net of imports,fed to animals or otherwise not available for humanconsumption, divided by the population size. FBSdata provide information about average availabilityper person, that is they relate simply to the quantitiesof food reaching the consumer (i.e. a measure ofavailability). FBSs, while describing consumption offoods per capita of the population for a country, donot represent the amount of food actually consumedand will almost invariably result in an overestimationin food consumption compared with dietary surveysat the individual level (Serra-Majemet al. 2003).This point is also clearly illustrated in another driverreview (Hawkesworthet al. 2010). -->
+<!--  -->
+
+## Country groupings
+
+```{r, ft.align = "center", echo = FALSE}
+
+ind <- which(df_bennett$Region == "Asia\n(excluding W. Asia)")
+asia_vec <- unique(df_bennett$Area[ind])
+ind <- which(df_bennett$Region == "Europe / N. Amer.\nAustralia / NZ")
+eurNAmAusNZ_vec <- unique(df_bennett$Area[ind])
+ind <- which(df_bennett$Region == "N. Africa / W. Asia")
+NAfWAsia_vec <- unique(df_bennett$Area[ind])
+ind <- which(df_bennett$Region == "Sub-Saharan Africa")
+SSA_vec <- unique(df_bennett$Area[ind])
+ind <- which(df_bennett$Region == "Latin America\n& Caribbean")
+LAC_vec <- unique(df_bennett$Area[ind])
+
+n_asia <- length(asia_vec)
+n_eurNAmAusNZ <- length(eurNAmAusNZ_vec)
+n_NAfWAsia <- length(NAfWAsia_vec)
+n_SSA <- length(SSA_vec)
+n_LAC <- length(LAC_vec)
+
+asia_vec <- paste(asia_vec, collapse = ", ")
+eurNAmAusNZ_vec <- paste(eurNAmAusNZ_vec, collapse = ", ")
+NAfWAsia_vec <- paste(NAfWAsia_vec, collapse = ", ")
+SSA_vec <- paste(SSA_vec, collapse = ", ")
+LAC_vec <- paste(LAC_vec, collapse = ", ")
+
+df_countryTable <- data.frame(asia_vec,
+                              eurNAmAusNZ_vec,
+                              NAfWAsia_vec,
+                              SSA_vec,
+                              LAC_vec)
+
+region_names <- c(paste("Asia\n(excluding W. Asia)\nN =", n_asia),
+                  paste("Europe / N. Amer.\nAustralia / NZ\nN =", n_eurNAmAusNZ),
+                  paste("N. Africa / W. Asia\nN =", n_NAfWAsia),
+                  paste("Sub-Saharan Africa\nN =", n_SSA),
+                  paste("Latin America\n& Caribbean\nN =", n_LAC))
+
+colnames(df_countryTable) <- region_names
+
+df_countryTable %>% regulartable() %>% autofit() %>%
+  valign(valign = "top", part = "all") %>%
+  align(align = "left", part = "all") %>%
+  knitr::knit_print()
+
+#     add_header_lines(values = table_title, top = TRUE) %>%
+# #   set_caption(
+# #   table_title,
+# #   autonum = NULL,
+# #   style = "Table Caption"#,
+# #   #html_escape = TRUE
+# # ) %>%
+#   # footnote(i = 1, j = 1,
+#   #          value = as_paragraph(this_cap),
+#   # ref_symbols = c("a", "b"),
+#   # part = "header")
+#   footnote(
+#   i = 2,
+#   j = c(1, 5, 6),
+#   value = as_paragraph(c(table_caption, fnote_col5, fnote_col6)),
+#   ref_symbols = c("a", "b", "c"),
+#   part = "header",
+#   #inline = FALSE,
+#   sep = "; "
+# )  %>%
+#  knitr::knit_print()
+
+```
+
+\pagebreak
+
+## Commodity groupings
+
+```{r, ft.align = "center", echo = FALSE}
+
+ind <- which(df_riskReward$Group == "Sugar, other")
+sugar_vec <- unique(df_riskReward$Item[ind])
+ind <- which(df_riskReward$Group == "Fruit & Veg.")
+FnV_vec <- unique(df_riskReward$Item[ind])
+ind <- which(df_riskReward$Group == "Animal products")
+animal_vec <- unique(df_riskReward$Item[ind])
+ind <- which(df_riskReward$Group == "Pulses, nuts, oils")
+pulNutOil_vec <- unique(df_riskReward$Item[ind])
+ind <- which(df_riskReward$Group == "Starchy crops")
+starch_vec <- unique(df_riskReward$Item[ind])
+
+n_sugar <- length(sugar_vec)
+n_FnV <- length(FnV_vec)
+n_animal <- length(animal_vec)
+n_pulNutOil <- length(pulNutOil_vec)
+n_starch <- length(starch_vec)
+
+sugar_vec <- paste(sugar_vec, collapse = ", ")
+FnV_vec <- paste(FnV_vec, collapse = ", ")
+animal_vec <- paste(animal_vec, collapse = ", ")
+pulNutOil_vec <- paste(pulNutOil_vec, collapse = ", ")
+starch_vec <- paste(starch_vec, collapse = ", ")
+
+df_foodTable <- data.frame(FnV_vec,
+                              animal_vec,
+                              pulNutOil_vec,
+                              starch_vec,
+                           sugar_vec)
+
+foodGroup_names <- c(paste("Fruit & Veg.\nN =", n_FnV),
+                     paste("Animal products\nN =", n_animal),
+                     paste("Pulses, nuts, oils\nN =", n_pulNutOil),
+                     paste("Starchy crops\nN =", n_starch),
+                     paste("Sugar, other\nN =", n_sugar))
+
+colnames(df_foodTable) <- foodGroup_names
+
+df_foodTable %>% regulartable() %>% autofit() %>%
+  valign(valign = "top", part = "all") %>%
+  align(align = "left", part = "all") %>%
+  knitr::knit_print()
+
+
+
+```
+
+## Bennett's law compared to other food groups
+
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:whatReplaces1}Relation between non-starchy food group dietary shares and GDP/capita, 2017 FBS data covering 170 countries.", echo = FALSE}
 
 gg_foodGroupLaws
 
 
-# unique(df_bennettRegion$Region)
-# df_asia <- subset(df_bennettRegion[, c("Country")], Region == "Asia\n(excluding W. Asia)")
-# df_
-# 
-# df_table <- df_bennettRegion[order(df_bennettRegion$Region), c("Country", "Region")]
-# #df_table <- df_table[-which(duplicated(df_table$Country)), ]
-# df_table <- df_table %>% spread(Region, Country)
-# 
-# kable(df_table,
-#       format = "pandoc",
-#       caption = "\\label{tab:tabCountries}") %>%
-#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+## Linear relation between the slope and y intercept of Engel's law across time
+
+```{r, fig.show = "hold", fig.width = 3, fig.height=3, fig.align="center", fig.cap="\\label{fig:mAffineYengel}Linear relation between the slope and y intercept of Engel's law.", echo = FALSE}
+
+# MOVE TO APPENDIX
+
+gg_mAffineYengel
+
+```
+
+## Modeled versus real macronutrient demand, 1970-2017
+
+```{r, fig.show = "hold", fig.width = 6, fig.height = 2, fig.align="center", fig.cap="\\label{fig:backTestMacronut}Comparison of modeled and historical demand for (left) carbohydrates, (middle) fats, and (right) proteins.", echo = FALSE}
+
+# Plot macronutrient law "backtests" generated in chunk in "Parsimonious demand modeling" section
+
+ggCarb <- ggCarb + guides(color = "none")
+ggFat <- ggFat + guides(color = "none")
+
+ggC <- (ggCarb / ggCarbDiff) + plot_layout(heights = c(1, 1 / 3))
+ggF <- (ggFat / ggFatDiff) + plot_layout(heights = c(1, 1 / 3))
+ggP <- (ggProt / ggProtDiff) + plot_layout(heights = c(1, 1 / 3))
+
+wrap_plots(list(ggC, ggF, ggP)) + plot_layout(ncol = 3, guides = "collect") & theme(legend.position = "bottom")
 
 
 ```
 
+## Heatmaps of 2050 macronutrient demand
 
-```{r, results = "markup", echo = F}
+```{r, fig.show = "hold", fig.width = 6, fig.height = 6, fig.align="center", fig.cap="\\label{fig:heatMapMacronut}Heatmaps of variation in the 2050 demand projection for (left) carbohydrates, (middle) fats, and (right) proteins, with respect to assumptions regarding GDP per capita and the income elasticity of carbohydrate demand.", echo = FALSE}
 
-# df_table <- 
-# 
-# kable(df_table,
-#       format = "pandoc",
-#       caption = "\\label{tab:tabCommods}") %>%
-#   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
-
+#this_plotTitle <- "2050 macronutrient demand (% of diet)"
+gg_carbDemShare + gg_fatDemShare + gg_protDemShare +
+  plot_layout(ncol = 2) #+ plot_annotation(title = this_plotTitle) &
+  #theme(plot.title = element_text(size = title_size))
 
 ```
 
+## Risk reward frontier disaggregated by region
+
+```{r, fig.show = "hold", fig.width = 5, fig.height=5, fig.align="center", fig.cap="\\label{fig:riskRewardByRegion}Logged mean price plotted against logged standard deviation, by region.", echo = FALSE}
+
+gg_riskRewardDisagg <- shift_legend2(gg_riskRewardDisagg)
+gg_riskRewardDisagg <- ggplotify::as.ggplot(gg_riskRewardDisagg)
+
+
+```
