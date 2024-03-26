@@ -4,6 +4,7 @@ library(jtools)
 library(ggrepel)
 library(miceadds)
 library(gganimate)
+library(factoextra)
 #---
 axisTitleSize <- 8
 axisTextSize <- 7
@@ -61,14 +62,14 @@ dfChr$Cat <- "Chr"
 # Overnutrition DALYs
 keepThese <- c("Diet high in sugar-sweetened beverages",
                "Diet high in processed meat",
-          #"Diet low in fiber",
+          "Diet low in fiber",
           # "Diet low in legumes",
           # "Diet low in fruits",
           # "Diet low in vegetables",
-          # "Diet low in whole grains",
+          "Diet low in whole grains",
           #"Diet low in nuts and seeds",
           # "Diet low in seafood omega-3 fatty acids",
-          #"Diet low in polyunsaturated fatty acids",
+          "Diet low in polyunsaturated fatty acids",
           "Diet high in trans fatty acids",
           "Diet high in sodium")
 overDevVec <- keepThese
@@ -424,6 +425,9 @@ gg <- ggplot(dfPC, aes(x = V1, y = V2, group = Region, color = Region))
 gg <- gg + geom_point()
 gg <- gg + geom_text(aes(label = area), size = 2)
 gg
+#---
+k2 <- kmeans(X, centers = 6, nstart = 25)
+fviz_cluster(k2, data = X)
 #===============================================================
 #===============================================================
 # FAO
@@ -731,9 +735,10 @@ gg
 # FBS PCA (just like the DALY PCA but FBS)
 dfFBSpca <- dfFBScommod %>% merge(dfGDP)
 yrVec <- unique(dfFBSpca$year)
-listDf <- list()
-for(i in 1:length(yrVec)){
-  thisYr <- yrVec[i]
+# listDf <- list()
+# for(i in 1:length(yrVec)){
+#   thisYr <- yrVec[i]
+thisYr <- 2019
   X <- dfFBSpca %>%
   subset(year == thisYr & area %in% areaVecPCA_ihme) %>%
   select(-c(year, `Population (1000 persons)`))
@@ -829,66 +834,111 @@ dfPC$Region[which(dfPC$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
 dfPC$Region[which(dfPC$area %in% ctyInCWANA)] <- "CWANA"
 dfPC$Region[which(dfPC$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
 unique(dfPC$area[which(is.na(dfPC$Region))])
-gg <- ggplot(dfPC, aes(x = V1, y = V2, color = Region))
+
+library(cluster)
+row.names(dfPC) <- dfPC$area
+pamOut <- pam(dfPC[, c(1, 2)], k = 2)
+p <- fviz_cluster(pamOut, labelsize = 5)
+hull_data <-  p$data %>%
+  group_by(cluster) %>%
+  slice(chull(x, y)) %>%
+  rename(area = name,
+         V1 = x, V2 = y)# %>%
+#  as.data.frame()
+#hull_data$area <- as.character(hull_data$area)
+#hull_data$cluster <- as.numeric(hull_data$cluster)
+dfPlot <- dfPC %>% select(area, V1, V2)
+gg <- ggplot(dfPlot, aes(x = V1, y = V2))
 gg <- gg + geom_point()
-gg <- gg + geom_density_2d(colour=1, bins=6)
-gg <- gg + geom_text(aes(label = area), size = 2)
-#gg
-dfPC$year <- thisYr
-listDf[[as.character(thisYr)]] <- dfPC
-print(nrow(dfPC))
-print(thisYr)
-}
-dfPC <- as.data.frame(do.call(rbind, listDf))
-#---
-library(gifski)
-gg <- ggplot(dfPC, aes(x = V1, y = V2, color = Region))
-gg <- gg + geom_point()
-gg <- gg + geom_density_2d(colour=1, bins=6)
-gg <- gg + geom_text(aes(label = area), size = 2)
-gg <- gg + transition_time(year) +
-  labs(title = "Year: {frame_time}")
-animate(gg, renderer = gifski_renderer())
-#gg
-thisAnimPath <- paste0(picFolder, "PCfbs.gif")
-anim_save(thisAnimPath, gg)
+#gg <- gg + geom_polygon(data = hull_data, alpha = 0.5, aes(fill = cluster, linetype=cluster))
+gg
+clustVec <- p$data
+clustVec <- as.numeric(clustVec$cluster)
+sum(clustVec == 2)
+
+p <- fviz_cluster(pamOut, labelsize = 5)
+p <- p + geom_density_2d(colour=1, bins=6)
+p <- p + theme_bw()
+p
+
+dfClustKey <- data.frame(area = areaVecPCA,
+                         clust = clustVec)
+# library(rworldmap)
+# dfMap <- data.frame(area = dfPC$area, cluster = clustVec)
+# clustMap <- joinCountryData2Map(dfMap, 
+#                                   joinCode = "NAME",
+#                                   nameJoinColumn = "area")
+# map <- mapCountryData(clustMap, 
+#                       nameColumnToPlot="cluster",
+#                       catMethod = "categorical",
+#                       missingCountryCol = gray(.8),
+#                       addLegend = F,
+#                       colourPalette = c("deepskyblue4","aquamarine4"),
+#                       borderCol = "black",
+#                       mapTitle = "pam clusters")
+
+
+# dfPC$year <- thisYr
+# listDf[[as.character(thisYr)]] <- dfPC
+# print(nrow(dfPC))
+# print(thisYr)
+# }
+# dfPC <- as.data.frame(do.call(rbind, listDf))
+# #---
+# library(gifski)
+# gg <- ggplot(dfPC, aes(x = V1, y = V2, color = Region))
+# gg <- gg + geom_point()
+# gg <- gg + geom_density_2d(colour=1, bins=6)
+# gg <- gg + geom_text(aes(label = area), size = 2)
+# gg <- gg + transition_time(year) +
+#   labs(title = "Year: {frame_time}")
+# animate(gg, renderer = gifski_renderer())
+# #gg
+# thisAnimPath <- paste0(picFolder, "PCfbs.gif")
+# anim_save(thisAnimPath, gg)
 #========================================================================
 # Model year
 thisYr <- 2019
 # Model 1
 # Hunger ~ Commodity
-dfMod <- merge(dfDaly, dfFBScommod) %>%
+dfMod <- merge(dfDaly, dfFBScommod) %>% #merge(dfClustKey) %>%
   #merge(dfGDP) %>%
-  subset(year == thisYr &
-           Region == "Africa South\nof the Sahara") %>%
+  subset(year == thisYr) %>%
   # mutate(`DALYs/capita` = 1000 * val / `Population (1000 persons)`) %>%
   rename(`DALYs/100,000 capita` = val) %>%
   #select(-c(year))
-  select(-c("year", "Region", "Population (1000 persons)"))
+  select(-c("year", "Population (1000 persons)"))
   #select(-c("Population (1000 persons)"))
 colnames(dfMod)
-charCols <- c(1, 3)
-#charCols <- c(1:3)
-dfMod[, -charCols] <- as.data.frame(apply(dfMod[, -charCols], 2, log))
+notCols <- which(colnames(dfMod) %in% c("area", "Region", "Cat"))
+#notCols <- c(1:3)
+dfMod[, -notCols] <- as.data.frame(apply(dfMod[, -notCols], 2, log))
 #dfMod[, -1] <- as.data.frame(apply(dfMod[, -1], 2, log))
 isInfNan <- function(x){
   nInfNan <- sum(is.nan(x) > 0) + sum(is.infinite(x) > 0) +
     sum(is.na(x) > 0)
   return(nInfNan)
 }
-infNanLook <- apply(dfMod[, -charCols], 2, isInfNan)
+infNanLook <- apply(dfMod[, -notCols], 2, isInfNan)
 infNanLook
 dfMod$area[infNanLook]
 indInf <- c(which(is.infinite(dfMod$Pulses)), which(is.infinite(dfMod$`Alcoholic Beverages`)))
 replaceInf <- function(x){x[which(is.infinite(x))]<-0;return(x)}
-dfMod[, -charCols] <- dfMod[, -charCols] %>% apply(2, replaceInf) %>% as.data.frame()
+dfMod[, -notCols] <- dfMod[, -notCols] %>% apply(2, replaceInf) %>% as.data.frame()
 rmRows <- c(which(is.na(dfMod$Oilcrops)), which(is.na(dfMod$`Alcoholic Beverages`)))
 rmRows <- unique(rmRows)
 if(length(rmRows) != 0){dfMod <- dfMod[-rmRows, ]}
 #---
 indRm <- which(dfMod$area %in% c("Mali", "South Sudan"))
 dfMod <- dfMod[-indRm, ]
+keepRegs <- c("Africa South\nof the Sahara",
+              "Eur. / N. Amer. /\nAus. / NZ", "CWANA")
+dfMod$Region[which(!(dfMod$Region %in% keepRegs))] <- "Other"
+unique(dfMod$Region)
+library(fastDummies)
+dfMod <- dummy_cols(dfMod, select_columns = "Region")
 #---
+charCols <- notCols
 dfModHid <- dfMod %>% subset(Cat == "Hid")
 ctyVecHid <- dfModHid$area
 dfModHid <- dfModHid %>% select (-charCols)
@@ -899,11 +949,18 @@ dfModOve <- dfMod %>% subset(Cat == "OverDev")
 ctyVecOve <- dfModOve$area
 dfModOve <- dfModOve %>% select (-charCols)
 #---
+indDummy <- grep("Region", colnames(dfModChr))
+#---
+#dfModChr <- dfModChr %>% subset(clust == 1) %>% select(-clust)
 refFn <- function(x){
   out <- x - log(mean(exp(x)))
   return(out)
 }
-dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
+nonCont <- c(1, indDummy)
+dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
+dfModChr$Region_Other <- NULL
+dfModChr$pop14 <- NULL
+dfModChr$sdi <- NULL
 mod <- lm(`DALYs/100,000 capita`~.,dfModChr)
 summ(mod)
 #summary(mod)
@@ -911,11 +968,14 @@ car::vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modChr <- mod
 pVals <- summary(mod)$coefficients[-1, 4]
-colRm <- which(pVals > 0.25) + 1
+colRm <- which(pVals > 0.5) + 1
 dfModChr <- dfModChr[, -colRm]
 #---
 # ctyVecChr[which(mod$residuals > 1)]
-dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
+#dfModHid <- dfModHid %>% subset(clust == 2) %>% select(-clust)
+dfModHid[, -nonCont] <- as.data.frame(apply(dfModHid[, -nonCont], 2, refFn))
+dfModHid$Region_Other <- NULL
+dfModHid$sdi <- NULL
 mod <- lm(`DALYs/100,000 capita` ~., dfModHid)
 summ(mod)
 #summary(mod)
@@ -923,11 +983,12 @@ car::vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modHid <- mod
 pVals <- summary(mod)$coefficients[-1, 4]
-colRm <- which(pVals > 0.25) + 1
+colRm <- which(pVals > 0.5) + 1
 dfModHid <- dfModHid[, -colRm]
 #---
-dfModOve[, -1] <- as.data.frame(apply(dfModOve[, -1], 2, refFn))
-#dfModOve <- dfModOve %>% select(-`Animal Products`)
+dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
+dfModOve$Region_Other <- NULL
+dfModOve$pop14 <- NULL
 mod <- lm(`DALYs/100,000 capita` ~., dfModOve)
 summ(mod)
 #summary(mod)
@@ -935,10 +996,11 @@ car::vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modOve <- mod
 pVals <- summary(mod)$coefficients[-1, 4]
-colRm <- which(pVals > 0.5) + 1
+colRm <- which(pVals > 0.25) + 1
 dfModOve <- dfModOve[, -colRm]
 #---
 #"mod1Results.docx"
+export_summs(modOve, model.nmes = c("Overnut"), to.file = "docx", file.name = paste0(picFolder, "mod1Results.docx"))
 export_summs(modChr, modHid, modOve, model.nmes = c("Chronic\nHunger", "Hidden\nHunger", "Overnut"), to.file = "docx", file.name = paste0(picFolder, "mod1Results.docx"))
 #---
 #-------------------------------------------------------------
