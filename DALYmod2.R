@@ -110,7 +110,7 @@ dfHid$Cat <- "Hid"
 # Unite them
 listDf <- list(dfChr, dfHid, dfOverDev)
 dfDaly <- as.data.frame(do.call(rbind, listDf))
-dfDaly$area <- gsub("Turkey", "Türkiye", dfDaly$area)
+dfDaly$area <- gsub("Turkey", "Turkiye", dfDaly$area)
 dfDaly <- subset(dfDaly, !(area %in% c("Taiwan (Province of China)")))
 #--------------------------------------------------------------
 # Get IHME's Socio-demographic index too and merge
@@ -132,7 +132,7 @@ dfRaw <- dfRaw[-indSAS[2], ]
 gathercols <- colnames(dfRaw)[-1]
 dfSDI <- dfRaw %>% as.data.frame() %>%
   gather_("year", "sdi", gathercols)
-dfSDI$sdi <- as.numeric(gsub("·", "\\.", dfSDI$sdi))
+dfSDI$sdi <- as.numeric(sub("..", "0.", dfSDI$sdi))
 colnames(dfSDI)[1] <- "area"
 u <- dfSDI$area
 #unique(u[grep("Cote", u)])
@@ -142,7 +142,7 @@ dfSDI$area[grep("Vietnam", u)] <- "Viet Nam"
 #dfSDI$area[grep("Virgin Islands", u)] <- "United States Virgin Islands"
 dfSDI$area[grep("Tanzania", u)] <- "United Republic of Tanzania"
 dfSDI$area[grep("UK", u)] <- "United Kingdom"
-dfSDI$area[grep("Turkey", u)] <- "Türkiye"
+dfSDI$area[grep("Turkey", u)] <- "Turkiye"
 dfSDI$area[grep("Syria", u)] <- "Syrian Arab Republic"
 dfSDI$area[grep("Russia", u)] <- "Russian Federation"
 dfSDI$area[grep("Moldova", u)] <- "Republic of Moldova"
@@ -194,7 +194,7 @@ dfDaly <- dfDaly[, c("area", "Region", colnames(dfDaly)[-c(1, ncol(dfDaly))])]
 thisFile <- "popUnder14pct.csv"
 thisFilePath <- paste0(thisFolder, thisFile)
 dfPopYoung <- read.csv(thisFilePath, stringsAsFactors = F) %>%
-  rename(area = Country.Name)
+  rename(area = X...Country.Name)
 # indEnd <- which(dfPopYoung$Series.Name == "")[1] - 1
 # dfPopYoung <- dfPopYoung[1:indEnd, ]
 gatherCols <- colnames(dfPopYoung)[5:ncol(dfPopYoung)]
@@ -215,7 +215,7 @@ dfPopYoung$area[grep("Virgin Islands \\(U\\.S\\.\\)", u)] <- "United States Virg
 #dfPopYoung$area[grep("British Virgin Islands", u)] <- 
 dfPopYoung$area[grep("Tanzania", u)] <- "United Republic of Tanzania"
 # dfPopYoung$area[grep("United Kingdom", u)] <- "United Kingdom"
-dfPopYoung$area[grep("Turkiye", u)] <- "Türkiye"
+#dfPopYoung$area[grep("Turkiye", u)] <- "Türkiye"
 dfPopYoung$area[grep("Yemen", u)] <- "Yemen"
 # dfPopYoung$area[grep("Syria", u)] <- "Syrian Arab Republic"
 # dfPopYoung$area[grep("Russia", u)] <- "Russian Federation"
@@ -241,6 +241,7 @@ dfPopYoung$pop14 <- as.numeric(dfPopYoung$pop14)
 # indNA <- which(is.na(dfPopYoung$pop14))
 # dfPopYoung[indNA, ]
 dfDaly <- dfDaly %>% merge(dfPopYoung)
+unique(dfDaly$area)
 #--------------------------------------------------------------
 # PCA
 # Get dataset for risk factor PCA
@@ -421,12 +422,17 @@ dfPC$Region[which(dfPC$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
 dfPC$Region[which(dfPC$area %in% ctyInCWANA)] <- "CWANA"
 dfPC$Region[which(dfPC$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
 unique(dfPC$area[which(is.na(dfPC$Region))])
-gg <- ggplot(dfPC, aes(x = V1, y = V2, group = Region, color = Region))
+colnames(dfPC) <- gsub("V", "PC", colnames(dfPC))
+gg <- ggplot(dfPC, aes(x = PC1, y = PC2, group = Region, color = Region))
 gg <- gg + geom_point()
-gg <- gg + geom_text(aes(label = area), size = 2)
+gg <- gg + geom_text(aes(label = area), size = 2, vjust = 1)
+gg <- gg + theme_bw()
 gg
+saveFile <- "riskFactrClust.png"
+saveTo <- paste0(picFolder, saveFile)
+ggsave(saveTo, width = 5, height = 3)
 #---
-k2 <- kmeans(X, centers = 6, nstart = 25)
+k2 <- kmeans(X, centers = 2, nstart = 25)
 fviz_cluster(k2, data = X)
 #===============================================================
 #===============================================================
@@ -455,8 +461,10 @@ dfFBS <- dfFBS2; rm(dfFBS2)
 # setdiff(dfHidHung$area, dfFBS$area)
 # unique(dfHidHung$area)
 # unique(dfFBS$area)
+#unique(dfFBS$area[grep("rkiye", dfFBS$area)])
 dfFBS$area[grep("United Kingdom", dfFBS$area)] <- "United Kingdom"
 dfFBS$area[grep("Netherlands", dfFBS$area)] <- "Netherlands"
+dfFBS$area[grep("rkiye", dfFBS$area)] <- "Turkiye"
 notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
               "China, Taiwan Province of", "China, mainland")
 dfFBS <- subset(dfFBS, !(area %in% notThese))
@@ -561,8 +569,16 @@ indTot <- which(colnames(dfFBScommod) == "Grand Total")
 dfFBScommod$Residual <- dfFBScommod$`Grand Total` -
   rowSums(dfFBScommod[, -c(1, 2, indTot)])
 dfFBScommod$`Grand Total` <- NULL
-dfFBScommod <- merge(dfFBScommod, dfFBSpop)
-
+#dfFBScommod <- dfFBScommod %>% merge(dfFBSpop)
+gathercols <- colnames(dfFBScommod)[-c(1, 2)]
+dfFBScommod <- dfFBScommod %>%
+  gather_("item", "val", gathercols) %>%
+  group_by(area, year) %>%
+  mutate(share = val / sum(val)) %>%
+  as.data.frame() %>%
+  select(-val) %>%
+  spread(item, share) %>%
+  merge(dfFBSpop)
 # # u <- dfFBScommod$`Alcoholic Beverages`
 # # dfFBScommod$area[which(is.na(u))]
 # dfResidX <- dfFBScommod %>% subset(!(item %in% c("Population", "Grand Total"))) %>%
@@ -824,6 +840,11 @@ gg <- gg + theme(legend.position = "top",
                  axis.title.y = element_blank(),
                  axis.title.x = element_text(size = axisTitleSize))
 gg
+
+saveFile <- "dietLoadings.png"
+saveTo <- paste0(picFolder, saveFile)
+ggsave(saveTo, width = 7, height = 4)
+
 #---
 dfPC <- as.data.frame(X %*% P %*% R) %>% select(V1, V2)
 dfPC$area <- areaVecPCA
@@ -834,35 +855,44 @@ dfPC$Region[which(dfPC$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
 dfPC$Region[which(dfPC$area %in% ctyInCWANA)] <- "CWANA"
 dfPC$Region[which(dfPC$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
 unique(dfPC$area[which(is.na(dfPC$Region))])
-
-library(cluster)
-row.names(dfPC) <- dfPC$area
-pamOut <- pam(dfPC[, c(1, 2)], k = 2)
-p <- fviz_cluster(pamOut, labelsize = 5)
-hull_data <-  p$data %>%
-  group_by(cluster) %>%
-  slice(chull(x, y)) %>%
-  rename(area = name,
-         V1 = x, V2 = y)# %>%
+colnames(dfPC) <- gsub("V", "PC", colnames(dfPC))
+# library(cluster)
+# row.names(dfPC) <- dfPC$area
+# pamOut <- pam(dfPC[, c(1, 2)], k = 2)
+# p <- fviz_cluster(pamOut, labelsize = 5)
+# hull_data <-  p$data %>%
+#   group_by(cluster) %>%
+#   slice(chull(x, y)) %>%
+#   rename(area = name,
+#          PC1 = x, PC2 = y)# %>%
 #  as.data.frame()
 #hull_data$area <- as.character(hull_data$area)
 #hull_data$cluster <- as.numeric(hull_data$cluster)
-dfPlot <- dfPC %>% select(area, V1, V2)
-gg <- ggplot(dfPlot, aes(x = V1, y = V2))
+gg <- ggplot(dfPC, aes(x = PC1, y = PC2, group = Region, color = Region))
 gg <- gg + geom_point()
-#gg <- gg + geom_polygon(data = hull_data, alpha = 0.5, aes(fill = cluster, linetype=cluster))
+gg <- gg + geom_text(aes(label = area), size = 2, vjust = 1)
+gg <- gg + theme_bw()
 gg
-clustVec <- p$data
-clustVec <- as.numeric(clustVec$cluster)
-sum(clustVec == 2)
+saveFile <- "dietClust.png"
+saveTo <- paste0(picFolder, saveFile)
+ggsave(saveTo, width = 5, height = 3)
 
-p <- fviz_cluster(pamOut, labelsize = 5)
-p <- p + geom_density_2d(colour=1, bins=6)
-p <- p + theme_bw()
-p
-
-dfClustKey <- data.frame(area = areaVecPCA,
-                         clust = clustVec)
+# gg <- ggplot(dfPlot, aes(x = PC1, y = PC2))
+# gg <- gg + geom_point()
+# gg <- gg + geom_text(aes)
+# #gg <- gg + geom_polygon(data = hull_data, alpha = 0.5, aes(fill = cluster, linetype=cluster))
+# gg
+# clustVec <- p$data
+# clustVec <- as.numeric(clustVec$cluster)
+# sum(clustVec == 2)
+# 
+# p <- fviz_cluster(pamOut, labelsize = 5)
+# p <- p + geom_density_2d(colour=1, bins=6)
+# p <- p + theme_bw()
+# p
+# 
+# dfClustKey <- data.frame(area = areaVecPCA,
+#                          clust = clustVec)
 # library(rworldmap)
 # dfMap <- data.frame(area = dfPC$area, cluster = clustVec)
 # clustMap <- joinCountryData2Map(dfMap, 
@@ -931,6 +961,7 @@ if(length(rmRows) != 0){dfMod <- dfMod[-rmRows, ]}
 #---
 indRm <- which(dfMod$area %in% c("Mali", "South Sudan"))
 dfMod <- dfMod[-indRm, ]
+#---
 keepRegs <- c("Africa South\nof the Sahara",
               "Eur. / N. Amer. /\nAus. / NZ", "CWANA")
 dfMod$Region[which(!(dfMod$Region %in% keepRegs))] <- "Other"
@@ -956,11 +987,12 @@ refFn <- function(x){
   out <- x - log(mean(exp(x)))
   return(out)
 }
-nonCont <- c(1, indDummy)
-dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
-dfModChr$Region_Other <- NULL
+# nonCont <- c(1, indDummy)
+# dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
+# dfModChr$Region_Other <- NULL
 dfModChr$pop14 <- NULL
 dfModChr$sdi <- NULL
+dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
 mod <- lm(`DALYs/100,000 capita`~.,dfModChr)
 summ(mod)
 #summary(mod)
@@ -973,9 +1005,11 @@ dfModChr <- dfModChr[, -colRm]
 #---
 # ctyVecChr[which(mod$residuals > 1)]
 #dfModHid <- dfModHid %>% subset(clust == 2) %>% select(-clust)
-dfModHid[, -nonCont] <- as.data.frame(apply(dfModHid[, -nonCont], 2, refFn))
+#dfModHid[, -nonCont] <- as.data.frame(apply(dfModHid[, -nonCont], 2, refFn))
+dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
 dfModHid$Region_Other <- NULL
 dfModHid$sdi <- NULL
+dfModHid$pop14 <- NULL
 mod <- lm(`DALYs/100,000 capita` ~., dfModHid)
 summ(mod)
 #summary(mod)
@@ -986,9 +1020,11 @@ pVals <- summary(mod)$coefficients[-1, 4]
 colRm <- which(pVals > 0.5) + 1
 dfModHid <- dfModHid[, -colRm]
 #---
-dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
+#dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
+dfModOve[, -1] <- as.data.frame(apply(dfModOve[, -1], 2, refFn))
 dfModOve$Region_Other <- NULL
 dfModOve$pop14 <- NULL
+dfModOve$sdi <- NULL
 mod <- lm(`DALYs/100,000 capita` ~., dfModOve)
 summ(mod)
 #summary(mod)
