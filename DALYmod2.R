@@ -5,6 +5,9 @@ library(ggrepel)
 library(miceadds)
 library(gganimate)
 library(factoextra)
+library(plm)
+library(fixest)
+library(modelsummary)
 #---
 axisTitleSize <- 8
 axisTextSize <- 7
@@ -62,14 +65,14 @@ dfChr$Cat <- "Chr"
 # Overnutrition DALYs
 keepThese <- c("Diet high in sugar-sweetened beverages",
                "Diet high in processed meat",
-          "Diet low in fiber",
+          #"Diet low in fiber",
           # "Diet low in legumes",
           # "Diet low in fruits",
           # "Diet low in vegetables",
-          "Diet low in whole grains",
+          #"Diet low in whole grains",
           #"Diet low in nuts and seeds",
           # "Diet low in seafood omega-3 fatty acids",
-          "Diet low in polyunsaturated fatty acids",
+          #"Diet low in polyunsaturated fatty acids",
           "Diet high in trans fatty acids",
           "Diet high in sodium")
 overDevVec <- keepThese
@@ -194,7 +197,7 @@ dfDaly <- dfDaly[, c("area", "Region", colnames(dfDaly)[-c(1, ncol(dfDaly))])]
 thisFile <- "popUnder14pct.csv"
 thisFilePath <- paste0(thisFolder, thisFile)
 dfPopYoung <- read.csv(thisFilePath, stringsAsFactors = F) %>%
-  rename(area = X...Country.Name)
+  rename(area = Country.Name)
 # indEnd <- which(dfPopYoung$Series.Name == "")[1] - 1
 # dfPopYoung <- dfPopYoung[1:indEnd, ]
 gatherCols <- colnames(dfPopYoung)[5:ncol(dfPopYoung)]
@@ -438,210 +441,197 @@ fviz_cluster(k2, data = X)
 #===============================================================
 # FAO
 # dfKey <- FAOsearch()
-thisFolder <- "FAOSTAT data"
-dir.create(thisFolder)
-# Food balance sheets (have to unite old and new files)
-# Note these include population
-dfRaw <- get_faostat_bulk(code = "FBS", data_folder = thisFolder)
-keepCols <- c("area", "year", "item", "element", "unit", "value")
-dfFBS2 <- dfRaw[, keepCols]; rm(dfRaw)
-# dfRaw <- get_faostat_bulk(code = "FBSH", data_folder = thisFolder)
+# thisFolder <- "FAOSTAT data"
+# dir.create(thisFolder)
+# # Food balance sheets (have to unite old and new files)
+# # Note these include population
+# dfRaw <- get_faostat_bulk(code = "FBS", data_folder = thisFolder)
+thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/FAO FBS/"
+thisFile <- "FoodBalanceSheets_E_All_Data.csv"
+thisFilePath <- paste0(thisFolder, thisFile)
+dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
+theseElems <- c("Food supply (kcal/capita/day)", "Total Population - Both sexes",
+                "Protein supply quantity (g/capita/day)",
+                "Fat supply quantity (g/capita/day)")
+dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"))) %>% subset(Element %in% theseElems)
+yrCols <- colnames(dfRaw)[grep("20", colnames(dfRaw))]
+dfRaw <- dfRaw %>% gather("year", "value", yrCols)
+dfRaw$year <- gsub("Y", "", dfRaw$year)
+colnames(dfRaw) <- tolower(colnames(dfRaw))
+dfFBSraw <- dfRaw; rm(dfRaw)
 # keepCols <- c("area", "year", "item", "element", "unit", "value")
-# dfFBS1 <- dfRaw[, keepCols]
-dfFBS <- dfFBS2; rm(dfFBS2)
-# dfLook <- dfFBS %>% subset(year == 2019)
+# dfFBSraw2 <- dfRaw[, keepCols]; rm(dfRaw)
+# # dfRaw <- get_faostat_bulk(code = "FBSH", data_folder = thisFolder)
+# # keepCols <- c("area", "year", "item", "element", "unit", "value")
+# # dfFBSraw1 <- dfRaw[, keepCols]
+# dfFBSraw <- dfFBSraw2; rm(dfFBSraw2)
+# dfLook <- dfFBSraw %>% subset(year == 2019)
 # u <- dfLook$area
 # unique(u[grep("Lesotho", u)])
-# dfPop <- dfFBS %>% subset(item == "Population" &
+# dfPop <- dfFBSraw %>% subset(item == "Population" &
 #                   element == "total_population___both_sexes") %>%
 #   rename(Population = value) %>%
 #   select("area", "year", "Population")
 # Rectification of names
-# setdiff(dfFBS$area, dfHidHung$area)
-# setdiff(dfHidHung$area, dfFBS$area)
+# setdiff(dfFBSraw$area, dfHidHung$area)
+# setdiff(dfHidHung$area, dfFBSraw$area)
 # unique(dfHidHung$area)
-# unique(dfFBS$area)
-#unique(dfFBS$area[grep("rkiye", dfFBS$area)])
-dfFBS$area[grep("United Kingdom", dfFBS$area)] <- "United Kingdom"
-dfFBS$area[grep("Netherlands", dfFBS$area)] <- "Netherlands"
-dfFBS$area[grep("rkiye", dfFBS$area)] <- "Turkiye"
+# unique(dfFBSraw$area)
+#unique(dfFBSraw$area[grep("rkiye", dfFBSraw$area)])
+dfFBSraw$area[grep("United Kingdom", dfFBSraw$area)] <- "United Kingdom"
+dfFBSraw$area[grep("Netherlands", dfFBSraw$area)] <- "Netherlands"
+dfFBSraw$area[grep("rkiye", dfFBSraw$area)] <- "Turkiye"
 notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
               "China, Taiwan Province of", "China, mainland")
-dfFBS <- subset(dfFBS, !(area %in% notThese))
+dfFBSraw <- subset(dfFBSraw, !(area %in% notThese))
 # Fix milk (and any other duplicates)
-dfFBS <- dfFBS %>% group_by(area, year, element, item) %>%
+dfFBSraw <- dfFBSraw %>% group_by(area, year, element, item) %>%
   mutate(x = duplicated(item)) %>%
   subset(x == F) %>%
   select(-x)
 #---
-# Look
-theseItems <- c("Cereals - Excluding Beer",
-                "Starchy Roots", "Vegetables",
-                "Vegetable Oils",
-                "Oilcrops",
-                "Fruits - Excluding Wine", "Pulses",
-                "Animal Products",
-                "Sugar & Sweeteners",
-                "Alcoholic Beverages")
-dfLook <- dfFBS %>% subset(area %in% "World" &
-                             year == 2018 &
-                             #item %in% theseItems &
-                             element == "food_supply__kcal_capita_day_")
-
-dfLook <- dfLook %>% subset(value > quantile(dfLook$value, 0.6))
-gg <- ggplot(dfLook, aes(x = value,
-                         y = reorder(item, value)))
-gg <- gg + geom_bar(stat = "identity")
-gg <- gg + facet_wrap(~area)
-gg <- gg + theme_bw()
-gg <- gg + theme(axis.text = element_text(size = axisTextSize),
-                 axis.title = element_blank(),
-                 strip.text = element_text(size = facetTitleSize))
-gg
-thisPic <- "eatRankWld.png"
-thisPicPath <- paste0(picFolder, thisPic)
-ggsave(thisPicPath, width = 5, height = 3)
+# Preliminary Look
+# theseItems <- c("Cereals - Excluding Beer",
+#                 "Starchy Roots", "Vegetables",
+#                 "Vegetable Oils",
+#                 "Oilcrops",
+#                 "Fruits - Excluding Wine", "Pulses",
+#                 "Animal Products",
+#                 "Sugar Crops",
+#                 "Alcoholic Beverages")
+# dfLook <- dfFBSraw %>% subset(area %in% "World" &
+#                              year == 2018 &
+#                              #item %in% theseItems &
+#                              element == "Food supply (kcal/capita/day)")
+#                              #"food_supply__kcal_capita_day_")
+# 
+# dfLook <- dfLook %>% subset(value > quantile(dfLook$value, 0.6))
+# gg <- ggplot(dfLook, aes(x = value,
+#                          y = reorder(item, value)))
+# gg <- gg + geom_bar(stat = "identity")
+# gg <- gg + facet_wrap(~area)
+# gg <- gg + theme_bw()
+# gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+#                  axis.title = element_blank(),
+#                  strip.text = element_text(size = facetTitleSize))
+# gg
+# thisPic <- "eatRankWld.png"
+# thisPicPath <- paste0(picFolder, thisPic)
+# ggsave(thisPicPath, width = 5, height = 3)
 #=====================================================================
 # GDP/capita
-dfRaw <- get_faostat_bulk(code = "MK", data_folder = thisFolder)
-keepCols <- c("area", "year", "item", "element", "unit", "value")
-dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
-                                        element == "value_us__per_capita__2015_prices") %>%
-  select(c("area", "year", "value")) %>%
-  rename(`GDP/capita (USD 2015 prices)` = value)
-dfGDP <- dfGDP %>% subset(!(area %in% notThese))
-dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
-dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
-# setdiff(unique(dfGDP$area), unique(dfRiskRaw$location))
-# unique(dfGDP$area)[order(unique(dfGDP$area))]
-# unique(dfRiskRaw$location)[order(unique(dfRiskRaw$location))]
-#dfFBS <- merge(dfFBS, dfGDP)
+# dfRaw <- get_faostat_bulk(code = "MK", data_folder = thisFolder)
+# keepCols <- c("area", "year", "item", "element", "unit", "value")
+# dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
+#                                         element == "value_us__per_capita__2015_prices") %>%
+#   select(c("area", "year", "value")) %>%
+#   rename(`GDP/capita (USD 2015 prices)` = value)
+# dfGDP <- dfGDP %>% subset(!(area %in% notThese))
+# dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
+# dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
+# # setdiff(unique(dfGDP$area), unique(dfRiskRaw$location))
+# # unique(dfGDP$area)[order(unique(dfGDP$area))]
+# # unique(dfRiskRaw$location)[order(unique(dfRiskRaw$location))]
+# #dfFBSraw <- merge(dfFBSraw, dfGDP)
 #=====================================================================
 # Get df for commodity model
-# u <- dfFBS$item
+# u <- dfFBSraw$item
 # unique(u[grep("Sugar", u)])
 # Note "Fruit, other" and "Vegetables, other" both include
 # 567 "Watermelons" and 568 "Melons, other (inc.cantaloupes)"
 theseItems <- c("Cereals - Excluding Beer",
                 "Starchy Roots", "Vegetables",
                 "Vegetable Oils",
-                "Oilcrops",
+                #"Oilcrops", #consumed oil crop oils are included under vegetable oils
                 "Fruits - Excluding Wine", "Pulses",
-                "Animal Products",
-                "Animal fats",
+#                "Animal Products",
+                #"Animal fats",
                 "Meat",
                 "Milk - Excluding Butter",
-                "Sugar & Sweeteners",
-                #"Sugar (Raw Equivalent)",
+                #"Sugar Crops",
+                #"Sugar & Sweeteners",
+                "Sugar (Raw Equivalent)",
                 #"Alcoholic Beverages",
                 "Grand Total")
-dfFBSpop <- dfFBS %>% subset(item == "Population" &
-                               element %in% c("total_population___both_sexes")) %>%
-  select(area, year, value) %>%
-  rename(`Population (1000 persons)` = value)
-dfFBSpop$element <- NULL; dfFBSpop$item <- NULL
-dfFBScommod <- dfFBS %>% subset(item %in% theseItems &
-                                  element %in% c("food_supply__kcal_capita_day_")) %>%
-  select(c("area", "year", "item", "value")) %>%#, "GDP/capita (USD 2015 prices)"))
-#  subset(item != "Grand Total") %>%
-  #select(-"GDP/capita (USD 2015 prices)") %>%
-#  rbind(dfResid) %>% as.data.frame() %>%
+
+dfPop <- dfFBSraw %>% subset(item == "Population") %>%
+  #rename(`Population (1000 persons)` = value) %>%
+  rename(Population = value) %>%
+  select(area, year, Population)
+dfPop$element <- NULL; dfPop$item <- NULL
+dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
+  subset(item %in% theseItems) %>%
+  mutate(item = gsub("Fruits - Excluding Wine", "F&V", item)) %>%
+  mutate(item = gsub("Vegetables", "F&V", item)) %>%
+  mutate(item = gsub("Milk - Excluding Butter", "Milk", item)) %>%
+  mutate(item = gsub("Cereals - Excluding Beer", "Cereals", item)) %>%
+  group_by(area, year, item, element) %>%
+  summarise(value = sum(value, na.rm = T)) %>%
   spread(item, value) %>%
-  rename(Fruits = `Fruits - Excluding Wine`) %>%
-  mutate(`F&V` = Fruits + Vegetables) %>%
-  select(-c(Vegetables, Fruits)) %>%
-  rename(Milk = `Milk - Excluding Butter`) %>%
-  mutate(`Animal prod other` = `Animal Products` -
-           `Animal fats` - Meat - Milk) %>%
-  select(-c(`Animal Products`)) %>%
-  rename(Cereals = `Cereals - Excluding Beer`) %>%
-  mutate(`CR&T` = Cereals + `Starchy Roots`) %>%
-  select(-c(Cereals, `Starchy Roots`)) #%>%
-  # mutate(fatRat = `Vegetable Oils` / `Animal fats`) %>%
-  # select(-c(`Vegetable Oils`, `Animal fats`))
-  dfFBScommod$element <- NULL
+  # mutate(`Animal prod other` = `Animal Products` -
+  #          Milk - Meat) %>%
+  #select(-c(`Animal Products`)) %>%
+  merge(dfPop, by = c("area", "year")) %>% as.data.frame()
+#mutate(`CR&T` = Cereals + `Starchy Roots`) %>%
+#select(-c(Cereals, `Starchy Roots`)) #%>%
+# mutate(fatRat = `Vegetable Oils` / `Animal fats`) %>%
+# select(-c(`Vegetable Oils`, `Animal fats`))
 # Replace Muslim country Alcoholic Beverages NA with 0
 if("Alcoholic Beverages" %in% theseItems){
-  u <- dfFBScommod$`Alcoholic Beverages`
-  dfFBScommod$`Alcoholic Beverages`[which(is.na(u))] <- 0
+  u <- dfFBS$`Alcoholic Beverages`
+  dfFBS$`Alcoholic Beverages`[which(is.na(u))] <- 0
 }
-indTot <- which(colnames(dfFBScommod) == "Grand Total")
-dfFBScommod$Residual <- dfFBScommod$`Grand Total` -
-  rowSums(dfFBScommod[, -c(1, 2, indTot)])
-dfFBScommod$`Grand Total` <- NULL
-#dfFBScommod <- dfFBScommod %>% merge(dfFBSpop)
-gathercols <- colnames(dfFBScommod)[-c(1, 2)]
-dfFBScommod <- dfFBScommod %>%
-  gather_("item", "val", gathercols) %>%
-  group_by(area, year) %>%
-  mutate(share = val / sum(val)) %>%
-  as.data.frame() %>%
-  select(-val) %>%
-  spread(item, share) %>%
-  merge(dfFBSpop)
-# # u <- dfFBScommod$`Alcoholic Beverages`
-# # dfFBScommod$area[which(is.na(u))]
-# dfResidX <- dfFBScommod %>% subset(!(item %in% c("Population", "Grand Total"))) %>%
-#   group_by(area, year) %>% summarize(value = sum(value, na.rm = T)) %>%
-#   rename(main = value) %>%
-#   select(c("area", "year", "main"))
-# dfResid <- dfFBScommod %>% subset(item == "Grand Total") %>%
-#   #select(-"GDP/capita (USD 2015 prices)") %>%
-#   merge(dfResidX) %>% mutate(value = value - main) %>%
-#   mutate(item = "Residual") %>%
-#   select(c("area", "year", "item", "value"))
-# dfFBScommod <- dfFBScommod %>%
-#   subset(item != "Grand Total") %>%
-#   #select(-"GDP/capita (USD 2015 prices)") %>%
-#   rbind(dfResid) %>% as.data.frame() %>%
-#   spread(item, value) %>%
-#   mutate(`F&V` = `Fruits - Excluding Wine` + Vegetables) %>%
-#   select(-c("Vegetables", "Fruits - Excluding Wine")) %>%
-#   mutate(`Animal prod excl fats` = `Animal Products` - `Animal fats`) %>%
-#   select(-c("Animal Products")) %>%
-#   rename(Cereals = `Cereals - Excluding Beer`,
-#          `Population (1000 persons)` = Population)
-# rm(dfResidX, dfResid)
-#--------------------------------------------------------------------
-# Get df for macronutrient model
-theseElems <- c("fat_supply_quantity__g_capita_day_",
-                "protein_supply_quantity__g_capita_day_",
-                "food_supply__kcal_capita_day_",
-                "total_population___both_sexes")
-dfFBSmacNut <- subset(dfFBS, item %in% c("Grand Total", "Population") &
-                        element %in% theseElems)
+# Check for NAs
+naFn <- function(x){u <- sum(is.infinite(x)); return(u)}
+o <- apply(dfFBS[, -c(1:3)], 2, naFn); colNA <- which(o > 0)
+# Population is NA in a few small and/or politically volatile ctys. Drop these.
+unique(dfFBS$area[which(is.na(dfFBS$Population))])
+rowRm <- which(is.na(dfFBS$Population)); dfFBS <- dfFBS[-rowRm, ]
+if(length(indRm) != 0){dfFBS <- dfFBS[-indRm, ]}
+# Calculate residual kcal category
+colSkip <- which(colnames(dfFBS) %in% c("Grand Total", "Population"))
+dfFBS$Residual <- dfFBS$`Grand Total` -
+  rowSums(dfFBS[, -c(1:3, colSkip)])
+# Make sure dfDaly and dfFBS ctys match
+setdiff(dfDaly$area, dfFBS$area)
+setdiff(dfFBS$area, dfDaly$area)
+dfFBS$area[grep("Ivoire", dfFBS$area)] <- "Côte d'Ivoire"
+# Separate into FBS commodity and FBS macnut dfs
+dfFBScom <- dfFBS %>% subset(element == "Food supply (kcal/capita/day)") %>% select(-c(element, `Grand Total`))
+dfFBSmn <- dfFBS %>% subset(element %in%
+                              c("Fat supply quantity (g/capita/day)",
+                                "Protein supply quantity (g/capita/day)",
+                                "Food supply (kcal/capita/day)")) %>%
+  select(c(area, year, Population, element, `Grand Total`)) %>%
+  rename(value = `Grand Total`)
 # Convert g to kcal
-dfFBSmacNut$value[grep("protein", dfFBSmacNut$element)] <- 4 *
-  dfFBSmacNut$value[grep("protein", dfFBSmacNut$element)]
-dfFBSmacNut$value[grep("fat", dfFBSmacNut$element)] <- 9 *
-  dfFBSmacNut$value[grep("fat", dfFBSmacNut$element)]
-dfFBSmacNut$element[grep("protein", dfFBSmacNut$element)] <- "Protein supply (kcal/capita/day)"
-dfFBSmacNut$element[grep("fat", dfFBSmacNut$element)] <- "Fat supply (kcal/capita/day)"
-dfFBSmacNut$element[grep("food", dfFBSmacNut$element)] <- "Food supply (kcal/capita/day)"
-dfFBSmacNut$unit <- NULL
-dfFBSmacNut$item <- NULL
+dfFBSmn$value[grep("Protein", dfFBSmn$element)] <- 4 *
+  dfFBSmn$value[grep("Protein", dfFBSmn$element)]
+dfFBSmn$value[grep("Fat", dfFBSmn$element)] <- 9 *
+  dfFBSmn$value[grep("Fat", dfFBSmn$element)]
+dfFBSmn$element[grep("Protein", dfFBSmn$element)] <- "Protein supply (kcal/capita/day)"
+dfFBSmn$element[grep("Fat", dfFBSmn$element)] <- "Fat supply (kcal/capita/day)"
 # Calculate carb kcal
-dfFBSmacNut <- dfFBSmacNut %>% spread(element, value)
-colnames(dfFBSmacNut)[ncol(dfFBSmacNut)] <- "Population (1000 persons)"
-dfFBSmacNut$`Carb supply (kcal/capita/day)` <- dfFBSmacNut$`Food supply (kcal/capita/day)` -
-  dfFBSmacNut$`Protein supply (kcal/capita/day)` - dfFBSmacNut$`Fat supply (kcal/capita/day)`
+dfFBSmn <- dfFBSmn %>% spread(element, value) %>%
+  mutate(`Carb supply (kcal/capita/day)` = `Food supply (kcal/capita/day)` -
+           `Protein supply (kcal/capita/day)` - `Fat supply (kcal/capita/day)`)
 # # Create % of diet variable
-dfPop <- dfFBSmacNut %>% select("area", "year", "Population (1000 persons)")
-dfFBSmacNutPct <- dfFBSmacNut %>% select(-c("Food supply (kcal/capita/day)",
-                                            "Population (1000 persons)"))
-dfFBStot <- dfFBS %>% subset(item == "Grand Total" &
-                               element == "food_supply__kcal_capita_day_") %>%
-  select(c("area", "year", "value")) %>% rename(total = value)
-gathercols <- colnames(dfFBSmacNutPct)[3:ncol(dfFBSmacNutPct)]
-dfFBSmacNutPct <- dfFBSmacNutPct %>% gather_("item", "value", gathercols)
-dfFBSmacNutPct$item[grep("Protein", dfFBSmacNutPct$item)] <- "Protein supply (%)"
-dfFBSmacNutPct$item[grep("Fat", dfFBSmacNutPct$item)] <- "Fat supply (%)"
-dfFBSmacNutPct$item[grep("Carb", dfFBSmacNutPct$item)] <- "Carb supply (%)"
-dfFBSmacNutPct <- dfFBSmacNutPct %>% merge(dfFBStot) %>%
-  mutate(`Diet share (%)` = round(100 * value / total, 2)) %>%
-  select(-c("value", "total")) %>%
-  spread(item, `Diet share (%)`) %>%
-  merge(dfPop)
+# dfPop <- dfFBSmacNut %>% select("area", "year", "Population (1000 persons)")
+# dfFBSmacNutPct <- dfFBSmacNut %>% select(-c("Food supply (kcal/capita/day)",
+#                                             "Population (1000 persons)"))
+# dfFBStot <- dfFBS %>% subset(item == "Grand Total" &
+#                                element == "food_supply__kcal_capita_day_") %>%
+#   select(c("area", "year", "value")) %>% rename(total = value)
+# gathercols <- colnames(dfFBSmacNutPct)[3:ncol(dfFBSmacNutPct)]
+# dfFBSmacNutPct <- dfFBSmacNutPct %>% gather_("item", "value", gathercols)
+# dfFBSmacNutPct$item[grep("Protein", dfFBSmacNutPct$item)] <- "Protein supply (%)"
+# dfFBSmacNutPct$item[grep("Fat", dfFBSmacNutPct$item)] <- "Fat supply (%)"
+# dfFBSmacNutPct$item[grep("Carb", dfFBSmacNutPct$item)] <- "Carb supply (%)"
+# dfFBSmacNutPct <- dfFBSmacNutPct %>% merge(dfFBStot) %>%
+#   mutate(`Diet share (%)` = round(100 * value / total, 2)) %>%
+#   select(-c("value", "total")) %>%
+#   spread(item, `Diet share (%)`) %>%
+#   merge(dfPop)
 #=======================================================================
 # # SDG data
 # dfRaw <- get_faostat_bulk(code = "SDGB", data_folder = thisFolder)
@@ -674,14 +664,14 @@ SEasAusNZvec <- c("South-eastern Asia", "Australia and New Zealand")
 areaVec <- c("Europe", "Northern America", "Eastern Asia",
              "Southern Asia", SSAvec, LACvec, CWANAvec,
              SEasAusNZvec, "World")
-
-dfPop <- dfFBScommod[, c("area", "year", "Population (1000 persons)")]
-gathercols <- colnames(dfFBScommod)[-c(1, 2, which(colnames(dfFBScommod) == "Population (1000 persons)"))]
-dfPlot <- dfFBScommod %>% subset(area %in% areaVec) %>%
-  select(-`Population (1000 persons)`) %>%
+#dfPop <- dfFBScommod[, c("area", "year", "Population (1000 persons)")]
+#gathercols <- colnames(dfFBScommod)[-c(1, 2, which(colnames(dfFBScommod) == "Population (1000 persons)"))]
+indPop <- which(colnames(dfFBScom) == "Population")
+gathercols <- colnames(dfFBScom)[-c(1:2, indPop)]
+#---
+dfPlot <- dfFBScom %>% subset(area %in% areaVec) %>%
   gather_("item", "val", gathercols) %>%
-  merge(dfPop) %>%
-  mutate(val = val * `Population (1000 persons)` * 1000)
+  mutate(val = val * Population * 1000)
 dfWorld <- dfPlot %>% subset(area == "World")
 dfPlot <- dfPlot %>% subset(area != "World")
 dfPlot$area[which(dfPlot$area %in% SSAvec)] <- "SSA"
@@ -690,9 +680,19 @@ dfPlot$area[which(dfPlot$area %in% CWANAvec)] <- "CWANA"
 dfPlot$area[which(dfPlot$area %in% SEasAusNZvec)] <- "SE Asia Aus & NZ"
 dfPlot <- dfPlot %>% group_by(area, year, item) %>%
   summarise_all(sum, na.rm = T) %>%
-  mutate(val = val / (`Population (1000 persons)` * 1000))
-# %>%
-#   select(-`Population (1000 persons)`)
+  mutate(val = val / (Population * 1000)) %>%
+  select(-Population) %>%
+  as.data.frame()
+dfPlot$year <- as.integer(dfPlot$year)
+# dfWorld$year <- as.integer(dfWorld$year)
+# dfWorld$val <- dfWorld$val / (dfWorld$Population * 1000)
+# dfWorld$Population <- NULL
+# gg <- ggplot(dfWorld, aes(x = year, y = val, fill = item))
+# gg <- gg + geom_area()
+# gg <- gg + scale_fill_manual(values = theseColors)
+# gg <- gg + labs(y = "kcal/capita/day")
+# gg <- gg + theme_bw()
+# gg
 theseColors <- randomcoloR::distinctColorPalette(length(unique(dfPlot$item)))
 gg <- ggplot(dfPlot, aes(x = year, y = val, fill = reorder(item, val)))
 gg <- gg + geom_area(position = "stack")
@@ -749,7 +749,7 @@ gg <- gg + geom_text_repel(aes(label = item), size = 2.5)
 gg
 #---
 # FBS PCA (just like the DALY PCA but FBS)
-dfFBSpca <- dfFBScommod %>% merge(dfGDP)
+dfFBSpca <- dfFBS %>% merge(dfGDP)
 yrVec <- unique(dfFBSpca$year)
 # listDf <- list()
 # for(i in 1:length(yrVec)){
@@ -928,105 +928,243 @@ ggsave(saveTo, width = 5, height = 3)
 # anim_save(thisAnimPath, gg)
 #========================================================================
 # Model year
-thisYr <- 2019
+#thisYr <- 2019
 # Model 1
 # Hunger ~ Commodity
-dfMod <- merge(dfDaly, dfFBScommod) %>% #merge(dfClustKey) %>%
+dfMod <- merge(dfDaly, dfFBScom) %>% #merge(dfClustKey) %>%
   #merge(dfGDP) %>%
-  subset(year == thisYr) %>%
+#  subset(year == thisYr) %>%
   # mutate(`DALYs/capita` = 1000 * val / `Population (1000 persons)`) %>%
-  rename(`DALYs/100,000 capita` = val) %>%
+  #rename(`DALYs/100,000 capita` = val) %>%
   #select(-c(year))
-  select(-c("year", "Population (1000 persons)"))
-  #select(-c("Population (1000 persons)"))
+  #select(-c("year", "Population (1000 persons)"))
+  select(-Population)
 colnames(dfMod)
-notCols <- which(colnames(dfMod) %in% c("area", "Region", "Cat"))
+notCols <- which(colnames(dfMod) %in% c("area", "year", "Region", "Cat"))
 #notCols <- c(1:3)
+# Log transform
 dfMod[, -notCols] <- as.data.frame(apply(dfMod[, -notCols], 2, log))
 #dfMod[, -1] <- as.data.frame(apply(dfMod[, -1], 2, log))
+# Lots of places/times where/when people not eating pulses
 isInfNan <- function(x){
   nInfNan <- sum(is.nan(x) > 0) + sum(is.infinite(x) > 0) +
     sum(is.na(x) > 0)
   return(nInfNan)
 }
 infNanLook <- apply(dfMod[, -notCols], 2, isInfNan)
-infNanLook
-dfMod$area[infNanLook]
-indInf <- c(which(is.infinite(dfMod$Pulses)), which(is.infinite(dfMod$`Alcoholic Beverages`)))
-replaceInf <- function(x){x[which(is.infinite(x))]<-0;return(x)}
-dfMod[, -notCols] <- dfMod[, -notCols] %>% apply(2, replaceInf) %>% as.data.frame()
-rmRows <- c(which(is.na(dfMod$Oilcrops)), which(is.na(dfMod$`Alcoholic Beverages`)))
-rmRows <- unique(rmRows)
-if(length(rmRows) != 0){dfMod <- dfMod[-rmRows, ]}
+#---
+# macnut models
+# Where are the infinite values happening?
+unique(dfMod$area[which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))])
+rowRm <- which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))
+dfMod <- dfMod[-rowRm, ]
+#---
+# commod models
+#Where are people not eating x?
+unique(dfMod$area[which(is.infinite(dfMod$Pulses))])
+unique(dfMod$area[which(is.infinite(dfMod$`Sugar (Raw Equivalent)`))])
+indNoPulses <- which(is.infinite(dfMod$Pulses))
+dfMod[indNoPulses, ] <- 0
 #---
 indRm <- which(dfMod$area %in% c("Mali", "South Sudan"))
 dfMod <- dfMod[-indRm, ]
 #---
-keepRegs <- c("Africa South\nof the Sahara",
-              "Eur. / N. Amer. /\nAus. / NZ", "CWANA")
-dfMod$Region[which(!(dfMod$Region %in% keepRegs))] <- "Other"
-unique(dfMod$Region)
-library(fastDummies)
-dfMod <- dummy_cols(dfMod, select_columns = "Region")
+# keepRegs <- c("Africa South\nof the Sahara",
+#               "Eur. / N. Amer. /\nAus. / NZ", "CWANA")
+# dfMod$Region[which(!(dfMod$Region %in% keepRegs))] <- "Other"
+# unique(dfMod$Region)
+# library(fastDummies)
+# dfMod <- dummy_cols(dfMod, select_columns = "year")
+dfMod$Region[which(is.na(dfMod$Region))] <- "Other"
 #---
-charCols <- notCols
+#charCols <- notCols
+catCol <- c(5)
 dfModHid <- dfMod %>% subset(Cat == "Hid")
 ctyVecHid <- dfModHid$area
-dfModHid <- dfModHid %>% select (-charCols)
+dfModHid <- dfModHid %>% select (-catCol)
 dfModChr <- dfMod %>% subset(Cat == "Chr")
 ctyVecChr <- dfModChr$area
-dfModChr <- dfModChr %>% select (-charCols)
+dfModChr <- dfModChr %>% select (-catCol)
 dfModOve <- dfMod %>% subset(Cat == "OverDev")
 ctyVecOve <- dfModOve$area
-dfModOve <- dfModOve %>% select (-charCols)
+dfModOve <- dfModOve %>% select (-catCol)
 #---
-indDummy <- grep("Region", colnames(dfModChr))
+#indDummy <- grep("Region", colnames(dfModChr))
 #---
 #dfModChr <- dfModChr %>% subset(clust == 1) %>% select(-clust)
 refFn <- function(x){
   out <- x - log(mean(exp(x)))
   return(out)
 }
-# nonCont <- c(1, indDummy)
-# dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
+nonCont <- c(1:3)
+dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
 # dfModChr$Region_Other <- NULL
 dfModChr$pop14 <- NULL
 dfModChr$sdi <- NULL
-dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
-mod <- lm(`DALYs/100,000 capita`~.,dfModChr)
-summ(mod)
+#dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
+#dfModChr$Region <- as.factor(dfModChr$Region)
+dfModChr$Region <- NULL
+dfModChr$Residual <- NULL
+dfModChr$`Carb supply (kcal/capita/day)` <- NULL
+dfModChr$`Protein supply (kcal/capita/day)` <- NULL
+#---
+colnames(dfModChr)[4] <- "y"
+#colnames(dfModChr)[4] <- paste0("`", colnames(dfModChr)[4], "`")
+vars <- colnames(dfModChr)[5:ncol(dfModChr)]
+vars <- paste0("`", vars, "`")
+# y <- paste0("`", colnames(dfModChr)[4], "`")
+# xpd(.[y] ~ .[vars])
+#setFixest_fml(..vars = ~ paste0("`", paste(vars, collapse = "`+`"), "`"))
+modFE <- feols(y ~ .[vars] | area, data = dfModChr, cluster = c("area", "year"))
+#modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
+summary(modFE)
+#car::vif(modFE)
+
+models <- list(
+  feols(y ~ .[vars] | area, data = dfModChr),
+  feols(y ~ .[vars] | year, data = dfModChr),
+  feols(y ~ .[vars] | year + area, cluster = ~year+area, data = dfModChr)
+  )
+
+modelsummary(models, statistic = "p.value")
+#---
+# pDfModChr <- pdata.frame(dfModChr, index = c("Region", "year"))
+# modFE <- plm(`DALYs.100.000.capita`~.-area-year-Region, data = pDfModChr, index = c("Region", "year"), model = "within", effect = "individual")
+# summary(modFE)
+# feVec <- fixef(modFE)
+# hist(feVec)
+# feVec[which(feVec > 10)]
+# 
+# modFE1 <- modFE
+# modFE2 <- modFE
+# modFE3 <- modFE
+# modFE4 <- modFE
+# modFE5 <- modFE
+# export_summs(modFE1, modFE2, modFE3, model.names = c("Chr1", "Chr2", "Chr3"), to.file = "docx", file.name = paste0(picFolder, "modChrFE2.docx"))
+# modRE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, index = c("area", "year"), model = "random", effect = "time",
+#              random.method = "ht")
+# summary(modRE)
+
+
+# library(estimatr)
+# mfe <- lm_robust(`DALYs/100,000 capita`~.-area-year-Region,
+#                   clusters = Region,
+#                   fixed_effects = ~Region,
+#                   data = dfModChr)
+# summary(mfe)
+# library(xtable)
+# library(kableExtra)
+# kable(tidy(modFE), digits=3, 
+#       caption = "FE")
+#coeftest(modFE, vcovHC(modFE, type = "HC1", cluster = c("area", "year")))
+
+#hist(fixef(modFE), breaks = 15)
+# modRE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, index = c("area", "year"), model = "random")
+# summary(modRE)
+# phtest(modFE, modRE)
+#modCl <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, model = "pooling")
+#summary(modCl)
+# library(xtable)
+# kable(tidy(modCl), digits=3, 
+#       caption = "Pooled model")
+# modP <- lm.cluster(dfModChr, `DALYs/100,000 capita`~.-year-area,
+#                    cluster = "year")
+# texreg::extract(modP)
+
+# mod <- lm(`DALYs/100,000 capita`~.,dfModChr)
+# summ(mod)
 #summary(mod)
-car::vif(mod)
-plot(mod$fitted.values, mod$residuals)
-modChr <- mod
-pVals <- summary(mod)$coefficients[-1, 4]
-colRm <- which(pVals > 0.5) + 1
-dfModChr <- dfModChr[, -colRm]
+# car::vif(mod)
+# plot(mod$fitted.values, mod$residuals)
+# modChr <- mod
+# pVals <- summary(mod)$coefficients[-1, 4]
+# colRm <- which(pVals > 0.5) + 1
+# dfModChr <- dfModChr[, -colRm]
 #---
 # ctyVecChr[which(mod$residuals > 1)]
 #dfModHid <- dfModHid %>% subset(clust == 2) %>% select(-clust)
 #dfModHid[, -nonCont] <- as.data.frame(apply(dfModHid[, -nonCont], 2, refFn))
-dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
-dfModHid$Region_Other <- NULL
+#dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
+#dfModHid$Region_Other <- NULL
+colnames(dfModHid)[4] <- "y"
 dfModHid$sdi <- NULL
 dfModHid$pop14 <- NULL
-mod <- lm(`DALYs/100,000 capita` ~., dfModHid)
-summ(mod)
+dfModHid$Region <- NULL
+dfModHid$Residual <- NULL
+dfModHid$`Food supply (kcal/capita/day)` <- NULL
+dfModHid$`Protein supply (kcal/capita/day)` <- NULL
+vars <- colnames(dfModHid)[5:ncol(dfModHid)]
+vars <- paste0("`", vars, "`")
+modFE <- feols(y ~ .[vars] | year, data = dfModHid)
+summary(modFE)
+# pDfModHid <- pdata.frame(dfModHid, index = c("area", "year"))
+# modFE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModHid, index = c("area", "year"), model = "within", effect = "time")
+# summary(modFE)
+# fixef(modFE)
+# modFE1 <- modFE
+# modFE2 <- modFE
+# modFE3 <- modFE
+# export_summs(modFE1, modFE2, modFE3, model.names = c("Hid1", "Hid2", "Hid3"), to.file = "docx", file.name = paste0(picFolder, "modHidFE.docx"))
+
+# pDfModHid <- pdata.frame(dfModHid, index = c("area", "year"))
+# modP <- plm(`DALYs.100.000.capita`~., data = pDfModHid, model = "pooling")
+# summary(modP)
+# modP <- lm.cluster(dfModHid, `DALYs/100,000 capita`~.-year-area,
+#                    cluster = "year")
+# texreg::extract(modP)
+# # create table in stargazer
+# summary(modP, cluster = "year")
+# library(stargazer)
+# stargazer(modP, se = list(coef(summary(modP, cluster = "year"))[, 2]), type = "text")
+
+# mod <- lm(`DALYs/100,000 capita` ~., dfModHid)
+# summ(mod)
 #summary(mod)
-car::vif(mod)
-plot(mod$fitted.values, mod$residuals)
-modHid <- mod
-pVals <- summary(mod)$coefficients[-1, 4]
-colRm <- which(pVals > 0.5) + 1
-dfModHid <- dfModHid[, -colRm]
+# car::vif(mod)
+# plot(mod$fitted.values, mod$residuals)
+# modHid <- mod
+# pVals <- summary(mod)$coefficients[-1, 4]
+# colRm <- which(pVals > 0.5) + 1
+# dfModHid <- dfModHid[, -colRm]
 #---
-#dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
-dfModOve[, -1] <- as.data.frame(apply(dfModOve[, -1], 2, refFn))
-dfModOve$Region_Other <- NULL
+dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
+dfModOve$Region <- NULL
 dfModOve$pop14 <- NULL
 dfModOve$sdi <- NULL
-mod <- lm(`DALYs/100,000 capita` ~., dfModOve)
-summ(mod)
+dfModOve$Residual <- NULL
+dfModOve$`Food supply (kcal/capita/day)` <- NULL
+dfModOve$`Protein supply (kcal/capita/day)` <- NULL
+colnames(dfModOve)[4] <- "y"
+vars <- colnames(dfModOve)[5:ncol(dfModOve)]
+vars <- paste0("`", vars, "`")
+modFE <- feols(y ~ .[vars] | year, data = dfModOve)
+summary(modFE)
+
+
+# pDfModOve <- pdata.frame(dfModOve, index = c("area", "year"))
+# modFE <- plm(DALYs.100.000.capita~.-area-year, data = pDfModOve, index = c("area", "year"), model = "within", effect = "time")
+# summary(modFE)
+# pDfModChr$area<-NULL
+# pDfModChr$year<-NULL
+# modFE1 <- modFE
+# modFE2 <- modFE
+# modFE3 <- modFE
+# modFE4 <- modFE
+# export_summs(modFE1, modFE2, modFE3, modFE4, model.names = c("Ove1", "Ove2", "Ove3", "Ove4"), to.file = "docx", file.name = paste0(picFolder, "modOveFE.docx"))
+
+n <- names(pDfModOve)
+f <- as.formula(paste("DALYs.100.000.capita ~", paste(n[!n %in% "y"], collapse = " + ")))
+modP <- plm(f, data = pDfModOve, index = c("area", "year"), model = "pooling",
+            random.method = "walhus")
+summary(modP)
+modP <- lm.cluster(dfModOve, `DALYs/100,000 capita`~.-year-area,
+                   cluster = "year")
+texreg::extract(modP)
+stargazer(modP, se = list(coef(summary(modP, cluster = "year"))[, 2]), type = "text")
+summary(modP, cluster = "year")
+stargazer(modP, type = "text")
+# mod <- lm(`DALYs/100,000 capita` ~., dfModOve)
+# summ(mod)
 #summary(mod)
 car::vif(mod)
 plot(mod$fitted.values, mod$residuals)
