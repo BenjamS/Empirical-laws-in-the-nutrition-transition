@@ -481,6 +481,7 @@ dfFBSraw <- dfRaw; rm(dfRaw)
 dfFBSraw$area[grep("United Kingdom", dfFBSraw$area)] <- "United Kingdom"
 dfFBSraw$area[grep("Netherlands", dfFBSraw$area)] <- "Netherlands"
 dfFBSraw$area[grep("rkiye", dfFBSraw$area)] <- "Turkiye"
+dfFBSraw$area[grep("Ivoire", dfFBSraw$area)] <- "Côte d'Ivoire"
 notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
               "China, Taiwan Province of", "China, mainland")
 dfFBSraw <- subset(dfFBSraw, !(area %in% notThese))
@@ -520,6 +521,25 @@ dfFBSraw <- dfFBSraw %>% group_by(area, year, element, item) %>%
 # ggsave(thisPicPath, width = 5, height = 3)
 #=====================================================================
 # GDP/capita
+thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/FAO FBS/"
+thisFile <- "Macro-Statistics_Key_Indicators_E_All_Data.csv"
+thisFilePath <- paste0(thisFolder, thisFile)
+dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
+theseElems <- "Value US$ per capita, 2015 prices"
+dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"), ends_with("N"))) %>% subset(Element %in% theseElems)
+yrCols <- colnames(dfRaw)[grep("20|19", colnames(dfRaw))]
+dfRaw <- dfRaw %>% gather("year", "value", yrCols)
+dfRaw$year <- gsub("Y", "", dfRaw$year)
+colnames(dfRaw) <- tolower(colnames(dfRaw))
+dfGDP <- dfRaw %>% select(area, year, value) %>% rename(`GDP/capita` = value)
+rm(dfRaw)
+dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
+dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
+dfGDP$area[grep("rkiye", dfGDP$area)] <- "Turkiye"
+dfGDP$area[grep("Ivoire", dfGDP$area)] <- "Côte d'Ivoire"
+notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
+              "China, Taiwan Province of", "China, mainland")
+dfGDP <- subset(dfGDP, !(area %in% notThese))
 # dfRaw <- get_faostat_bulk(code = "MK", data_folder = thisFolder)
 # keepCols <- c("area", "year", "item", "element", "unit", "value")
 # dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
@@ -545,9 +565,9 @@ theseItems <- c("Cereals - Excluding Beer",
                 #"Oilcrops", #consumed oil crop oils are included under vegetable oils
                 "Fruits - Excluding Wine", "Pulses",
 #                "Animal Products",
-                #"Animal fats",
-                "Meat",
-                "Milk - Excluding Butter",
+                "Animal fats",
+#                "Meat",
+#                "Milk - Excluding Butter",
                 #"Sugar Crops",
                 #"Sugar & Sweeteners",
                 "Sugar (Raw Equivalent)",
@@ -563,8 +583,12 @@ dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
   subset(item %in% theseItems) %>%
   mutate(item = gsub("Fruits - Excluding Wine", "F&V", item)) %>%
   mutate(item = gsub("Vegetables", "F&V", item)) %>%
-  mutate(item = gsub("Milk - Excluding Butter", "Milk", item)) %>%
-  mutate(item = gsub("Cereals - Excluding Beer", "Cereals", item)) %>%
+  #mutate(item = gsub("Milk - Excluding Butter", "Milk", item)) %>%
+  mutate(item = gsub("Cereals - Excluding Beer", "CRT", item)) %>%
+  mutate(item = gsub("Starchy Roots", "CRT", item)) %>%
+  #mutate(item = gsub("Sugar \\(Raw Equivalent\\)", "CRTnS", item)) %>%
+  mutate(item = gsub("Animal fats", "Fats", item)) %>%
+  mutate(item = gsub("Vegetable Oils", "Fats", item)) %>%
   group_by(area, year, item, element) %>%
   summarise(value = sum(value, na.rm = T)) %>%
   spread(item, value) %>%
@@ -586,8 +610,11 @@ naFn <- function(x){u <- sum(is.infinite(x)); return(u)}
 o <- apply(dfFBS[, -c(1:3)], 2, naFn); colNA <- which(o > 0)
 # Population is NA in a few small and/or politically volatile ctys. Drop these.
 unique(dfFBS$area[which(is.na(dfFBS$Population))])
-rowRm <- which(is.na(dfFBS$Population)); dfFBS <- dfFBS[-rowRm, ]
-if(length(indRm) != 0){dfFBS <- dfFBS[-indRm, ]}
+rowRm <- which(is.na(dfFBS$Population))
+# Also get rid of outliers in the errors vs fitted values plot: Mali, Chad
+AddToRowRm <- which(dfFBS$area %in% c("Chad", "Mali"))
+if(length(rowRm) != 0){rowRm <- unique(c(rowRm, AddToRowRm))}else{rowRm <- AddToRowRm}
+if(length(rowRm) != 0){dfFBS <- dfFBS[-rowRm, ]}
 # Calculate residual kcal category
 colSkip <- which(colnames(dfFBS) %in% c("Grand Total", "Population"))
 dfFBS$Residual <- dfFBS$`Grand Total` -
@@ -595,7 +622,7 @@ dfFBS$Residual <- dfFBS$`Grand Total` -
 # Make sure dfDaly and dfFBS ctys match
 setdiff(dfDaly$area, dfFBS$area)
 setdiff(dfFBS$area, dfDaly$area)
-dfFBS$area[grep("Ivoire", dfFBS$area)] <- "Côte d'Ivoire"
+#unique(dfFBS$area[grep("Guinea", dfFBS$area)])
 # Separate into FBS commodity and FBS macnut dfs
 dfFBScom <- dfFBS %>% subset(element == "Food supply (kcal/capita/day)") %>% select(-c(element, `Grand Total`))
 dfFBSmn <- dfFBS %>% subset(element %in%
@@ -931,8 +958,8 @@ ggsave(saveTo, width = 5, height = 3)
 #thisYr <- 2019
 # Model 1
 # Hunger ~ Commodity
-dfMod <- merge(dfDaly, dfFBScom) %>% #merge(dfClustKey) %>%
-  #merge(dfGDP) %>%
+dfMod <- merge(dfDaly, dfFBSmn) %>% #merge(dfClustKey) %>%
+  merge(dfGDP) %>%
 #  subset(year == thisYr) %>%
   # mutate(`DALYs/capita` = 1000 * val / `Population (1000 persons)`) %>%
   #rename(`DALYs/100,000 capita` = val) %>%
@@ -966,9 +993,6 @@ unique(dfMod$area[which(is.infinite(dfMod$`Sugar (Raw Equivalent)`))])
 indNoPulses <- which(is.infinite(dfMod$Pulses))
 dfMod[indNoPulses, ] <- 0
 #---
-indRm <- which(dfMod$area %in% c("Mali", "South Sudan"))
-dfMod <- dfMod[-indRm, ]
-#---
 # keepRegs <- c("Africa South\nof the Sahara",
 #               "Eur. / N. Amer. /\nAus. / NZ", "CWANA")
 # dfMod$Region[which(!(dfMod$Region %in% keepRegs))] <- "Other"
@@ -991,112 +1015,76 @@ dfModOve <- dfModOve %>% select (-catCol)
 #---
 #indDummy <- grep("Region", colnames(dfModChr))
 #---
-#dfModChr <- dfModChr %>% subset(clust == 1) %>% select(-clust)
-refFn <- function(x){
-  out <- x - log(mean(exp(x)))
-  return(out)
-}
-nonCont <- c(1:3)
-dfModChr[, -nonCont] <- as.data.frame(apply(dfModChr[, -nonCont], 2, refFn))
-# dfModChr$Region_Other <- NULL
-dfModChr$pop14 <- NULL
-dfModChr$sdi <- NULL
-#dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
-#dfModChr$Region <- as.factor(dfModChr$Region)
-dfModChr$Region <- NULL
-dfModChr$Residual <- NULL
-dfModChr$`Carb supply (kcal/capita/day)` <- NULL
-dfModChr$`Protein supply (kcal/capita/day)` <- NULL
-#---
+# Chronic hunger
 colnames(dfModChr)[4] <- "y"
 #colnames(dfModChr)[4] <- paste0("`", colnames(dfModChr)[4], "`")
-vars <- colnames(dfModChr)[5:ncol(dfModChr)]
+vars <- colnames(dfModChr)[7:ncol(dfModChr)]
+vars <- colnames(dfModChr)[c(5, 7:12)]
+vars <- colnames(dfModChr)[c(5, 7, 9)]
 vars <- paste0("`", vars, "`")
-# y <- paste0("`", colnames(dfModChr)[4], "`")
-# xpd(.[y] ~ .[vars])
-#setFixest_fml(..vars = ~ paste0("`", paste(vars, collapse = "`+`"), "`"))
-modFE <- feols(y ~ .[vars] | area, data = dfModChr, cluster = c("area", "year"))
+modFE <- feols(y ~ .[vars] | area, data = dfModChr, cluster = c("area"))
+modFE <- feols(y ~ sdi + `F&V` | area, data = dfModChr, cluster = c("area"))
 #modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
 summary(modFE)
+plot(modFE$fitted.values, modFE$residuals)
+unique(dfModChr$area[which(abs(modFE$residuals) > 0.3)])
+hist(fixef(modFE)$area, breaks = 10)
+#---
+#Bennet's Law
+colnames(dfModChr)[c(7)] <- "CRT"
+modFE <- feols(CRT ~ `GDP/capita` | year, data = dfModChr, cluster = c("year"))
+#modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
+summary(modFE)
+plot(modFE$fitted.values, modFE$residuals)
+modelsummary(modFE, statistic = "p.value")
+#---
+names(fixef(modFE)$area)
+library(marginaleffects)
+#View(slopes(modFE))
+avg_slopes(modFE)
 #car::vif(modFE)
-
 models <- list(
   feols(y ~ .[vars] | area, data = dfModChr),
+  feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModChr),
+  feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModChr),
   feols(y ~ .[vars] | year, data = dfModChr),
-  feols(y ~ .[vars] | year + area, cluster = ~year+area, data = dfModChr)
+  feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModChr)
   )
-
-modelsummary(models, statistic = "p.value")
+modelsummary(models, statistic = "p.value", output = "chrFEmods.docx")
+# pDfModChr <- pdata.frame(dfModChr, index = c("area", "year"))
+# modFEc <- plm(y~.-area-year-Region, data = pDfModChr, index = c("area", "year"), model = "within", effect = "individual")
+# modFEt <- plm(y~.-area-year-Region, data = pDfModChr, index = c("area", "year"), model = "within", effect = "time")
+# summary(modFEt)
+# pFtest(modFEt, modFEc)
+# plmtest(modFE, c("time"), type=("bp"))
 #---
-# pDfModChr <- pdata.frame(dfModChr, index = c("Region", "year"))
-# modFE <- plm(`DALYs.100.000.capita`~.-area-year-Region, data = pDfModChr, index = c("Region", "year"), model = "within", effect = "individual")
-# summary(modFE)
-# feVec <- fixef(modFE)
-# hist(feVec)
-# feVec[which(feVec > 10)]
-# 
-# modFE1 <- modFE
-# modFE2 <- modFE
-# modFE3 <- modFE
-# modFE4 <- modFE
-# modFE5 <- modFE
-# export_summs(modFE1, modFE2, modFE3, model.names = c("Chr1", "Chr2", "Chr3"), to.file = "docx", file.name = paste0(picFolder, "modChrFE2.docx"))
-# modRE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, index = c("area", "year"), model = "random", effect = "time",
-#              random.method = "ht")
-# summary(modRE)
-
-
-# library(estimatr)
-# mfe <- lm_robust(`DALYs/100,000 capita`~.-area-year-Region,
-#                   clusters = Region,
-#                   fixed_effects = ~Region,
-#                   data = dfModChr)
-# summary(mfe)
-# library(xtable)
-# library(kableExtra)
-# kable(tidy(modFE), digits=3, 
-#       caption = "FE")
-#coeftest(modFE, vcovHC(modFE, type = "HC1", cluster = c("area", "year")))
-
-#hist(fixef(modFE), breaks = 15)
-# modRE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, index = c("area", "year"), model = "random")
-# summary(modRE)
-# phtest(modFE, modRE)
-#modCl <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModChr, model = "pooling")
-#summary(modCl)
-# library(xtable)
-# kable(tidy(modCl), digits=3, 
-#       caption = "Pooled model")
-# modP <- lm.cluster(dfModChr, `DALYs/100,000 capita`~.-year-area,
-#                    cluster = "year")
-# texreg::extract(modP)
-
-# mod <- lm(`DALYs/100,000 capita`~.,dfModChr)
-# summ(mod)
-#summary(mod)
-# car::vif(mod)
-# plot(mod$fitted.values, mod$residuals)
-# modChr <- mod
-# pVals <- summary(mod)$coefficients[-1, 4]
-# colRm <- which(pVals > 0.5) + 1
-# dfModChr <- dfModChr[, -colRm]
-#---
-# ctyVecChr[which(mod$residuals > 1)]
-#dfModHid <- dfModHid %>% subset(clust == 2) %>% select(-clust)
-#dfModHid[, -nonCont] <- as.data.frame(apply(dfModHid[, -nonCont], 2, refFn))
-#dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
-#dfModHid$Region_Other <- NULL
+# Hidden hunger
 colnames(dfModHid)[4] <- "y"
-dfModHid$sdi <- NULL
-dfModHid$pop14 <- NULL
-dfModHid$Region <- NULL
-dfModHid$Residual <- NULL
-dfModHid$`Food supply (kcal/capita/day)` <- NULL
-dfModHid$`Protein supply (kcal/capita/day)` <- NULL
+# dfModHid$sdi <- NULL
+# dfModHid$pop14 <- NULL
+# dfModHid$Region <- NULL
+# dfModHid$Residual <- NULL
+# dfModHid$`Food supply (kcal/capita/day)` <- NULL
+# dfModHid$`Protein supply (kcal/capita/day)` <- NULL
 vars <- colnames(dfModHid)[5:ncol(dfModHid)]
+vars <- colnames(dfModHid)[c(5, 7, 9)]
 vars <- paste0("`", vars, "`")
-modFE <- feols(y ~ .[vars] | year, data = dfModHid)
+modFE <- feols(y ~ .[vars] | area, data = dfModHid)
 summary(modFE)
+plot(modFE$fitted.values, modFE$residuals)
+unique(dfModChr$area[which(modFE$fitted.values > 5.5)])
+hist(fixef(modFE)$area, breaks = 10)
+
+models <- list(
+  feols(y ~ .[vars] | area, data = dfModHid),
+  feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModHid),
+  feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModHid),
+  feols(y ~ .[vars] | year, data = dfModHid),
+  feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModHid)
+)
+modelsummary(models, statistic = "p.value")
+
+
 # pDfModHid <- pdata.frame(dfModHid, index = c("area", "year"))
 # modFE <- plm(`DALYs.100.000.capita`~.-area-year, data = pDfModHid, index = c("area", "year"), model = "within", effect = "time")
 # summary(modFE)
@@ -1128,18 +1116,22 @@ summary(modFE)
 # dfModHid <- dfModHid[, -colRm]
 #---
 dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
-dfModOve$Region <- NULL
-dfModOve$pop14 <- NULL
-dfModOve$sdi <- NULL
-dfModOve$Residual <- NULL
-dfModOve$`Food supply (kcal/capita/day)` <- NULL
-dfModOve$`Protein supply (kcal/capita/day)` <- NULL
+# dfModOve$Region <- NULL
+# dfModOve$pop14 <- NULL
+# dfModOve$sdi <- NULL
+# dfModOve$Residual <- NULL
+# dfModOve$`Food supply (kcal/capita/day)` <- NULL
+# dfModOve$`Protein supply (kcal/capita/day)` <- NULL
 colnames(dfModOve)[4] <- "y"
 vars <- colnames(dfModOve)[5:ncol(dfModOve)]
+vars <- colnames(dfModOve)[c(5, 7, 9)]
 vars <- paste0("`", vars, "`")
-modFE <- feols(y ~ .[vars] | year, data = dfModOve)
+modFE <- feols(y ~ sdi | area, data = dfModOve)
+modFE <- feols(y ~ .[vars] | area, data = dfModOve)
 summary(modFE)
-
+plot(modFE$fitted.values, modFE$residuals)
+unique(dfModChr$area[which(modFE$fitted.values > 5.5)])
+hist(fixef(modFE)$area, breaks = 15)
 
 # pDfModOve <- pdata.frame(dfModOve, index = c("area", "year"))
 # modFE <- plm(DALYs.100.000.capita~.-area-year, data = pDfModOve, index = c("area", "year"), model = "within", effect = "time")
