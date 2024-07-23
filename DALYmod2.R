@@ -564,8 +564,8 @@ theseItems <- c("Cereals - Excluding Beer",
                 "Vegetable Oils",
                 #"Oilcrops", #consumed oil crop oils are included under vegetable oils
                 "Fruits - Excluding Wine", "Pulses",
-#                "Animal Products",
-                "Animal fats",
+                "Animal Products",
+#                "Animal fats",
 #                "Meat",
 #                "Milk - Excluding Butter",
                 #"Sugar Crops",
@@ -584,11 +584,11 @@ dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
   mutate(item = gsub("Fruits - Excluding Wine", "F&V", item)) %>%
   mutate(item = gsub("Vegetables", "F&V", item)) %>%
   #mutate(item = gsub("Milk - Excluding Butter", "Milk", item)) %>%
-  mutate(item = gsub("Cereals - Excluding Beer", "CRT", item)) %>%
-  mutate(item = gsub("Starchy Roots", "CRT", item)) %>%
+  # mutate(item = gsub("Cereals - Excluding Beer", "CRT", item)) %>%
+  # mutate(item = gsub("Starchy Roots", "CRT", item)) %>%
   #mutate(item = gsub("Sugar \\(Raw Equivalent\\)", "CRTnS", item)) %>%
-  mutate(item = gsub("Animal fats", "Fats", item)) %>%
-  mutate(item = gsub("Vegetable Oils", "Fats", item)) %>%
+  # mutate(item = gsub("Animal fats", "Fats", item)) %>%
+  # mutate(item = gsub("Vegetable Oils", "Fats", item)) %>%
   group_by(area, year, item, element) %>%
   summarise(value = sum(value, na.rm = T)) %>%
   spread(item, value) %>%
@@ -607,7 +607,7 @@ if("Alcoholic Beverages" %in% theseItems){
 }
 # Check for NAs
 naFn <- function(x){u <- sum(is.infinite(x)); return(u)}
-o <- apply(dfFBS[, -c(1:3)], 2, naFn); colNA <- which(o > 0)
+o <- apply(dfFBS[, -c(1:3)], 2, naFn); colNA <- which(o > 0);table(o)
 # Population is NA in a few small and/or politically volatile ctys. Drop these.
 unique(dfFBS$area[which(is.na(dfFBS$Population))])
 rowRm <- which(is.na(dfFBS$Population))
@@ -958,7 +958,7 @@ ggsave(saveTo, width = 5, height = 3)
 #thisYr <- 2019
 # Model 1
 # Hunger ~ Commodity
-dfMod <- merge(dfDaly, dfFBSmn) %>% #merge(dfClustKey) %>%
+dfMod <- merge(dfDaly, dfFBScom) %>% #merge(dfClustKey) %>%
   merge(dfGDP) %>%
 #  subset(year == thisYr) %>%
   # mutate(`DALYs/capita` = 1000 * val / `Population (1000 persons)`) %>%
@@ -978,13 +978,14 @@ isInfNan <- function(x){
     sum(is.na(x) > 0)
   return(nInfNan)
 }
-infNanLook <- apply(dfMod[, -notCols], 2, isInfNan)
+infNanLook <- apply(dfMod[, -notCols], 2, isInfNan); table(infNanLook)
 #---
 # macnut models
 # Where are the infinite values happening?
-unique(dfMod$area[which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))])
-rowRm <- which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))
-dfMod <- dfMod[-rowRm, ]
+which(infNanLook == 147);which(infNanLook == 21)
+#unique(dfMod$area[which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))])
+#rowRm <- which(is.infinite(dfMod$`Food supply (kcal/capita/day)`))
+#dfMod <- dfMod[-rowRm, ]
 #---
 # commod models
 #Where are people not eating x?
@@ -1018,39 +1019,51 @@ dfModOve <- dfModOve %>% select (-catCol)
 # Chronic hunger
 colnames(dfModChr)[4] <- "y"
 #colnames(dfModChr)[4] <- paste0("`", colnames(dfModChr)[4], "`")
-vars <- colnames(dfModChr)[7:ncol(dfModChr)]
-vars <- colnames(dfModChr)[c(5, 7:12)]
-vars <- colnames(dfModChr)[c(5, 7, 9)]
-vars <- paste0("`", vars, "`")
-modFE <- feols(y ~ .[vars] | area, data = dfModChr, cluster = c("area"))
-modFE <- feols(y ~ sdi + `F&V` | area, data = dfModChr, cluster = c("area"))
+vars <- colnames(dfModChr)[c(5, 7:(ncol(dfModChr) - 1))]
+vars <- colnames(dfModChr)[c(7:(ncol(dfModChr)))]
+# vars <- colnames(dfModChr)[c(5, 7:12)]
+varsChr2 <- colnames(dfModChr)[c(6, 7, 9)]
+#varsChr2 <- colnames(dfModChr)[c(15, 7, 9, 10)]
+varsChr1 <- colnames(dfModChr)[c(5)]
+varsChr2 <- paste0("`", varsChr2, "`")
+varsChr1 <- paste0("`", varsChr1, "`")
+modChr2 <- feols(y ~ .[varsChr2] | area, data = dfModChr,  vcov = "hetero")
+modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = "area")# vcov = "hetero")
+#modFE <- feols(y ~ sdi + `F&V` | area, data = dfModChr, cluster = c("area"))
 #modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
-summary(modFE)
+summary(modChr1)
+summary(modChr2)
 plot(modFE$fitted.values, modFE$residuals)
 unique(dfModChr$area[which(abs(modFE$residuals) > 0.3)])
 hist(fixef(modFE)$area, breaks = 10)
+
+# models <- list(
+#   feols(y ~ .[varsChr2] | area, data = dfModChr),
+#   feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero"))
+# modelsummary(models, statistic = "p.value")
+
 #---
-#Bennet's Law
-colnames(dfModChr)[c(7)] <- "CRT"
-modFE <- feols(CRT ~ `GDP/capita` | year, data = dfModChr, cluster = c("year"))
-#modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
-summary(modFE)
-plot(modFE$fitted.values, modFE$residuals)
-modelsummary(modFE, statistic = "p.value")
-#---
-names(fixef(modFE)$area)
-library(marginaleffects)
-#View(slopes(modFE))
-avg_slopes(modFE)
-#car::vif(modFE)
-models <- list(
-  feols(y ~ .[vars] | area, data = dfModChr),
-  feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModChr),
-  feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModChr),
-  feols(y ~ .[vars] | year, data = dfModChr),
-  feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModChr)
-  )
-modelsummary(models, statistic = "p.value", output = "chrFEmods.docx")
+# #Bennet's Law
+# colnames(dfModChr)[c(7)] <- "CRT"
+# modFE <- feols(CRT ~ `GDP/capita` | year, data = dfModChr, cluster = c("year"))
+# #modFE <- feols(y ~ .[vars] | year, data = dfModChr, cluster = c("area", "year"))
+# summary(modFE)
+# plot(modFE$fitted.values, modFE$residuals)
+# modelsummary(modFE, statistic = "p.value")
+# #---
+# names(fixef(modFE)$area)
+# library(marginaleffects)
+# #View(slopes(modFE))
+# avg_slopes(modFE)
+# #car::vif(modFE)
+# models <- list(
+#   feols(y ~ .[vars] | area, data = dfModChr),
+#   feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModChr),
+#   feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModChr),
+#   feols(y ~ .[vars] | year, data = dfModChr),
+#   feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModChr)
+#   )
+# modelsummary(models, statistic = "p.value", output = "chrFEmods.docx")
 # pDfModChr <- pdata.frame(dfModChr, index = c("area", "year"))
 # modFEc <- plm(y~.-area-year-Region, data = pDfModChr, index = c("area", "year"), model = "within", effect = "individual")
 # modFEt <- plm(y~.-area-year-Region, data = pDfModChr, index = c("area", "year"), model = "within", effect = "time")
@@ -1060,29 +1073,29 @@ modelsummary(models, statistic = "p.value", output = "chrFEmods.docx")
 #---
 # Hidden hunger
 colnames(dfModHid)[4] <- "y"
-# dfModHid$sdi <- NULL
-# dfModHid$pop14 <- NULL
-# dfModHid$Region <- NULL
-# dfModHid$Residual <- NULL
-# dfModHid$`Food supply (kcal/capita/day)` <- NULL
-# dfModHid$`Protein supply (kcal/capita/day)` <- NULL
-vars <- colnames(dfModHid)[5:ncol(dfModHid)]
-vars <- colnames(dfModHid)[c(5, 7, 9)]
-vars <- paste0("`", vars, "`")
-modFE <- feols(y ~ .[vars] | area, data = dfModHid)
-summary(modFE)
-plot(modFE$fitted.values, modFE$residuals)
-unique(dfModChr$area[which(modFE$fitted.values > 5.5)])
-hist(fixef(modFE)$area, breaks = 10)
-
-models <- list(
-  feols(y ~ .[vars] | area, data = dfModHid),
-  feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModHid),
-  feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModHid),
-  feols(y ~ .[vars] | year, data = dfModHid),
-  feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModHid)
-)
-modelsummary(models, statistic = "p.value")
+varsHid2 <- colnames(dfModHid)[c(5,13)]#7:(ncol(dfModHid) - 1))]
+varsHid2 <- paste0("`", varsHid2, "`")
+varsHid1 <- colnames(dfModHid)[c(6, 7, 9, 13)] #7:(ncol(dfModHid) - 1))]
+varsHid1 <- paste0("`", varsHid1, "`")
+# Don't forget to use cty cluster robust standard errors!
+# another alternative perhaps worth exploring is vcov = "hetero"
+modHid1 <- feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero") # cluster = "area")
+modHid2 <- feols(y ~ .[varsHid2] | area, data = dfModHid, cluster = "area")
+# modFE <- feols(y ~ .[vars] | area, data = dfModHid, cluster = c("year", "area"))
+summary(modHid1)
+summary(modHid2)
+plot(modHid1$fitted.values, modHid1$residuals)
+plot(modHid2$fitted.values, modHid2$residuals)
+hist(fixef(modHid1)$area, breaks = 10)
+hist(fixef(modHid2)$area, breaks = 10)
+# models <- list(
+#   feols(y ~ .[vars] | area, data = dfModHid),
+#   feols(y ~ .[vars] | area, cluster = ~area+year, data = dfModHid),
+#   feols(y ~ .[vars] | area+year, cluster = ~area+year, data = dfModHid),
+#   feols(y ~ .[vars] | year, data = dfModHid),
+#   feols(y ~ .[vars] | year, cluster = ~year+area, data = dfModHid)
+# )
+# modelsummary(models, statistic = "p.value")
 
 
 # pDfModHid <- pdata.frame(dfModHid, index = c("area", "year"))
@@ -1115,7 +1128,7 @@ modelsummary(models, statistic = "p.value")
 # colRm <- which(pVals > 0.5) + 1
 # dfModHid <- dfModHid[, -colRm]
 #---
-dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
+#dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
 # dfModOve$Region <- NULL
 # dfModOve$pop14 <- NULL
 # dfModOve$sdi <- NULL
@@ -1123,16 +1136,37 @@ dfModOve[, -nonCont] <- as.data.frame(apply(dfModOve[, -nonCont], 2, refFn))
 # dfModOve$`Food supply (kcal/capita/day)` <- NULL
 # dfModOve$`Protein supply (kcal/capita/day)` <- NULL
 colnames(dfModOve)[4] <- "y"
-vars <- colnames(dfModOve)[5:ncol(dfModOve)]
-vars <- colnames(dfModOve)[c(5, 7, 9)]
-vars <- paste0("`", vars, "`")
-modFE <- feols(y ~ sdi | area, data = dfModOve)
-modFE <- feols(y ~ .[vars] | area, data = dfModOve)
-summary(modFE)
-plot(modFE$fitted.values, modFE$residuals)
-unique(dfModChr$area[which(modFE$fitted.values > 5.5)])
-hist(fixef(modFE)$area, breaks = 15)
+#vars <- colnames(dfModOve)[c(5, 7:(ncol(dfModOve) - 1))]
+varsOve2 <- colnames(dfModOve)[c(6, 7, 10)]
+varsOve2 <- paste0("`", varsOve2, "`")
+varsOve1 <- colnames(dfModOve)[c(5, 7, 10)]
+varsOve1 <- paste0("`", varsOve1, "`")
+#modFE <- feols(y ~ sdi | area, data = dfModOve)
+modOve1 <- feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero")
+modOve2 <- feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
+summary(modOve1)
+summary(modOve2)
+plot(modOve1$fitted.values, modOve1$residuals)
+plot(modOve2$fitted.values, modOve2$residuals)
+hist(fixef(modOve1)$area, breaks = 10)
+hist(fixef(modOve2)$area, breaks = 10)
+#-----------------------------------------------------------------
+models <- list(
+  feols(y ~ .[varsChr1] | area, data = dfModChr),
+  feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero"),
+  feols(y ~ .[varsHid2] | area, data = dfModHid),
+  feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero"),
+  feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero"),
+  feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
+)
+thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
+thisFile <- "ctyFEmods.docx"
+thisFilePath <- paste0(thisFolder, thisFile)
+modelsummary(models, output = thisFilePath, statistic = "p.value")
 
+#-----------------------------------------------------------------
+export_summs(modChr, modChr2, modHid, modHid2, modOve, model.names = c("Chronic\nhunger 1", "Chronic\nhunger 2", "Hidden\nhunger 1", "Hidden\nhunger 2", "Overnutrition"), to.file = "docx", file.name = paste0(picFolder, "modsCtyFE.docx"))
+#-----------------------------------------------------------------
 # pDfModOve <- pdata.frame(dfModOve, index = c("area", "year"))
 # modFE <- plm(DALYs.100.000.capita~.-area-year, data = pDfModOve, index = c("area", "year"), model = "within", effect = "time")
 # summary(modFE)
