@@ -1,46 +1,54 @@
+# Set up
+#----------------------------------------------------------------
+# Load libraries
 library(tidyverse)
-library(FAOSTAT)
-library(jtools)
-library(ggrepel)
-library(miceadds)
-library(gganimate)
-library(factoextra)
-library(plm)
+# library(FAOSTAT)
+# library(jtools)
+# library(ggrepel)
+# library(miceadds)
+# library(gganimate)
+# library(factoextra)
+# library(plm)
 library(fixest)
 library(modelsummary)
 #---
-axisTitleSize <- 8
-axisTextSize <- 7
-legendTextSize <- 7
-facetTitleSize <- 7
-#--------------------------------------------------------------
-# Create country vecs for regional subsetting
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FAO country region keys/"
-theseFiles <- list.files(thisFolder)
-listVec <- list()
-for(i in 1:length(theseFiles)){
-  print(theseFiles[i])
-  thisPath <- paste0(thisFolder, theseFiles[i])
-  thisDf <- read.csv(thisPath, stringsAsFactors = F)
-  thisVec <- thisDf$Area
-  listVec[[theseFiles[i]]] <- thisVec
-}
-ctyInAsansCWA <- listVec[[theseFiles[1]]]
-ctyInCWANA <- listVec[[theseFiles[3]]]
-#ctyInEUR <- listVec[[theseFiles[3]]]
-ctyInLAC <- listVec[[theseFiles[5]]]
-ctyInNAMEURAUSNZ <- listVec[[theseFiles[6]]]
-ctyInSSA <- listVec[[theseFiles[7]]]
+# axisTitleSize <- 8
+# axisTextSize <- 7
+# legendTextSize <- 7
+# facetTitleSize <- 7
+# #--------------------------------------------------------------
+# Define folders
+dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/"
+graphicsFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Graphics/"
+
+# # Create country vecs for regional subsetting
+# dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FAO country region keys/"
+# theseFiles <- list.files(dataFolder)
+# listVec <- list()
+# for(i in 1:length(theseFiles)){
+#   print(theseFiles[i])
+#   thisPath <- paste0(dataFolder, theseFiles[i])
+#   thisDf <- read.csv(thisPath, stringsAsFactors = F)
+#   thisVec <- thisDf$Area
+#   listVec[[theseFiles[i]]] <- thisVec
+# }
+# ctyInAsansCWA <- listVec[[theseFiles[1]]]
+# ctyInCWANA <- listVec[[theseFiles[3]]]
+# #ctyInEUR <- listVec[[theseFiles[3]]]
+# ctyInLAC <- listVec[[theseFiles[5]]]
+# ctyInNAMEURAUSNZ <- listVec[[theseFiles[6]]]
+# ctyInSSA <- listVec[[theseFiles[7]]]
 #--------------------------------------------------------------
 #https://vizhub.healthdata.org/gbd-results/
-picFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
-theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLc1990-2019countries-"), c(1:2), ".csv")
-listDf <- lapply(theseFiles, read.csv)
-dfCauseRaw <- as.data.frame(do.call(rbind, listDf))
-theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLr1990-2019countries-"), c(1:3), ".csv")
-listDf <- lapply(theseFiles, read.csv)
-dfRiskRaw <- as.data.frame(do.call(rbind, listDf))
+# theseFiles <- paste0(dataFolder, c("IHME-GBD_2019_ALLc1990-2019countries-"), c(1:2), ".csv")
+# listDf <- lapply(theseFiles, read.csv)
+# dfCauseRaw <- as.data.frame(do.call(rbind, listDf))
+thisFilename <- "IHME-GBD_2010-2021_cNutDef_cty.csv"
+thisFilepath <- paste0(dataFolder, thisFilename)
+dfCauseRaw <- read.csv(thisFilepath, stringsAsFactors = F)
+# theseFiles <- paste0(dataFolder, c("IHME-GBD_2019_ALLr1990-2019countries-"), c(1:3), ".csv")
+# listDf <- lapply(theseFiles, read.csv)
+# dfRiskRaw <- as.data.frame(do.call(rbind, listDf))
 #---------------------------------------------------------------
 # Chronic hunger DALYs
 dfChr <- dfRiskRaw %>%
@@ -50,6 +58,37 @@ dfChr <- dfRiskRaw %>%
   rename(area = location) %>%
   select(area, year, val)
 dfChr$Cat <- "Chr"
+#---
+# Hidden hunger DALYs
+# From cause data get iodine deficiency, protein-energy malnutrition,
+# and other deficiencies
+# From risk factor data get DALYs due to zinc, iron,
+# vit. A deficiency, and child underweight
+hidHcause <- c("Iodine deficiency",
+               "Dietary iron deficiency",
+               "Vitamin A deficiency",
+               "Other nutritional deficiencies")
+# hidHrisks <- c("Vitamin A deficiency",
+#                "Zinc deficiency",
+#                "Iron deficiency") #CHANGE TO DIETARY IRON DEFICIENCY (cause not risk)
+# dfHid1 <- dfRiskRaw %>%
+#   subset(rei %in% hidHrisks &
+#            metric == "Rate" &
+#            age == "All ages") %>%
+#   rename(issue = rei, area = location) %>%
+#   select(area, year, issue, val)
+dfHid2 <- dfCauseRaw %>%
+  subset(cause %in% hidHcause &
+           metric == "Rate" &
+           age == "All ages") %>%
+  rename(issue = cause, area = location) %>%
+  select(area, year, issue, val)
+#dfHid <- as.data.frame(rbind(dfHid1, dfHid2)) %>%
+dfHid <- dfHid2 %>%
+  group_by(area, year) %>%
+  summarise(val = sum(val))
+dfHid$Cat <- "Hid"
+rm(dfHid2)
 #---
 # Overnutrition DALYs
 keepThese <- c("Diet high in sugar-sweetened beverages",
@@ -74,79 +113,225 @@ dfOverDev <- dfRiskRaw %>% subset(rei %in% keepThese &
   summarize(val = sum(val))
 dfOverDev$Cat <- "OverDev"
 #---
-# Hidden hunger DALYs
-# From cause data get iodine deficiency, protein-energy malnutrition,
-# and other deficiencies
-# From risk factor data get DALYs due to zinc, iron,
-# vit. A deficiency, and child underweight
-hidHcause <- c("Iodine deficiency",
-               "Other nutritional deficiencies")
-hidHrisks <- c("Vitamin A deficiency",
-               "Zinc deficiency",
-               "Iron deficiency") #CHANGE TO DIETARY IRON DEFICIENCY (cause not risk)
-dfHid1 <- dfRiskRaw %>%
-  subset(rei %in% hidHrisks &
-           metric == "Rate" &
-           age == "All ages") %>%
-  rename(issue = rei, area = location) %>%
-  select(area, year, issue, val)
-dfHid2 <- dfCauseRaw %>%
-  subset(cause %in% hidHcause &
-           metric == "Rate" &
-           age == "All ages") %>%
-  rename(issue = cause, area = location) %>%
-  select(area, year, issue, val)
-dfHid <- as.data.frame(rbind(dfHid1, dfHid2)) %>%
-  group_by(area, year) %>%
-  summarise(val = sum(val))
-dfHid$Cat <- "Hid"
-#---
 # Unite them
 listDf <- list(dfChr, dfHid, dfOverDev)
 dfDaly <- as.data.frame(do.call(rbind, listDf))
+dfDaly <- dfHid
+# Rename Turkey to facilitate later merges
 dfDaly$area <- gsub("Turkey", "Turkiye", dfDaly$area)
+# The name "Taiwan (Province of China)" suggests it is included in "China"
+# Therefore, drop Taiwan to avoid double counting China DALYs
 dfDaly <- subset(dfDaly, !(area %in% c("Taiwan (Province of China)")))
-#--------------------------------------------------------------
-# Get IHME's Socio-demographic index too and merge
-#https://ghdx.healthdata.org/record/global-burden-disease-study-2021-gbd-2021-socio-demographic-index-sdi-1950%E2%80%932021
-#thisFile <- "IHME_GBD_2019_SDI_1990_2019_Y2020M10D15.xlsx"
-thisFile <- "IHME_GBD_SDI_2021_SDI_1950_2021_Y2024M05D16.csv"
-thisFilePath <- paste0(thisFolder, thisFile)
+#=========================================================================
+# Get IHME's Socio-demographic index (SDI), merge with dfDaly
+# Source: https://ghdx.healthdata.org/record/global-burden-disease-study-2021-gbd-2021-socio-demographic-index-sdi-1950%E2%80%932021
+#thisFile <- "IHME_GBD_2019_SDI_1990_2019_Y2020M10D15.xlsx" # 2019 release
+thisFile <- "IHME_GBD_SDI_2021_SDI_1950_2021_Y2024M05D16.csv" # 2021 release
+thisFilePath <- paste0(dataFolder, thisFile)
 dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
 dfRaw <- dfRaw %>% rename(area = location_name,
                           sdi = mean_value,
                           year = year_id) %>%
   select(area, year, sdi)
-# Lots of duplicates for some region groupings. Remove.
-# Careful Georgia is not duplicate. Deal with Georgia separately.
-dfRaw <- dfRaw %>% group_by(area) %>%
-  mutate(x = duplicated(year))
-dfRaw$x[which(dfRaw$area == "Georgia")] <- F
-dfRaw <- dfRaw %>% subset(x == F) %>% select(-x)
-
-#dfRaw <- readxl::read_excel(thisFilePath)
-# colnames(dfRaw) <- dfRaw[1, ]
-# dfRaw <- dfRaw[-1, ]
-# Get rid of Georgia the USA state
-indGeorgia <- which(dfRaw$area == "Georgia")
-dfRaw <- dfRaw[-indGeorgia[2], ]
-# Get rid of repeated MENA row
-indMENA <- which(dfRaw$Location == "North Africa and Middle East")
-dfRaw <- dfRaw[-indMENA[2], ]
-# Get rid of repeated South Asia row
-indSAS <- which(dfRaw$Location == "South Asia")
-dfRaw <- dfRaw[-indSAS[2], ]
-gathercols <- colnames(dfRaw)[-1]
-dfSDI <- dfRaw %>% as.data.frame() %>%
-  gather_("year", "sdi", gathercols)
-dfSDI$sdi <- as.numeric(sub("..", "0.", dfSDI$sdi))
-colnames(dfSDI)[1] <- "area"
+# For some reason, some region level areas are duplicated
+duplicateAreas <- dfRaw %>% group_by(year) %>%
+  mutate(dup = duplicated(area)) %>%
+  subset(dup == T) %>% .$area %>% unique()
+# Remove these, except for Georgia. Georgia is not duplicate
+# Georgia refers to the US state and the cty
+# Deal with Georgia separately
+dfRaw <- dfRaw %>% group_by(year) %>%
+  mutate(dup = duplicated(area))
+dfRaw$dup[which(dfRaw$area == "Georgia")] <- F
+dfRaw <- dfRaw %>% subset(dup == F) %>% select(-dup)
+# Dealing with Georgia
+# In the previous 2019 release (which was an .xlsx not .csv file),
+# The two Georgias were clearly differentiated by region headings
+# In that file, the 2019 values for Georgia the cty and Georgia the US state
+# were 0.702 and 0.841, respectively
+# By this we can determine which Georgia is the cty in the 2021 SDI data.
+# (I.e., it's the one with the lower SDI in recent years)
+dfGeorgia <- dfRaw %>% subset(area == "Georgia") %>%
+  mutate(dup = as.integer(duplicated(year))) %>%
+  mutate(area = paste(area, dup)) %>% select(-dup) %>%
+  spread(area, sdi) 
+# Visual inspection of dfGeorgia reveals that "Georgia 1" has the higher SDI
+# in recent years and so this must refer to the cty.
+dfGeorgia <- dfGeorgia %>% select(-`Georgia 0`) %>%
+  rename(sdi = `Georgia 1`) %>% mutate(area = "Georgia") %>%
+  select(area, year, sdi)
+dfSDI <- dfRaw %>% subset(area != "Georgia") %>%
+  rbind(dfGeorgia) %>% as.data.frame()
+rm(dfRaw, dfGeorgia)
+# Unlike the 2019 SDI data, 2021 cty names are harmonized with the names
+# in dfDaly
 u <- dfSDI$area
+setdiff(unique(dfDaly$area), unique(u))
+#unique(dfDaly$area[grep("Korea", dfDaly$area)])
+dfDaly <- dfDaly %>% merge(dfSDI)
+#========================================================================
+# Get population under 14 data from UN Population Data Portal, merge with dfDaly
+# Source: https://pdp.unfpa.org/?data_id=dataSource_8-2%3A548%2CdataSource_8-5%3A2870
+# Alternatively: https://population.un.org/wpp/Download/Standard/Population/
+thisFile <- "WPP2024_POP_F06_1_POPULATION_PERCENTAGE_SELECT_AGE_GROUPS_BOTH_SEXES.xlsx"
+thisFilepath <- paste0(dataFolder, thisFile)
+dfRaw <- readxl::read_xlsx(thisFilepath)
+dfRaw <- dfRaw[-c(1:11), ]
+colnames(dfRaw) <- dfRaw[1, ]
+dfPopYoung <- dfRaw[-1, ] %>% 
+  rename(area = `Region, subregion, country or area *`,
+         year = Year,
+         `Pct Pop < 15` = `0-14`) %>%
+  select(area, year, `Pct Pop < 15`) %>%
+  subset(year >= 2010)
+rm(dfRaw)
+dfPopYoung$`Pct Pop < 15` <- as.numeric(dfPopYoung$`Pct Pop < 15`)
+# Check for duplicates (character(0) if none)
+dfPopYoung %>% group_by(year) %>% mutate(dup = duplicated(area)) %>%
+  subset(dup == T) %>% .$area %>% unique()
+# Harmonize cty names
+u <- dfPopYoung$area
+setdiff(unique(dfDaly$area), unique(u))
+dfPopYoung$area[grep("Dem. People's Republic of Korea", u)] <- "Democratic People's Republic of Korea"
+dfPopYoung$area[grep("Micronesia \\(Fed. States of\\)", u)] <- "Micronesia (Federated States of)"
+class(dfPopYoung$`Pct Pop < 15`)
+# Make sure there are no NA (0 if none)
+sum(is.na(dfPopYoung$`Pct Pop < 15`))
+# Merge with dfDaly
+dfDaly <- dfDaly %>% merge(dfPopYoung)
+#========================================================================
+# Get FAO Food Balance Sheet kcal data, merge with dfDaly
+thisFile <- "FoodBalanceSheets_E_All_Data.csv"
+thisFilePath <- paste0(dataFolder, thisFile)
+dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
+theseElems <- c("Food supply (kcal/capita/day)", "Total Population - Both sexes",
+                "Protein supply quantity (g/capita/day)",
+                "Fat supply quantity (g/capita/day)")
+dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"))) %>% subset(Element %in% theseElems)
+yrCols <- colnames(dfRaw)[grep("20", colnames(dfRaw))]
+dfRaw <- dfRaw %>% gather("year", "value", yrCols)
+dfRaw$year <- gsub("Y", "", dfRaw$year)
+colnames(dfRaw) <- tolower(colnames(dfRaw))
+dfFBSraw <- dfRaw; rm(dfRaw)
+# keepCols <- c("area", "year", "item", "element", "unit", "value")
+# dfFBSraw2 <- dfRaw[, keepCols]; rm(dfRaw)
+# # dfRaw <- get_faostat_bulk(code = "FBSH", data_folder = dataFolder)
+# # keepCols <- c("area", "year", "item", "element", "unit", "value")
+# # dfFBSraw1 <- dfRaw[, keepCols]
+# dfFBSraw <- dfFBSraw2; rm(dfFBSraw2)
+# dfLook <- dfFBSraw %>% subset(year == 2019)
+# u <- dfLook$area
+# unique(u[grep("Lesotho", u)])
+# dfPop <- dfFBSraw %>% subset(item == "Population" &
+#                   element == "total_population___both_sexes") %>%
+#   rename(Population = value) %>%
+#   select("area", "year", "Population")
+# Rectification of names
+# setdiff(dfFBSraw$area, dfHidHung$area)
+# setdiff(dfHidHung$area, dfFBSraw$area)
+# unique(dfHidHung$area)
+# unique(dfFBSraw$area)
+#unique(dfFBSraw$area[grep("rkiye", dfFBSraw$area)])
+dfFBSraw$area[grep("United Kingdom", dfFBSraw$area)] <- "United Kingdom"
+dfFBSraw$area[grep("Netherlands", dfFBSraw$area)] <- "Netherlands"
+dfFBSraw$area[grep("rkiye", dfFBSraw$area)] <- "Turkiye"
+dfFBSraw$area[grep("Ivoire", dfFBSraw$area)] <- "Côte d'Ivoire"
+notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
+              "China, Taiwan Province of", "China, mainland")
+dfFBSraw <- subset(dfFBSraw, !(area %in% notThese))
+# Fix milk (and any other duplicates)
+dfFBSraw <- dfFBSraw %>% group_by(area, year, element, item) %>%
+  mutate(x = duplicated(item)) %>%
+  subset(x == F) %>%
+  select(-x)
+#---
+# Preliminary Look
+# theseItems <- c("Cereals - Excluding Beer",
+#                 "Starchy Roots", "Vegetables",
+#                 "Vegetable Oils",
+#                 "Oilcrops",
+#                 "Fruits - Excluding Wine", "Pulses",
+#                 "Animal Products",
+#                 "Sugar Crops",
+#                 "Alcoholic Beverages")
+# dfLook <- dfFBSraw %>% subset(area %in% "World" &
+#                              year == 2018 &
+#                              #item %in% theseItems &
+#                              element == "Food supply (kcal/capita/day)")
+#                              #"food_supply__kcal_capita_day_")
+# 
+# dfLook <- dfLook %>% subset(value > quantile(dfLook$value, 0.6))
+# gg <- ggplot(dfLook, aes(x = value,
+#                          y = reorder(item, value)))
+# gg <- gg + geom_bar(stat = "identity")
+# gg <- gg + facet_wrap(~area)
+# gg <- gg + theme_bw()
+# gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+#                  axis.title = element_blank(),
+#                  strip.text = element_text(size = facetTitleSize))
+# gg
+# thisPic <- "eatRankWld.png"
+# thisPicPath <- paste0(graphicsFolder, thisPic)
+# ggsave(thisPicPath, width = 5, height = 3)
+#=====================================================================
+# GDP/capita
+dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/FAO FBS/"
+thisFile <- "Macro-Statistics_Key_Indicators_E_All_Data.csv"
+thisFilePath <- paste0(dataFolder, thisFile)
+dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
+theseElems <- "Value US$ per capita, 2015 prices"
+dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"), ends_with("N"))) %>% subset(Element %in% theseElems)
+yrCols <- colnames(dfRaw)[grep("20|19", colnames(dfRaw))]
+dfRaw <- dfRaw %>% gather("year", "value", yrCols)
+dfRaw$year <- gsub("Y", "", dfRaw$year)
+colnames(dfRaw) <- tolower(colnames(dfRaw))
+dfGDP <- dfRaw %>% select(area, year, value) %>% rename(`GDP/capita` = value)
+rm(dfRaw)
+dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
+dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
+dfGDP$area[grep("rkiye", dfGDP$area)] <- "Turkiye"
+dfGDP$area[grep("Ivoire", dfGDP$area)] <- "Côte d'Ivoire"
+notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
+              "China, Taiwan Province of", "China, mainland")
+dfGDP <- subset(dfGDP, !(area %in% notThese))
+# dfRaw <- get_faostat_bulk(code = "MK", data_folder = dataFolder)
+# keepCols <- c("area", "year", "item", "element", "unit", "value")
+# dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
+#                                         element == "value_us__per_capita__2015_prices") %>%
+#   select(c("area", "year", "value")) %>%
+#   rename(`GDP/capita (USD 2015 prices)` = value)
+# dfGDP <- dfGDP %>% subset(!(area %in% notThese))
+# dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
+# dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
+# # setdiff(unique(dfGDP$area), unique(dfRiskRaw$location))
+# # unique(dfGDP$area)[order(unique(dfGDP$area))]
+# # unique(dfRiskRaw$location)[order(unique(dfRiskRaw$location))]
+# #dfFBSraw <- merge(dfFBSraw, dfGDP)
+
+#========================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #unique(u[grep("Cote", u)])
 dfSDI$area[grep("Venezuela", u)] <- "Venezuela (Bolivarian Republic of)"
 dfSDI$area[grep("USA", u)] <- "United States of America"
 dfSDI$area[grep("Vietnam", u)] <- "Viet Nam"
-#dfSDI$area[grep("Virgin Islands", u)] <- "United States Virgin Islands"
 dfSDI$area[grep("Tanzania", u)] <- "United Republic of Tanzania"
 dfSDI$area[grep("UK", u)] <- "United Kingdom"
 dfSDI$area[grep("Turkey", u)] <- "Turkiye"
@@ -158,7 +343,6 @@ dfSDI$area[grep("Micronesia", u)] <- "Micronesia (Federated States of)"
 dfSDI$area[grep("Laos", u)] <- "Lao People's Democratic Republic"
 dfSDI$area[grep("Iran", u)] <- "Iran (Islamic Republic of)"
 dfSDI$area[grep("Gambia", u)] <- "Gambia"
-#dfSDI$area[grep("Swaziland", u)] <- "Eswatini"
 dfSDI$area[grep("DR Congo", u)] <- "Democratic Republic of the Congo"
 dfSDI$area[grep("North Korea", u)] <- "Democratic People's Republic of Korea"
 dfSDI$area[grep("Czech", u)] <- "Czechia"
@@ -177,7 +361,7 @@ dfSDI$area[grep("Bahamas", u)] <- "Bahamas"
 # setdiff(x1, x2)
 # intersect(dfSDI$area, dfDaly$area)
 dfDaly <- dfDaly %>% merge(dfSDI) %>% subset(area != "United States Virgin Islands")
-#--------------------------------------------------------------
+
 # Create region groupings
 dfDaly$Region <- NA
 dfDaly$Region[which(dfDaly$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
@@ -198,57 +382,6 @@ dfDaly$Region[which(dfDaly$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
 unique(dfDaly$area[which(is.na(dfDaly$Region))])
 dfDaly <- dfDaly[, c("area", "Region", colnames(dfDaly)[-c(1, ncol(dfDaly))])]
 #=========================================================
-thisFile <- "popUnder14pct.csv"
-thisFilePath <- paste0(thisFolder, thisFile)
-dfPopYoung <- read.csv(thisFilePath, stringsAsFactors = F) %>%
-  rename(area = Country.Name)
-# indEnd <- which(dfPopYoung$Series.Name == "")[1] - 1
-# dfPopYoung <- dfPopYoung[1:indEnd, ]
-gatherCols <- colnames(dfPopYoung)[5:ncol(dfPopYoung)]
-dfPopYoung <- dfPopYoung %>% gather_("year", "pop14", gatherCols) %>%
-  select(area, year, pop14)
-dfPopYoung$year <- readr::parse_number(dfPopYoung$year)
-setdiff(unique(dfPopYoung$area), unique(dfDaly$area))
-u <- dfPopYoung$area
-unique(u[grep("Cote d'Ivoire", u)])
-unique(dfDaly$area[grep("Côte d'Ivoire", dfDaly$area)])
-dfPopYoung$area[grep("Cote d'Ivoire", u)] <- "Côte d'Ivoire"
-dfPopYoung$area[grep("Kyrgyz", u)] <- "Kyrgyzstan"
-dfPopYoung$area[grep("Egypt", u)] <- "Egypt"
-dfPopYoung$area[grep("Venezuela", u)] <- "Venezuela (Bolivarian Republic of)"
-dfPopYoung$area[which(u == "United States")] <- "United States of America"
-dfPopYoung$area[grep("Vietnam", u)] <- "Viet Nam"
-dfPopYoung$area[grep("Virgin Islands \\(U\\.S\\.\\)", u)] <- "United States Virgin Islands"
-#dfPopYoung$area[grep("British Virgin Islands", u)] <- 
-dfPopYoung$area[grep("Tanzania", u)] <- "United Republic of Tanzania"
-# dfPopYoung$area[grep("United Kingdom", u)] <- "United Kingdom"
-#dfPopYoung$area[grep("Turkiye", u)] <- "Türkiye"
-dfPopYoung$area[grep("Yemen", u)] <- "Yemen"
-# dfPopYoung$area[grep("Syria", u)] <- "Syrian Arab Republic"
-# dfPopYoung$area[grep("Russia", u)] <- "Russian Federation"
-dfPopYoung$area[grep("Moldova", u)] <- "Republic of Moldova"
-dfPopYoung$area[grep("Korea, Rep\\.", u)] <- "Republic of Korea"
-dfPopYoung$area[grep("Korea, Dem\\. People's", u)] <- "Democratic People's Republic of Korea"
-dfPopYoung$area[grep("Micronesia", u)] <- "Micronesia (Federated States of)"
-dfPopYoung$area[grep("Lao PDR", u)] <- "Lao People's Democratic Republic"
-dfPopYoung$area[grep("Iran, Islamic", u)] <- "Iran (Islamic Republic of)"
-dfPopYoung$area[grep("Gambia", u)] <- "Gambia"
-#dfPopYoung$area[grep("Swaziland", u)] <- "Eswatini"
-dfPopYoung$area[grep("Congo, Dem\\. Rep\\.", u)] <- "Democratic Republic of the Congo"
-dfPopYoung$area[grep("Congo, Rep\\.", u)] <- "Congo"
-#dfPopYoung$area[grep("Czech", u)] <- "Czechia"
-#dfPopYoung$area[grep("Cabo Verde", u)] <- "Cabo Verde"
-#dfPopYoung$area[grep("Brunei", u)] <- "Brunei Darussalam"
-#dfPopYoung$area[grep("São Tomé and PrÍncipe", u)] <- "Sao Tome and Principe"
-dfPopYoung$area[grep("Bolivia", u)] <- "Bolivia (Plurinational State of)"
-dfPopYoung$area[grep("Bahamas", u)] <- "Bahamas"
-dfPopYoung$area[grep("Slovak", u)] <- "Slovakia"
-setdiff(unique(dfPopYoung$area), unique(dfDaly$area))
-dfPopYoung$pop14 <- as.numeric(dfPopYoung$pop14)
-# indNA <- which(is.na(dfPopYoung$pop14))
-# dfPopYoung[indNA, ]
-dfDaly <- dfDaly %>% merge(dfPopYoung)
-unique(dfDaly$area)
 #--------------------------------------------------------------
 # PCA
 # Get dataset for risk factor PCA
@@ -300,7 +433,7 @@ diet <- c("Diet low in fruits",
 allVec <- c(chldMatern, metab, environ, subAbuse, diet)
 #catList <- list(chldMatern, metab, diet, environ, subAbuse)
 # thisFile <- "IHME-GBD_2019_LEV2r1990-2019countries.csv"
-# thisFilePath <- paste0(thisFolder, thisFile)
+# thisFilePath <- paste0(dataFolder, thisFile)
 # dfRiskPCA <- read.csv(thisFilePath, stringsAsFactors = F)
 dfrPCA <- dfRiskRaw %>% subset(rei %in% allVec &
                                  age == thisAge &
@@ -417,7 +550,7 @@ gg <- gg + theme(legend.position = "top",
                  axis.title.x = element_text(size = axisTitleSize))
 gg
 saveFile <- "riskFactrLoadings.png"
-saveTo <- paste0(picFolder, saveFile)
+saveTo <- paste0(graphicsFolder, saveFile)
 ggsave(saveTo, width = 7, height = 6)
 #---
 dfPC <- as.data.frame(X %*% P %*% R)
@@ -436,127 +569,13 @@ gg <- gg + geom_text(aes(label = area), size = 2, vjust = 1)
 gg <- gg + theme_bw()
 gg
 saveFile <- "riskFactrClust.png"
-saveTo <- paste0(picFolder, saveFile)
+saveTo <- paste0(graphicsFolder, saveFile)
 ggsave(saveTo, width = 5, height = 3)
 #---
 k2 <- kmeans(X, centers = 2, nstart = 25)
 fviz_cluster(k2, data = X)
 #===============================================================
 #===============================================================
-# FAO
-# dfKey <- FAOsearch()
-# thisFolder <- "FAOSTAT data"
-# dir.create(thisFolder)
-# # Food balance sheets (have to unite old and new files)
-# # Note these include population
-# dfRaw <- get_faostat_bulk(code = "FBS", data_folder = thisFolder)
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/FAO FBS/"
-thisFile <- "FoodBalanceSheets_E_All_Data.csv"
-thisFilePath <- paste0(thisFolder, thisFile)
-dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
-theseElems <- c("Food supply (kcal/capita/day)", "Total Population - Both sexes",
-                "Protein supply quantity (g/capita/day)",
-                "Fat supply quantity (g/capita/day)")
-dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"))) %>% subset(Element %in% theseElems)
-yrCols <- colnames(dfRaw)[grep("20", colnames(dfRaw))]
-dfRaw <- dfRaw %>% gather("year", "value", yrCols)
-dfRaw$year <- gsub("Y", "", dfRaw$year)
-colnames(dfRaw) <- tolower(colnames(dfRaw))
-dfFBSraw <- dfRaw; rm(dfRaw)
-# keepCols <- c("area", "year", "item", "element", "unit", "value")
-# dfFBSraw2 <- dfRaw[, keepCols]; rm(dfRaw)
-# # dfRaw <- get_faostat_bulk(code = "FBSH", data_folder = thisFolder)
-# # keepCols <- c("area", "year", "item", "element", "unit", "value")
-# # dfFBSraw1 <- dfRaw[, keepCols]
-# dfFBSraw <- dfFBSraw2; rm(dfFBSraw2)
-# dfLook <- dfFBSraw %>% subset(year == 2019)
-# u <- dfLook$area
-# unique(u[grep("Lesotho", u)])
-# dfPop <- dfFBSraw %>% subset(item == "Population" &
-#                   element == "total_population___both_sexes") %>%
-#   rename(Population = value) %>%
-#   select("area", "year", "Population")
-# Rectification of names
-# setdiff(dfFBSraw$area, dfHidHung$area)
-# setdiff(dfHidHung$area, dfFBSraw$area)
-# unique(dfHidHung$area)
-# unique(dfFBSraw$area)
-#unique(dfFBSraw$area[grep("rkiye", dfFBSraw$area)])
-dfFBSraw$area[grep("United Kingdom", dfFBSraw$area)] <- "United Kingdom"
-dfFBSraw$area[grep("Netherlands", dfFBSraw$area)] <- "Netherlands"
-dfFBSraw$area[grep("rkiye", dfFBSraw$area)] <- "Turkiye"
-dfFBSraw$area[grep("Ivoire", dfFBSraw$area)] <- "Côte d'Ivoire"
-notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
-              "China, Taiwan Province of", "China, mainland")
-dfFBSraw <- subset(dfFBSraw, !(area %in% notThese))
-# Fix milk (and any other duplicates)
-dfFBSraw <- dfFBSraw %>% group_by(area, year, element, item) %>%
-  mutate(x = duplicated(item)) %>%
-  subset(x == F) %>%
-  select(-x)
-#---
-# Preliminary Look
-# theseItems <- c("Cereals - Excluding Beer",
-#                 "Starchy Roots", "Vegetables",
-#                 "Vegetable Oils",
-#                 "Oilcrops",
-#                 "Fruits - Excluding Wine", "Pulses",
-#                 "Animal Products",
-#                 "Sugar Crops",
-#                 "Alcoholic Beverages")
-# dfLook <- dfFBSraw %>% subset(area %in% "World" &
-#                              year == 2018 &
-#                              #item %in% theseItems &
-#                              element == "Food supply (kcal/capita/day)")
-#                              #"food_supply__kcal_capita_day_")
-# 
-# dfLook <- dfLook %>% subset(value > quantile(dfLook$value, 0.6))
-# gg <- ggplot(dfLook, aes(x = value,
-#                          y = reorder(item, value)))
-# gg <- gg + geom_bar(stat = "identity")
-# gg <- gg + facet_wrap(~area)
-# gg <- gg + theme_bw()
-# gg <- gg + theme(axis.text = element_text(size = axisTextSize),
-#                  axis.title = element_blank(),
-#                  strip.text = element_text(size = facetTitleSize))
-# gg
-# thisPic <- "eatRankWld.png"
-# thisPicPath <- paste0(picFolder, thisPic)
-# ggsave(thisPicPath, width = 5, height = 3)
-#=====================================================================
-# GDP/capita
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/FAO FBS/"
-thisFile <- "Macro-Statistics_Key_Indicators_E_All_Data.csv"
-thisFilePath <- paste0(thisFolder, thisFile)
-dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
-theseElems <- "Value US$ per capita, 2015 prices"
-dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"), ends_with("N"))) %>% subset(Element %in% theseElems)
-yrCols <- colnames(dfRaw)[grep("20|19", colnames(dfRaw))]
-dfRaw <- dfRaw %>% gather("year", "value", yrCols)
-dfRaw$year <- gsub("Y", "", dfRaw$year)
-colnames(dfRaw) <- tolower(colnames(dfRaw))
-dfGDP <- dfRaw %>% select(area, year, value) %>% rename(`GDP/capita` = value)
-rm(dfRaw)
-dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
-dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
-dfGDP$area[grep("rkiye", dfGDP$area)] <- "Turkiye"
-dfGDP$area[grep("Ivoire", dfGDP$area)] <- "Côte d'Ivoire"
-notThese <- c("China, Hong Kong SAR", "China, Macao SAR",
-              "China, Taiwan Province of", "China, mainland")
-dfGDP <- subset(dfGDP, !(area %in% notThese))
-# dfRaw <- get_faostat_bulk(code = "MK", data_folder = thisFolder)
-# keepCols <- c("area", "year", "item", "element", "unit", "value")
-# dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
-#                                         element == "value_us__per_capita__2015_prices") %>%
-#   select(c("area", "year", "value")) %>%
-#   rename(`GDP/capita (USD 2015 prices)` = value)
-# dfGDP <- dfGDP %>% subset(!(area %in% notThese))
-# dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
-# dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
-# # setdiff(unique(dfGDP$area), unique(dfRiskRaw$location))
-# # unique(dfGDP$area)[order(unique(dfGDP$area))]
-# # unique(dfRiskRaw$location)[order(unique(dfRiskRaw$location))]
-# #dfFBSraw <- merge(dfFBSraw, dfGDP)
 #=====================================================================
 # Get df for commodity model
 # u <- dfFBSraw$item
@@ -665,7 +684,7 @@ dfFBSmn <- dfFBSmn %>% spread(element, value) %>%
 #   merge(dfPop)
 #=======================================================================
 # # SDG data
-# dfRaw <- get_faostat_bulk(code = "SDGB", data_folder = thisFolder)
+# dfRaw <- get_faostat_bulk(code = "SDGB", data_folder = dataFolder)
 # keepCols <- c("area", "year", "item", "element", "unit", "value")
 # rmRows <- which(dfRaw$value == "NaN")
 # dfSDGB <- dfRaw[-rmRows, keepCols]
@@ -740,7 +759,7 @@ gg <- gg + theme(axis.title.x = element_blank(),
                  legend.text = element_text(size = legendTextSize))
 gg
 thisPic <- "Diet shares mag2.png"
-thisPicPath <- paste0(picFolder, thisPic)
+thisPicPath <- paste0(graphicsFolder, thisPic)
 ggsave(thisPicPath, width = 7, height = 5)
 #---
 dfPlot2 <- dfPlot %>% group_by(area, year) %>%
@@ -760,7 +779,7 @@ gg <- gg + theme(axis.title.x = element_blank(),
                  legend.text = element_text(size = legendTextSize))
 gg
 thisPic <- "Diet shares frac.png"
-thisPicPath <- paste0(picFolder, thisPic)
+thisPicPath <- paste0(graphicsFolder, thisPic)
 ggsave(thisPicPath, width = 7, height = 5)
 #---
 dfPlot3 <- dfPlot2 %>%
@@ -874,7 +893,7 @@ gg <- gg + theme(legend.position = "top",
 gg
 
 saveFile <- "dietLoadings.png"
-saveTo <- paste0(picFolder, saveFile)
+saveTo <- paste0(graphicsFolder, saveFile)
 ggsave(saveTo, width = 7, height = 4)
 
 #---
@@ -906,7 +925,7 @@ gg <- gg + geom_text(aes(label = area), size = 2, vjust = 1)
 gg <- gg + theme_bw()
 gg
 saveFile <- "dietClust.png"
-saveTo <- paste0(picFolder, saveFile)
+saveTo <- paste0(graphicsFolder, saveFile)
 ggsave(saveTo, width = 5, height = 3)
 
 # gg <- ggplot(dfPlot, aes(x = PC1, y = PC2))
@@ -956,7 +975,7 @@ ggsave(saveTo, width = 5, height = 3)
 #   labs(title = "Year: {frame_time}")
 # animate(gg, renderer = gifski_renderer())
 # #gg
-# thisAnimPath <- paste0(picFolder, "PCfbs.gif")
+# thisAnimPath <- paste0(graphicsFolder, "PCfbs.gif")
 # anim_save(thisAnimPath, gg)
 #========================================================================
 # Model year
@@ -1119,7 +1138,7 @@ hist(exp(fixef(modHid2)$area))
 # modFE1 <- modFE
 # modFE2 <- modFE
 # modFE3 <- modFE
-# export_summs(modFE1, modFE2, modFE3, model.names = c("Hid1", "Hid2", "Hid3"), to.file = "docx", file.name = paste0(picFolder, "modHidFE.docx"))
+# export_summs(modFE1, modFE2, modFE3, model.names = c("Hid1", "Hid2", "Hid3"), to.file = "docx", file.name = paste0(graphicsFolder, "modHidFE.docx"))
 
 # pDfModHid <- pdata.frame(dfModHid, index = c("area", "year"))
 # modP <- plm(`DALYs.100.000.capita`~., data = pDfModHid, model = "pooling")
@@ -1176,12 +1195,12 @@ models <- list(
   feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero"),
   feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
 )
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
+dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
 thisFile <- "ctyFEmods.docx"
-thisFilePath <- paste0(thisFolder, thisFile)
+thisFilePath <- paste0(dataFolder, thisFile)
 modelsummary(models, output = thisFilePath, statistic = "p.value")
 #-----------------------------------------------------------------
-#export_summs(modChr, modChr2, modHid, modHid2, modOve, model.names = c("Chronic\nhunger 1", "Chronic\nhunger 2", "Hidden\nhunger 1", "Hidden\nhunger 2", "Overnutrition"), to.file = "docx", file.name = paste0(picFolder, "modsCtyFE.docx"))
+#export_summs(modChr, modChr2, modHid, modHid2, modOve, model.names = c("Chronic\nhunger 1", "Chronic\nhunger 2", "Hidden\nhunger 1", "Hidden\nhunger 2", "Overnutrition"), to.file = "docx", file.name = paste0(graphicsFolder, "modsCtyFE.docx"))
 #-----------------------------------------------------------------
 
 #
@@ -1281,7 +1300,7 @@ plot(mod$fitted.values, mod$residuals)
 pVals <- summary(mod)$coefficients[, 4]
 colRm <- which(pVals > 0.04) + 1
 dfModPC <- dfModPC[, -colRm]
-#export_summs(mod, model.names = c("Hidden\nHunger"), to.file = "docx", file.name = paste0(picFolder, "mod2Results.docx"))
+#export_summs(mod, model.names = c("Hidden\nHunger"), to.file = "docx", file.name = paste0(graphicsFolder, "mod2Results.docx"))
 #---
 # Plot loadings
 thesePCs <- as.numeric(gsub("\\D", "", colnames(dfModPC)[-1]))
@@ -1367,7 +1386,7 @@ car::vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modOve <- mod
 #---
-export_summs(modChr, modHid, modOve, model.names = c("Chronic\nHunger", "Hidden\nHunger", "Over-dev"), to.file = "docx", file.name = paste0(picFolder, "mod3Results.docx"))
+export_summs(modChr, modHid, modOve, model.names = c("Chronic\nHunger", "Hidden\nHunger", "Over-dev"), to.file = "docx", file.name = paste0(graphicsFolder, "mod3Results.docx"))
 #-----------------------------------------------------------------------
 # Fat-carb frontier
 dfMod <- dfFBSmacNutPct %>% subset(year == thisYr) %>%
@@ -1476,11 +1495,11 @@ dfHung <- dfHung %>% subset(cause %in% chrHungVec) %>%
 #==============================================================
 #GRAPHICS
 #==============================================================
-# thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
-# theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLc1990-2019regions-"), c(1:6), ".csv")
+# dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
+# theseFiles <- paste0(dataFolder, c("IHME-GBD_2019_ALLc1990-2019regions-"), c(1:6), ".csv")
 # listDf <- lapply(theseFiles, read.csv)
 # dfCauseRegRaw <- as.data.frame(do.call(rbind, listDf))
-# theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLr1990-2019regions-"), c(1:2), ".csv")
+# theseFiles <- paste0(dataFolder, c("IHME-GBD_2019_ALLr1990-2019regions-"), c(1:2), ".csv")
 # listDf <- lapply(theseFiles, read.csv)
 # dfRiskRegRaw <- as.data.frame(do.call(rbind, listDf))
 # #---------------------------------------------------------------
@@ -1609,7 +1628,7 @@ dfHung <- dfHung %>% subset(cause %in% chrHungVec) %>%
 # gg
 # 
 # saveFile <- "overView.png"
-# saveTo <- paste0(picFolder, saveFile)
+# saveTo <- paste0(graphicsFolder, saveFile)
 # ggsave(saveTo, width = 7, height = 4)
 # #---
 # # Proof that Godecke et al.'s convoluted calculation of
@@ -1646,13 +1665,13 @@ dfHung <- dfHung %>% subset(cause %in% chrHungVec) %>%
 #                  axis.title = element_blank())
 # gg
 # saveFile <- "Child underwgt age standardized.png"
-# saveTo <- paste0(picFolder, saveFile)
+# saveTo <- paste0(graphicsFolder, saveFile)
 # ggsave(saveTo, width = 7, height = 4)
 #==================================================================
 # Bar graph main causes of DALYs by region
-# thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
+# dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
 # thisFile <- "IHME-GBD_2019_DATA-c1990-2019regions.csv"
-# thisFilePath <- paste0(thisFolder, thisFile)
+# thisFilePath <- paste0(dataFolder, thisFile)
 # dfC <- read.csv(thisFilePath, stringsAsFactors = F)
 keepGeo <- c("Sub-Saharan Africa - WB",
                "South Asia - WB",
@@ -1721,7 +1740,7 @@ gg <- gg + theme(legend.position = "top")
 gg
 # Risk factor - cause map
 thisFile <- "IHME-GBD_2019_DATA-rcMap1990-2019regions.csv"
-thisFilePath <- paste0(thisFolder, thisFile)
+thisFilePath <- paste0(dataFolder, thisFile)
 dfMap <- read.csv(thisFilePath, stringsAsFactors = F)
 colnames(dfMap)[2] <- "area"
 keepRei <- c("Child and maternal malnutrition",
@@ -1780,7 +1799,7 @@ gg <- gg + theme(legend.position = "top",
 gg
 
 saveFile <- "riskFactrContrib2.png"
-saveTo <- paste0(picFolder, saveFile)
+saveTo <- paste0(graphicsFolder, saveFile)
 ggsave(saveTo, width = 8, height = 6)
 # <- c("Chronic kidney disease", "Diabetes mellitus",
 #   "Total cancers", "Maternal and neonatal disorders",
