@@ -35,27 +35,16 @@ ctyInSSA <- listVec[[theseFiles[7]]]
 #https://vizhub.healthdata.org/gbd-results/
 picFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
 thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Hunger DALY data/"
-# thisFile <- "IHME-GBD_2019_DATA-countries.csv"
-# thisFile <- "IHME-GBD_2019_DATA-c1990-2019countries.csv"
-# thisFilePath <- paste0(thisFolder, thisFile)
-# dfCauseRaw <- read.csv(thisFilePath, stringsAsFactors = F)
 theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLc1990-2019countries-"), c(1:2), ".csv")
 listDf <- lapply(theseFiles, read.csv)
 dfCauseRaw <- as.data.frame(do.call(rbind, listDf))
-# thisFile <- "IHME-GBD_2019_DATA-r1990-2019countries.csv"
-# thisFilePath <- paste0(thisFolder, thisFile)
-# dfRiskRaw <- read.csv(thisFilePath, stringsAsFactors = F)
 theseFiles <- paste0(thisFolder, c("IHME-GBD_2019_ALLr1990-2019countries-"), c(1:3), ".csv")
 listDf <- lapply(theseFiles, read.csv)
 dfRiskRaw <- as.data.frame(do.call(rbind, listDf))
 #---------------------------------------------------------------
 # Chronic hunger DALYs
-# From risk factor data get DALYs due to zinc, iron,
-# vit. A deficiency, and child underweight
 dfChr <- dfRiskRaw %>%
   subset(rei == "Child underweight" &
-# dfChr <- dfCauseRaw %>%
-#   subset(cause == "Protein-energy malnutrition" &
            age == "All ages" &
            metric == "Rate") %>%
   rename(area = location) %>%
@@ -88,11 +77,13 @@ dfOverDev$Cat <- "OverDev"
 # Hidden hunger DALYs
 # From cause data get iodine deficiency, protein-energy malnutrition,
 # and other deficiencies
+# From risk factor data get DALYs due to zinc, iron,
+# vit. A deficiency, and child underweight
 hidHcause <- c("Iodine deficiency",
                "Other nutritional deficiencies")
 hidHrisks <- c("Vitamin A deficiency",
                "Zinc deficiency",
-               "Iron deficiency")
+               "Iron deficiency") #CHANGE TO DIETARY IRON DEFICIENCY (cause not risk)
 dfHid1 <- dfRiskRaw %>%
   subset(rei %in% hidHrisks &
            metric == "Rate" &
@@ -117,14 +108,27 @@ dfDaly$area <- gsub("Turkey", "Turkiye", dfDaly$area)
 dfDaly <- subset(dfDaly, !(area %in% c("Taiwan (Province of China)")))
 #--------------------------------------------------------------
 # Get IHME's Socio-demographic index too and merge
-thisFile <- "IHME_GBD_2019_SDI_1990_2019_Y2020M10D15.xlsx"
+#https://ghdx.healthdata.org/record/global-burden-disease-study-2021-gbd-2021-socio-demographic-index-sdi-1950%E2%80%932021
+#thisFile <- "IHME_GBD_2019_SDI_1990_2019_Y2020M10D15.xlsx"
+thisFile <- "IHME_GBD_SDI_2021_SDI_1950_2021_Y2024M05D16.csv"
 thisFilePath <- paste0(thisFolder, thisFile)
-#dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
-dfRaw <- readxl::read_excel(thisFilePath)
-colnames(dfRaw) <- dfRaw[1, ]
-dfRaw <- dfRaw[-1, ]
+dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
+dfRaw <- dfRaw %>% rename(area = location_name,
+                          sdi = mean_value,
+                          year = year_id) %>%
+  select(area, year, sdi)
+# Lots of duplicates for some region groupings. Remove.
+# Careful Georgia is not duplicate. Deal with Georgia separately.
+dfRaw <- dfRaw %>% group_by(area) %>%
+  mutate(x = duplicated(year))
+dfRaw$x[which(dfRaw$area == "Georgia")] <- F
+dfRaw <- dfRaw %>% subset(x == F) %>% select(-x)
+
+#dfRaw <- readxl::read_excel(thisFilePath)
+# colnames(dfRaw) <- dfRaw[1, ]
+# dfRaw <- dfRaw[-1, ]
 # Get rid of Georgia the USA state
-indGeorgia <- which(dfRaw$Location == "Georgia")
+indGeorgia <- which(dfRaw$area == "Georgia")
 dfRaw <- dfRaw[-indGeorgia[2], ]
 # Get rid of repeated MENA row
 indMENA <- which(dfRaw$Location == "North Africa and Middle East")
