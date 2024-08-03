@@ -5,6 +5,7 @@ library(tidyverse)
 library(fixest)
 library(modelsummary)
 library(randomcoloR)
+library(countries)
 #-------------------------------------------------------------------------
 # Define folders
 dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/"
@@ -15,32 +16,13 @@ graphicsFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/G
 thisFilename <- "IHME-GBD_2010-2021_cNutDef_cty.csv"
 thisFilepath <- paste0(dataFolder, thisFilename)
 dfCauseRaw <- read.csv(thisFilepath, stringsAsFactors = F)
-thisFilename <- "IHME-GBD_2010-2021_rNutDef_cty.csv"
+thisFilename <- "IHME-GBD_2010-2021_rNutDef_ctyB.csv"
 thisFilepath <- paste0(dataFolder, thisFilename)
 dfRiskRaw <- read.csv(thisFilepath, stringsAsFactors = F)
 #-------------------------------------------------------------------------
-# Harmonize risk factor and cause data cty names
-setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
-# For most ctys, the names are slightly different (what a pain!)
-# The cause data has a more standard naming convention that matches well
-# with FAO FBS and UN population data which we'll have to merge with later on.
-# So we'll adapt the risk factor data cty names to the cause data cty names.
-# Start by removing the "Republic of" that precedes most names in the risk data.
-thesePatterns <- "Republic of |People's Republic of "
-dfRiskRaw$location <- gsub(thesePatterns, "", dfRiskRaw$location)
-setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
-
-
+# Harmonize cty names in the risk factor and cause data frames
 # The cause data has "Turkey" while the risk data has "Türkiye"
 # Harmonize the two and get rid of the umlaut to avoid UTF-8 problems
-
-
-u <- dfCauseRaw$location %>% unique()
-u[grep("China",u)]
-u <- dfRiskRaw$location %>% unique()
-u[grep("China",u)]
-
-
 dfRiskRaw$location[grep("rkiye", dfRiskRaw$location)] <- "Turkiye"
 dfCauseRaw$location[grep("Turkey", dfCauseRaw$location)] <- "Turkiye"
 # The name "Taiwan (Province of China)" suggests it is included in "China"
@@ -579,6 +561,38 @@ dfPlot <- rbind(dfRegC, dfRegR) %>% as.data.frame()
 
 
 
+
+
+# # Ctys in cause data frame follow standard UN/FAO naming convention.
+# # Ctys in risk data frame are in some weird format.
+# setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
+# #dfRctys <- data.frame(loc1 = unique(dfRiskRaw$location))
+# unique(dfRiskRaw$location[grep("Korea", dfRiskRaw$location)])
+# # Start by removing non-UN standard parts of the cty names in the risk data.
+# thesePatterns <- "Sultanate of |Hashemite |Principality of |People's Democratic Republic of |People's Republic of |Islamic Republic of |Arab Republic of |Eastern Republic of |Republic of |Kingdom of |Commonwealth of |Democratic |Socialist |Union |Independent State of |State of |of the |Federative "
+# dfRiskRaw$location <- gsub(thesePatterns, "", dfRiskRaw$location)
+# setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
+# # Use countries package to create UN cty names. Helps identify remaining names to be corrected.
+# dfRiskRaw$location_UN <- country_name(dfRiskRaw$location, to = "UN_en", verbose = T)
+# u <- dfRiskRaw$location
+# dfRiskRaw$location[grep("Portuguese Republic", u)] <- "Portugal"
+# dfRiskRaw$location[grep("Mexican States", u)] <- "Mexico"
+# dfRiskRaw$location[grep("Luxembourg", u)] <- "Luxembourg"
+# dfRiskRaw$location_UN <- country_name(dfRiskRaw$location, to = "UN_en", verbose = T)
+# setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location_UN))
+# u <- dfRiskRaw$location
+# dfRiskRaw$location_UN[grep("Korea", dfRiskRaw$location_UN)] %>% unique()
+# # Use countries package to change to create ISO3 name.
+# country_name("Bolivarian Venezuela", to = "UN_en", verbose = T)
+# dfCauseRaw$iso3 <- country_name(dfCauseRaw$location, to = "ISO3", verbose = T)
+# dfRiskRaw$iso3 <- country_name(dfRiskRaw$location, to = "ISO3", verbose = T)
+# 
+# setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
+# # The cause data has a more standard naming convention that matches well
+# # with FAO FBS and UN population data which we'll have to merge with later on.
+# # So we'll adapt the risk factor data cty names to the cause data cty names.
+# 
+# setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
 
 
 
