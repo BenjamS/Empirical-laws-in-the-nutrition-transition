@@ -6,13 +6,20 @@ library(fixest)
 library(modelsummary)
 library(randomcoloR)
 library(countries)
+library(PerformanceAnalytics)
 #-------------------------------------------------------------------------
 # Define folders
-dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/"
-graphicsFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Graphics/"
+# Working directory:
+wrkDir <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
+# All the data required should be stored here:
+dataFolder <- paste0(wrkDir, "Data/")
+# Outputs--graphics and summary stats--should be written here:
+outFolder <- paste0(wrkDir, "Graphics and sumStats/")
 #=========================================================================
 # Import IHME GBD DALY raw data files
 # Source: https://vizhub.healthdata.org/gbd-results/
+# GBD Methdological Appendix search engine (very useful to see how key hunger components are defined.):
+# https://www.healthdata.org/gbd/methods-appendices-2021
 thisFilename <- "IHME-GBD_2010-2021_cNutDef_cty.csv"
 thisFilepath <- paste0(dataFolder, thisFilename)
 dfCauseRaw <- read.csv(thisFilepath, stringsAsFactors = F)
@@ -20,7 +27,8 @@ thisFilename <- "IHME-GBD_2010-2021_rNutDef_ctyB.csv"
 thisFilepath <- paste0(dataFolder, thisFilename)
 dfRiskRaw <- read.csv(thisFilepath, stringsAsFactors = F)
 #-------------------------------------------------------------------------
-# Harmonize cty names in the risk factor and cause data frames
+# Harmonize cty names in the risk factor and cause data frames.
+setdiff(unique(dfCauseRaw$location), unique(dfRiskRaw$location))
 # The cause data has "Turkey" while the risk data has "Türkiye"
 # Harmonize the two and get rid of the umlaut to avoid UTF-8 problems
 dfRiskRaw$location[grep("rkiye", dfRiskRaw$location)] <- "Turkiye"
@@ -32,27 +40,29 @@ dfCauseRaw <- subset(dfCauseRaw, location != "Taiwan (Province of China)")
 #-------------------------------------------------------------------------
 # Create separate data frames for chronic, hidden, and overnutrition DALYs 
 # Chronic hunger DALYs
-dfChr <- dfCauseRaw %>%
-  subset(cause == "Protein-energy malnutrition" &
+# dfChr <- dfCauseRaw %>%
+#   subset(cause == "Protein-energy malnutrition" &
+#            age == "All ages" &
+#            metric == "Rate" &
+#            measure == "DALYs (Disability-Adjusted Life Years)") %>%
+#   rename(area = location) %>%
+#   mutate(Cat = "Chronic hunger") %>%
+#   select(area, year, val, Cat)
+# Original definition
+dfChr <- dfRiskRaw %>%
+  subset(rei == "Child underweight" &
            age == "All ages" &
            metric == "Rate" &
            measure == "DALYs (Disability-Adjusted Life Years)") %>%
   rename(area = location) %>%
-  mutate(Cat = "Chr") %>%
-  select(area, year, val, Cat)
-# Old definition
-# dfChr0 <- dfRiskRaw %>%
-#   subset(rei == "Child underweight" &
-#            age == "All ages" &
-#            metric == "Rate") %>%
-#   rename(area = location) %>%
-#   mutate(Cat = "Chr") %>%
-#   select(area, year, val, Cat)
+  mutate(Cat = "Chronic hunger") %>%
+  select(area, year, lower, Cat) %>%
+  rename(val = lower)
 # Hidden hunger DALYs
 hidHcauses <- c("Iodine deficiency",
-               "Dietary iron deficiency",
-               "Vitamin A deficiency",
-               "Other nutritional deficiencies")
+                "Dietary iron deficiency",
+                "Vitamin A deficiency",
+                "Other nutritional deficiencies")
 dfHid <- dfCauseRaw %>%
   subset(cause %in% hidHcauses &
            age == "All ages" &
@@ -61,21 +71,22 @@ dfHid <- dfCauseRaw %>%
   rename(area = location) %>%
   group_by(area, year) %>%
   summarize(val = sum(val)) %>%
-  mutate(Cat = "Hid") %>%
+  mutate(Cat = "Hidden hunger") %>%
   select(area, year, val, Cat)
 # Overnutrition DALYs
 overNutRiskFactors <- c("Diet high in sugar-sweetened beverages",
-               "Diet high in processed meat",
-               #"Diet low in fiber",
-               # "Diet low in legumes",
-               # "Diet low in fruits",
-               # "Diet low in vegetables",
-               #"Diet low in whole grains",
-               #"Diet low in nuts and seeds",
-               "Diet low in seafood omega-3 fatty acids",
-               "Diet Low in Omega-6 Polyunsaturated Fatty Acids",
-               "Diet high in trans fatty acids",
-               "Diet high in sodium")
+                        "Diet high in processed meat",
+                        #"Diet low in fiber",
+                        # "Diet low in legumes",
+                        # "Diet low in fruits",
+                        # "Diet low in vegetables",
+                        #"Diet low in whole grains",
+                        #"Diet low in nuts and seeds",
+                        # "Diet low in seafood omega-3 fatty acids",
+                        # "Diet Low in Omega-6 Polyunsaturated Fatty Acids",
+                        "Diet low in polyunsaturated fatty acids",
+                        "Diet high in trans fatty acids",
+                        "Diet high in sodium")
 dfOve <- dfRiskRaw %>%
   subset(rei %in% overNutRiskFactors &
            age == "All ages" &
@@ -84,7 +95,7 @@ dfOve <- dfRiskRaw %>%
   rename(area = location) %>%
   group_by(area, year) %>%
   summarize(val = sum(val)) %>%
-  mutate(Cat = "Ove") %>%
+  mutate(Cat = "Overnutrition") %>%
   select(area, year, val, Cat)
 #-------------------------------------------------------------------------
 # Unite the hunger DALYs data frames in one data frame
@@ -150,10 +161,12 @@ colnames(dfRaw) <- dfRaw[1, ]
 dfPopYoung <- dfRaw[-1, ] %>% 
   rename(area = `Region, subregion, country or area *`,
          year = Year,
+         `Pct Pop < 15` = `0-14`,
          `Pct Pop < 25` = `0-24`) %>%
-  select(area, year, `Pct Pop < 25`) %>%
+  select(area, year, `Pct Pop < 15`, `Pct Pop < 25`) %>%
   subset(year >= 2010)
 rm(dfRaw)
+dfPopYoung$`Pct Pop < 15` <- as.numeric(dfPopYoung$`Pct Pop < 15`)
 dfPopYoung$`Pct Pop < 25` <- as.numeric(dfPopYoung$`Pct Pop < 25`)
 # Check for duplicates
 dfPopYoung %>% group_by(year) %>% mutate(dup = duplicated(area)) %>%
@@ -165,11 +178,12 @@ dfPopYoung$area[grep("rkiye", u)] <- "Turkiye"
 dfPopYoung$area[grep("Dem. People's Republic of Korea", u)] <- "Democratic People's Republic of Korea"
 dfPopYoung$area[grep("Micronesia \\(Fed. States of\\)", u)] <- "Micronesia (Federated States of)"
 # Make sure there are no NA (0 if none)
+sum(is.na(dfPopYoung$`Pct Pop < 15`))
 sum(is.na(dfPopYoung$`Pct Pop < 25`))
 # Merge with dfDaly
 dfDaly <- dfDaly %>% merge(dfPopYoung)
 #========================================================================
-# Get GDP/capita data
+# Get GDP / capita data
 # Source: FAOSTAT
 thisFile <- "Macro-Statistics_Key_Indicators_E_All_Data.csv"
 thisFilePath <- paste0(dataFolder, thisFile)
@@ -181,7 +195,7 @@ dfRaw <- dfRaw %>% gather_("year", "value", yrCols)
 dfRaw$year <- gsub("Y", "", dfRaw$year)
 colnames(dfRaw) <- tolower(colnames(dfRaw))
 dfGDP <- dfRaw %>% select(area, year, value) %>%
-  rename(`GDP/capita` = value) %>%
+  rename(`GDP / capita` = value) %>%
   subset(year >= 2010)
 rm(dfRaw)
 # Harmonize cty names with those in dfDaly
@@ -199,8 +213,8 @@ apply(dfGDP, 2, function(x) sum(is.na(x))) %>% table()
 apply(dfGDP, 2, function(x) sum(is.nan(x))) %>% table()
 apply(dfGDP, 2, function(x) sum(is.infinite(x))) %>% table()
 # There are a few NAs for ctys that will be dropped in merge, not important
-dfGDP$area[which(is.na(dfGDP$`GDP/capita`))] %>% unique()
-#View(dfGDP[which(is.na(dfGDP$`GDP/capita`)), ])
+dfGDP$area[which(is.na(dfGDP$`GDP / capita`))] %>% unique()
+#View(dfGDP[which(is.na(dfGDP$`GDP / capita`)), ])
 # Merge with dfDaly
 dfDaly <- dfDaly %>% merge(dfGDP)
 #========================================================================
@@ -274,6 +288,9 @@ dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.na(x))) %>% table()
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.nan(x))) %>% table()
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.infinite(x))) %>% table()
+# Convert to diet share terms by dividing by grand total
+colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element"))
+dfFBS[, -colSkip] <- dfFBS[, -colSkip] / dfFBS$`Grand Total` * 100
 # Calculate residual kcal category
 colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element", "Grand Total"))
 dfFBS$Residual <- dfFBS$`Grand Total` - rowSums(dfFBS[, -colSkip])
@@ -282,7 +299,7 @@ dfFBS$Residual <- dfFBS$`Grand Total` - rowSums(dfFBS[, -colSkip])
 # These will be lost in the merge. Not too important since they are all very small
 # population countries.
 setdiff(dfDaly$area, dfFBS$area)
-setdiff(dfFBS$area, dfDaly$area)
+#setdiff(dfFBS$area, dfDaly$area)
 # unique(dfFBS$area[grep("Greenland", dfFBS$area)])
 # unique(dfDaly$area[grep("Greenland", dfDaly$area)])
 # Separate into FBS commodity and FBS macnut dfs
@@ -298,175 +315,306 @@ notCols <- which(colnames(dfMod) %in% c("area", "year", "Cat"))
 apply(dfMod[, -notCols], 2, function(x) sum(is.na(x))) %>% table()
 apply(dfMod[, -notCols], 2, function(x) sum(is.nan(x))) %>% table()
 apply(dfMod[, -notCols], 2, function(x) sum(is.infinite(x))) %>% table()
-apply(dfMod[, -notCols], 2, function(x) sum(x == 0)) %>% table()
-# A handful of ctys have zero values for all years and food categories. Drop these.
-View(dfMod[which(dfMod$`Animal Products` == 0), ])
-notThese <- dfMod$area[which(dfMod$`Animal Products` == 0)] %>% unique()
+apply(dfMod[, -notCols], 2, function(x) sum(x == 0, na.rm = T)) %>% table()
+# A handful of ctys have NaN values for all years and food categories.
+# This is because they were zero and then turned NaN when dividing by Grand Total.
+# Drop these.
+dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
+notThese <- dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
 dfMod <- dfMod %>% subset(!(area %in% notThese))
-# The remaining zero values are due to a handful of ctys where people are not eating pulses
+# There are also zero values due to a handful of ctys where people are not eating pulses
 dfMod$area[which(dfMod$Pulses == 0)] %>% unique()
-# These will become infinite after log transform.
-# Replace with 0 after log transform.
+#  Replace with 1 so that they will become 0 after log transform.
+# First Save unlogged data for summary stats
+dfModSumStats <- dfMod
 # Log transform
+dfMod$Pulses[which(dfMod$Pulses == 0)] <- 1
 dfMod[, -notCols] <- as.data.frame(apply(dfMod[, -notCols], 2, log))
-dfMod$Pulses[which(is.infinite(dfMod$Pulses))] <- 0
 #-----------------------------------------------------------------------
 # Separate into data frames for each hunger model
 catCol <- which(colnames(dfMod) == "Cat")
-dfModHid <- dfMod %>% subset(Cat == "Hid") %>% select (-catCol)
-dfModChr <- dfMod %>% subset(Cat == "Chr") %>% select (-catCol)
-dfModOve <- dfMod %>% subset(Cat == "Ove") %>% select (-catCol)
+dfModHid <- dfMod %>% subset(Cat == "Hidden hunger") %>% select (-catCol)
+dfModChr <- dfMod %>% subset(Cat == "Chronic hunger") %>% select (-catCol)
+dfModOve <- dfMod %>% subset(Cat == "Overnutrition") %>% select (-catCol)
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
 colnames(dfModChr)[3] <- "y"
-varsChr1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)", "Residual")
-varsChr2 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+              "Pulses", "Sugar (Raw Equivalent)")
+varsChr2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
-#varsChr1 <- colnames(dfModChr)[c(5, 7:ncol(dfModChr))]
 varsChr3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)", "Residual")
+              "Pulses", "Sugar (Raw Equivalent)")
+varsChr4 <- c("GDP / capita", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses")
 varsChr1 <- paste0("`", varsChr1, "`")
 varsChr2 <- paste0("`", varsChr2, "`")
 varsChr3 <- paste0("`", varsChr3, "`")
+varsChr4 <- paste0("`", varsChr4, "`")
 modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
 #modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("area", "year"))
 modChr2 <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
 modChr3 <- feols(y ~ .[varsChr3] | area, data = dfModChr, vcov = "hetero")
+modChr4 <- feols(y ~ .[varsChr4] | area, data = dfModChr, vcov = "hetero")
 summary(modChr1)
 summary(modChr2)
 summary(modChr3)
+summary(modChr4)
 plot(modChr1$fitted.values, modChr1$residuals)
 plot(modChr2$fitted.values, modChr2$residuals)
 plot(modChr3$fitted.values, modChr3$residuals)
+plot(modChr4$fitted.values, modChr4$residuals)
 hist(fixef(modChr1)$area, breaks = 15)
 hist(fixef(modChr2)$area, breaks = 15)
 hist(fixef(modChr3)$area, breaks = 15)
+hist(fixef(modChr4)$area, breaks = 15)
 #plot(fixef(modChr1)$area - fixef(modChr2)$area)
 #mean(fixef(modChr1)$area - fixef(modChr2)$area)
+models <- list(modChr1, modChr2, modChr3, modChr4)
+thisFile <- "ctyFEmods_Chr.docx"
+thisFilepath <- paste0(outFolder, thisFile)
+modelsummary(models, output = thisFilepath, statistic = "p.value")
 #-----------------------------------------------------------------------
 # Burden of hidden hunger model
 colnames(dfModHid)[3] <- "y"
-varsHid1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+varsHid1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)", "Residual")
-varsHid2 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+              "Pulses", "Sugar (Raw Equivalent)")
+varsHid2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
-#varsChr1 <- colnames(dfModChr)[c(5, 7:ncol(dfModChr))]
 varsHid3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)", "Residual")
-varsHid3 <- c("sdi", "Animal Products", "Cereals",
+              "Pulses", "Sugar (Raw Equivalent)")
+varsHid4 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)", "Residual")
+              "Pulses", "Sugar (Raw Equivalent)")
 varsHid1 <- paste0("`", varsHid1, "`")
 varsHid2 <- paste0("`", varsHid2, "`")
 varsHid3 <- paste0("`", varsHid3, "`")
+varsHid4 <- paste0("`", varsHid4, "`")
 modHid1 <- feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero")
 modHid2 <- feols(y ~ .[varsHid2] | area, data = dfModHid, vcov = "hetero")
 modHid3 <- feols(y ~ .[varsHid3] | area, data = dfModHid, vcov = "hetero")
+modHid4 <- feols(y ~ .[varsHid4] | area, data = dfModHid, vcov = "hetero")
 summary(modHid1)
 summary(modHid2)
 summary(modHid3)
+summary(modHid4)
 plot(modHid1$fitted.values, modHid1$residuals)
 plot(modHid2$fitted.values, modHid2$residuals)
 plot(modHid3$fitted.values, modHid3$residuals)
+plot(modHid4$fitted.values, modHid4$residuals)
 hist(fixef(modHid1)$area, breaks = 15)
 hist(fixef(modHid2)$area, breaks = 15)
 hist(fixef(modHid3)$area, breaks = 15)
+hist(fixef(modHid4)$area, breaks = 15)
 # plot(fixef(modHid1)$area - fixef(modHid2)$area)
 # mean(fixef(modHid1)$area - fixef(modHid2)$area)
+models <- list(modHid1, modHid2, modHid3, modHid4)
+thisFile <- "ctyFEmods_Hid.docx"
+thisFilepath <- paste0(outFolder, thisFile)
+modelsummary(models, output = thisFilepath, statistic = "p.value")
 #-----------------------------------------------------------------------
 # Burden of overnutrition model
 colnames(dfModOve)[3] <- "y"
-#varsOve1 <- colnames(dfModOve)[c(5, 7:(ncol(dfModOve) - 1))]
-varsOve2 <- colnames(dfModOve)[c(6, 7, 10)]
-varsOve2 <- paste0("`", varsOve2, "`")
-varsOve1 <- colnames(dfModOve)[c(5, 7, 10)]
+varsOve1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses", "Sugar (Raw Equivalent)")
+varsOve2 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses")
+varsOve3 <- c("sdi", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses", "Sugar (Raw Equivalent)")
+varsOve4 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses", "Sugar (Raw Equivalent)")
 varsOve1 <- paste0("`", varsOve1, "`")
-#modFE <- feols(y ~ sdi | area, data = dfModOve)
+varsOve2 <- paste0("`", varsOve2, "`")
+varsOve3 <- paste0("`", varsOve3, "`")
+varsOve4 <- paste0("`", varsOve4, "`")
 modOve1 <- feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero")
-modOve2 <- feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
+modOve2 <- feols(y ~ .[varsOve2] | area, data = dfModOve, cluster = "area")# vcov = "hetero")
+modOve3 <- feols(y ~ .[varsOve3] | area, data = dfModOve, vcov = "hetero")
+modOve4 <- feols(y ~ .[varsOve4] | area, data = dfModOve, vcov = "hetero")
 summary(modOve1)
 summary(modOve2)
+summary(modOve3)
+summary(modOve4)
 plot(modOve1$fitted.values, modOve1$residuals)
 plot(modOve2$fitted.values, modOve2$residuals)
-hist(fixef(modOve1)$area, breaks = 10)
-hist(fixef(modOve2)$area, breaks = 10)
-hist(exp(fixef(modOve1)$area), breaks = 15)
-hist(exp(fixef(modOve2)$area), breaks = 15)
-plot(fixef(modOve2)$area - fixef(modOve1)$area)
-#------------------------------------------------------------------------
-models <- list(
-  feols(y ~ .[varsChr1] | area, data = dfModChr),
-  feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero"),
-  feols(y ~ .[varsHid1] | area, data = dfModHid),
-  feols(y ~ .[varsHid2] | area, data = dfModHid, vcov = "hetero"),
-  feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero"),
-  feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
-)
-dataFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/"
-thisFile <- "ctyFEmods.docx"
-thisFilepath <- paste0(dataFolder, thisFile)
+plot(modOve3$fitted.values, modOve3$residuals)
+plot(modOve4$fitted.values, modOve4$residuals)
+hist(fixef(modOve1)$area, breaks = 15)
+hist(fixef(modOve2)$area, breaks = 15)
+hist(fixef(modOve3)$area, breaks = 15)
+hist(fixef(modOve4)$area, breaks = 15)
+# hist(exp(fixef(modOve1)$area), breaks = 15)
+# hist(exp(fixef(modOve2)$area), breaks = 15)
+# plot(fixef(modOve2)$area - fixef(modOve1)$area)
+models <- list(modOve1, modOve2, modOve3, modOve4)
+thisFile <- "ctyFEmods_Ove.docx"
+thisFilepath <- paste0(outFolder, thisFile)
 modelsummary(models, output = thisFilepath, statistic = "p.value")
-
-
-
-
 #========================================================================
 #========================================================================
-# Graphics
+#========================================================================
+# Graphics/tables
 #========================================================================
 #========================================================================
 # Set graphic parameters
 axisTitleSize <- 8
 axisTextSize <- 7
-legendTextSize <- 7
-facetTitleSize <- 8
 legendKeySize <- 0.3
+legendTextSize <- axisTextSize
+facetTitleSize <- axisTitleSize
+plotTitleSize = axisTextSize
+labelSize <- 2
 #------------------------------------------------------------------------
-# Create graphics data frame
+# Summary statistic tables
+# Hunger summary stats by type, year
+thisFile <- "Hunger summary statistics.png"
+thisFilepath <- paste0(outFolder, thisFile)
+dfModSumStats %>% select(year, Cat, `DALYs / 100,000 capita`) %>%
+  group_by(Cat, year) %>% summarize_all(list(#N = "length",
+                                        mean = "mean",
+                                        `s.d.` = "sd",
+                                        max = "max",
+                                        min = "min")) %>%
+  gather(stat, val, mean:min) %>% as.data.frame() %>%
+  mutate(stat = factor(stat, levels = unique(stat)),
+         year = factor(year, levels = unique(year)),
+         val = round(val, 2)) %>% 
+  ggplot(aes(x = stat, y = year)) +
+  geom_tile(alpha = 0) +
+  geom_text(aes(label = val), size = labelSize) +
+  scale_x_discrete(position = "top") +
+    facet_wrap(~Cat) +
+  theme_classic() +
+  theme(axis.title = element_blank(),
+        axis.text = element_text(size = axisTextSize),
+        plot.title = element_text(size = plotTitleSize),
+        strip.text = element_text(size = facetTitleSize))
+ggsave(thisFilepath, height = 4, width = 5)
+#------------------------------------------------------------------------
+# Socioeconomic/demographic regressor summary stats by year
+thisFile <- "Regressor summary statistics.png"
+thisFilepath <- paste0(outFolder, thisFile)
+regrssrs <- colnames(dfModSumStats)[-c(1:4)]
+dfModSumStats %>% subset(Cat == "Chronic hunger") %>%
+  select(year, regrssrs) %>%
+  gather_("var", "val", regrssrs) %>%
+  group_by(year, var) %>% summarize_all(list(#N = "length",
+                                        mean = "mean",
+                                        `s.d.` = "sd",
+                                        max = "max",
+                                        min = "min")) %>%
+  gather(stat, val, mean:min) %>% as.data.frame() %>%
+  mutate(stat = factor(stat, levels = unique(stat)),
+         year = factor(year, levels = unique(year)),
+         val = round(val, 2)) %>% 
+  ggplot(aes(x = stat, y = year)) +
+  geom_tile(alpha = 0) +
+  geom_text(aes(label = val), size = labelSize) +
+  scale_x_discrete(position = "top") +
+  facet_wrap(~var, ncol = 3) +
+  theme_classic() +
+  theme(axis.title = element_blank(),
+        axis.text = element_text(size = axisTextSize),
+        plot.title = element_text(size = plotTitleSize),
+        strip.text = element_text(size = facetTitleSize))
+ggsave(thisFilepath, height = 6, width = 5)
+#------------------------------------------------------------------------
+# Correlation plot
+dfMod %>% subset(year == 2021) %>%
+  spread(Cat, `DALYs / 100,000 capita`) %>%
+  select(-c(year, area)) %>% chart.Correlation(histogram=TRUE, pch=19)
+# Manually save using Export in the plot viewer, use width 1500 height 1000
+#------------------------------------------------------------------------
+# Create graphics data frame for regionally disaggregated hunger plots
 thisFile <- "IHME-GBD_1990-2021_cNutDef_byAge_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
 dfGraphicsC <- read.csv(thisFilepath, stringsAsFactors = F) %>%
+  subset(cause %in% hidHcauses) %>%
   rename(`DALYs / 100,000 capita` = val,
          area = location) %>%
-  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`) %>%
-  mutate(type = "Hidden hunger")
-dfGraphicsC$type[grep("Protein-energy", dfGraphicsC$cause)] <- "Chronic hunger"
+  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`, upper, lower) %>%
+  mutate(Cat = "Hidden hunger")
 thisFile <- "IHME-GBD_1990-2021_rNutDef_byAge_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
 dfGraphicsR <- read.csv(thisFilepath, stringsAsFactors = F) %>%
+  subset(rei %in% c(overNutRiskFactors, "Child underweight")) %>%
   select(-cause) %>%
   rename(`DALYs / 100,000 capita` = val,
          area = location,
          cause = rei) %>%
-  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`) %>%
-  mutate(type = "Overnutrition")
+  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`, upper, lower)
+dfGraphicsR$Cat <- NA
+dfGraphicsR$Cat[grep("Child underweight", dfGraphicsR$cause)] <- "Chronic hunger"
+dfGraphicsR$Cat[which(dfGraphicsR$cause %in% overNutRiskFactors)] <- "Overnutrition"
 dfGraphics <- rbind(dfGraphicsC, dfGraphicsR) %>% as.data.frame()
 #------------------------------------------------------------------------
 # Graphic demonstrating that nutrition DALYs/capita are age sensitive
 dfPlot <- dfGraphics %>% subset(year == 2021 &
-         age != "All ages" &
-         metric == "Rate" &
-         measure == "DALYs (Disability-Adjusted Life Years)" &
-        area != "Global" &
-         cause %in% c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition"))
-dfPlot$age <- factor(dfPlot$age, levels = unique(dfPlot$age))
+                                  age != "All ages" &
+                                  metric == "Rate" &
+                                  measure == "DALYs (Disability-Adjusted Life Years)" &
+                                  area != "Global" &
+                                  Cat %in% c("Chronic hunger",
+                                             "Hidden hunger",
+                                             "Overnutrition"))  %>%
+  mutate(area = gsub(" - WB", "", area),
+         age = factor(age, levels = unique(age)))
+#dfPlot$age <- factor(dfPlot$age, levels = unique(dfPlot$age))
 nColors <- length(unique(dfPlot$cause))
-bag_of_colors <- distinctColorPalette(k = 5 * nColors)
+bag_of_colors <- distinctColorPalette(k = 2 * nColors)
 theseColors <- sample(bag_of_colors, nColors)
 gg <- ggplot(dfPlot, aes(x = age, y = `DALYs / 100,000 capita`, fill = cause))
 gg <- gg + geom_bar(stat = "identity", position = "stack")
-gg <- gg + facet_grid(type~area, scales = "free")
+gg <- gg + facet_grid(Cat~area, scales = "free")
 gg <- gg + scale_fill_manual(values = theseColors)
 gg <- gg + theme_bw()
 gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
-                                              angle = 60, hjust = 1),
+                                            angle = 60, hjust = 1),
+                 axis.title.x = element_text(size = axisTitleSize),
+                 axis.title.y = element_blank(),
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = legendTextSize),
+                 legend.position = "top",
+                 legend.key.size = unit(legendKeySize, "cm"),
+                 strip.text = element_text(size = facetTitleSize))
+gg <- gg + coord_flip()
+thisGraphic <- "Hunger DALYs per cap by age group.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 8, height = 8)
+#------------------------------------------------------------------------
+# Graphic of burden of hunger over time, by type, disaggregated by WB region
+#theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
+theseCauses <- c(hidHcauses, overNutRiskFactors, "Child underweight")
+dfPlot <- dfGraphics %>% subset(age == "All ages" &
+                                metric == "Rate" &
+                                measure == "DALYs (Disability-Adjusted Life Years)" &
+                                Cat %in% c("Chronic hunger",
+                                           "Hidden hunger",
+                                           "Overnutrition")) %>%
+  mutate(area = gsub(" - WB", "", area))
+dfPlot <- dfPlot %>% group_by(area, year, Cat) %>%
+  summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`))
+nColors <- length(unique(dfPlot$Cat))
+bag_of_colors <- distinctColorPalette(k = 2 * nColors)
+theseColors <- sample(bag_of_colors, nColors)
+gg <- ggplot(dfPlot, aes(x = year, y = `DALYs / 100,000 capita`, group = Cat, color = Cat))
+gg <- gg + geom_line(lwd = 1)
+gg <- gg + scale_color_manual(values = theseColors)
+gg <- gg + facet_wrap(~area, nrow = 2, scales = "free_y")
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
+                                            angle = 60, hjust = 1),
                  axis.title.y = element_text(size = axisTitleSize),
                  axis.title.x = element_blank(),
                  legend.title = element_blank(),
@@ -474,42 +622,124 @@ gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
                  legend.position = "top",
                  legend.key.size = unit(legendKeySize, "cm"),
                  strip.text = element_text(size = facetTitleSize))
-gg
-gg + coord_flip()
-thisGraphic <- "DALYs per cap by age group.png"
-thisFilepath <- paste0(graphicsFolder, thisGraphic)
-ggsave(thisFilepath, width = 9, height = 7)
+thisGraphic <- "Hunger DALYs 1990-2021 by region.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 8, height = 8)
 #------------------------------------------------------------------------
-# Graphic of burden of hunger over time, by type, disaggregated by WB region
-# Create country vecs for regional subsetting
-thisFile <- "IHME-GBD_1990-2021_cNutDef_region.csv"
+# Area stack graphic of the cause composition of burden of hunger over time,
+# by type, disaggregated by WB region
+#theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
+thisFile <- "IHME-GBD_1990-2021_ChronicHungDecomp_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
-dfRegC <- read.csv(thisFilepath, stringsAsFactors = F) %>%
+dfChrDecomp <- read.csv(thisFilepath, stringsAsFactors = F) %>%
   subset(age == "All ages" &
-           metric == "Rate" &
-           measure == "DALYs (Disability-Adjusted Life Years)" &
-           cause %in% c(hidHcauses, "Protein-energy malnutrition")) %>%
-  rename(`DALYs / 100,000 capita` = val,
-         area = location) %>%
-  select(area, year, cause, `DALYs / 100,000 capita`) %>%
-  mutate(type = "Hidden hunger")
-dfRegC$type[grep("Protein-energy", dfRegC$cause)] <- "Chronic hunger"
-thisFile <- "IHME-GBD_1990-2021_cNutDef_region.csv"
-thisFilepath <- paste0(dataFolder, thisFile)
-dfRegR <- read.csv(thisFilepath, stringsAsFactors = F) %>%
-  subset(age == "All ages" &
-           metric == "Rate" &
-           measure == "DALYs (Disability-Adjusted Life Years)" &
-           rei %in% overNutRiskFactors) %>%
-  rename(`DALYs / 100,000 capita` = val,
-         area = location,
-         cause = rei) %>%
-  select(area, year, cause, `DALYs / 100,000 capita`) %>%
-  mutate(type = "Overnutrition")
-dfPlot <- rbind(dfRegC, dfRegR) %>% as.data.frame()
+         metric == "Rate" &
+         measure == "DALYs (Disability-Adjusted Life Years)") %>%
+  rename(Cat = rei, area = location) %>% mutate(Cat = "Chronic hunger") %>%
+  select(area, year, Cat, cause, val) %>% rename(`DALYs / 100,000 capita` = val)
+dfPlot <- dfGraphics %>% subset(age == "All ages" &
+                                  metric == "Rate" &
+                                  measure == "DALYs (Disability-Adjusted Life Years)" &
+                                  Cat %in% c("Hidden hunger",
+                                             "Overnutrition")) %>%
+  select(area, year, Cat, cause, `DALYs / 100,000 capita`) %>%
+  rbind(dfChrDecomp) %>% as.data.frame() %>%
+  mutate(area = gsub(" - WB", "", area))
+catVec <- unique(dfPlot$Cat)
+nCat <- length(catVec)
+for(i in 1:nCat){
+  thisCat <- catVec[i]
+  thisDfPlot <- subset(dfPlot, Cat == thisCat)
+  nColors <- length(unique(thisDfPlot$cause))
+  bag_of_colors <- distinctColorPalette(k = 2 * nColors)
+  theseColors <- sample(bag_of_colors, nColors)
+  gg <- ggplot(thisDfPlot, aes(x = year, y = `DALYs / 100,000 capita`, fill = cause))
+  gg <- gg + geom_area(position = "stack")
+  gg <- gg + scale_fill_manual(values = theseColors)
+  gg <- gg + facet_wrap(~area, nrow = 2, scales = "free_y")
+  gg <- gg + theme_bw()
+  gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
+                                              angle = 60, hjust = 1),
+                   axis.title.y = element_text(size = axisTitleSize),
+                   axis.title.x = element_blank(),
+                   legend.title = element_blank(),
+                   legend.text = element_text(size = legendTextSize),
+                   legend.position = "top",
+                   legend.key.size = unit(legendKeySize, "cm"),
+                   strip.text = element_text(size = facetTitleSize))
+  thisGraphic <- paste(thisCat, "DALYs cause decomp 1990-2021 by region.png")
+  thisFilepath <- paste0(outFolder, thisGraphic)
+  ggsave(thisFilepath, width = 7, height = 3)
+}
 
+#
+
+
+
+
+
+
+
+# # Graphic demonstrating low confidence around child underweight disease sequelae DALYs
+# # as compared to protein-energy malnourishment DALYs
+# theseCauses <- c("Child underweight", "Protein-energy malnutrition")
+# dfPlot <- dfGraphics %>% subset(age == "All ages" &
+#                                   metric == "Rate" &
+#                                   measure == "DALYs (Disability-Adjusted Life Years)" &
+#                                   cause %in% theseCauses &
+#                                   area == "Global")
+# nColors <- length(unique(dfPlot$cause))
+# bag_of_colors <- distinctColorPalette(k = 2 * nColors)
+# theseColors <- sample(bag_of_colors, nColors)
+# gg <- ggplot(dfPlot, aes(x = year, y = `DALYs / 100,000 capita`, group = cause, color = cause))
+# gg <- gg + geom_line(lwd = 1)
+# gg <- gg + geom_ribbon(aes(ymin = lower, ymax = upper, group = cause, fill = cause), alpha = 0.5)
+# gg <- gg + scale_color_manual(values = theseColors)
+# gg <- gg + scale_fill_manual(values = theseColors)
+# #gg <- gg + facet_wrap(~area, nrow = 2)
+# gg <- gg + theme_bw()
+# gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
+#                                             angle = 60, hjust = 1),
+#                  axis.title.y = element_text(size = axisTitleSize),
+#                  axis.title.x = element_blank(),
+#                  legend.title = element_blank(),
+#                  legend.text = element_text(size = legendTextSize),
+#                  legend.position = "top",
+#                  legend.key.size = unit(legendKeySize, "cm"),
+#                  strip.text = element_text(size = facetTitleSize))
+# gg
 #------------------------------------------------------------------------
 # Graphic of variable correlations
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#------------------------------------------------------------------------
+# Hunger histograms
+thisYr <- 2019
+thisFile <- paste0("Hunger density plots ", thisYr, ".png")
+thisFilepath <- paste0(outFolder, thisFile)
+dfMod %>% subset(year == thisYr) %>%
+  rename(`DALYs / 100,000 capita, logged` = `DALYs / 100,000 capita`) %>%
+ggplot(aes(x = `DALYs / 100,000 capita, logged`)) +
+  geom_density() + facet_wrap(~Cat, nrow = 1) + labs(title = thisYr) +
+  theme_bw() +
+  theme(axis.title = element_text(size = axisTitleSize),
+        axis.text = element_text(size = axisTextSize),
+        plot.title = element_text(size = plotTitleSize)) +
+ggsave(thisFilepath)
 
 #========================================================================
 
@@ -602,7 +832,7 @@ dfPlot <- rbind(dfRegC, dfRegR) %>% as.data.frame()
 # dfGDP <- dfRaw[, keepCols] %>% subset(item == "Gross Domestic Product" &
 #                                         element == "value_us__per_capita__2015_prices") %>%
 #   select(c("area", "year", "value")) %>%
-#   rename(`GDP/capita (USD 2015 prices)` = value)
+#   rename(`GDP / capita (USD 2015 prices)` = value)
 # dfGDP <- dfGDP %>% subset(!(area %in% notThese))
 # dfGDP$area[grep("United Kingdom", dfGDP$area)] <- "United Kingdom"
 # dfGDP$area[grep("Netherlands", dfGDP$area)] <- "Netherlands"
@@ -795,7 +1025,7 @@ dfrPCA <- subset(dfrPCA, !(area %in% c("Taiwan (Province of China)")))
 # unique(dfRiskRaw$location)[order(unique(dfRiskRaw$location))]
 # dfGDPmerge <- subset(dfGDP, year == thisYr)[c(1, 3)]
 # colnames(dfGDPmerge)[2] <- "val"
-# dfGDPmerge$Issue <- "GDP/capita (USD 2015 prices)"
+# dfGDPmerge$Issue <- "GDP / capita (USD 2015 prices)"
 # dfGDPmerge <- dfGDPmerge[, colnames(dfrPCA)]
 # rmAreas <- setdiff(unique(dfGDPmerge$area), unique(dfrPCA$area))
 # dfGDPmerge <- dfGDPmerge %>% subset(!(area %in% rmAreas))
@@ -811,7 +1041,7 @@ dfPCA <- as.data.frame(rbind(dfrPCA, dfSocioD))
 #dfPCA[which(is.infinite(dfPCA$val)),]
 X <- dfPCA %>% spread(Issue, val)
 naFn <- function(x){u <- sum(is.na(x)); return(u)}; apply(X[, -1], 2, naFn)
-#indNA <- which(is.na(X$`GDP/capita (USD 2015 prices)`)); X$area[indNA]
+#indNA <- which(is.na(X$`GDP / capita (USD 2015 prices)`)); X$area[indNA]
 indNA <- which(is.na(X$pop14)); X$area[indNA]
 X <- X[-indNA, ]
 zerFn <- function(x){u <- sum(x < 0); return(u)}; apply(X[, -1], 2, zerFn)
@@ -1392,10 +1622,10 @@ dfMod <- merge(dfDaly, dfFBSmacNut) %>%
             "Protein supply (kcal/capita/day)",
             #"Carb supply (kcal/capita/day)",
             #"Fat supply (kcal/capita/day)",
-            #"GDP/capita (USD 2015 prices)",
+            #"GDP / capita (USD 2015 prices)",
             "Food supply (kcal/capita/day)"))
 # dfMod <- merge(dfHidHung, dfFBSmacNut) %>% subset(year == thisYr) %>%
-#   select(-c("area", "year", #"GDP/capita (USD 2015 prices)",
+#   select(-c("area", "year", #"GDP / capita (USD 2015 prices)",
 #             #"Fat supply (kcal/capita/day)",
 #             "Protein supply (kcal/capita/day)",
 #             "Food supply (kcal/capita/day)"
@@ -1456,7 +1686,7 @@ plot(mod$fitted.values, mod$residuals)
 dfPlot <- merge(dfFBSmacNutPct, dfGDP) %>% subset(year %in% thisYr) %>%
   select(c("Carb supply (%)",
            "Fat supply (%)",
-           "GDP/capita (USD 2015 prices)"))
+           "GDP / capita (USD 2015 prices)"))
 
 m <- round(mod$coefficients[2], 3)
 b <- round(mod$coefficients[1], 3)
@@ -1478,7 +1708,7 @@ gg <- ggplot(dfPlot, aes(x = `Fat supply (%)`,
                          y = `Carb supply (%)`,
                          # group = Region, fill = Region,
                          # shape = Region,
-                         size = `GDP/capita (USD 2015 prices)`))#,
+                         size = `GDP / capita (USD 2015 prices)`))#,
 #label = label_these))
 #gg <- gg + geom_smooth(aes(group = NULL, fill = NULL, shape = NULL), method = lm, se = F)
 gg <- gg + geom_point(alpha = 0.6, color = "black", stroke = 0.5)
