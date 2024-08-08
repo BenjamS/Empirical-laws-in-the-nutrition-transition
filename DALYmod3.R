@@ -5,7 +5,8 @@ library(tidyverse)
 library(fixest)
 library(modelsummary)
 library(randomcoloR)
-library(countries)
+library(scales)
+#library(countries)
 library(PerformanceAnalytics)
 #-------------------------------------------------------------------------
 # Define folders
@@ -269,8 +270,8 @@ theseItems <- c("Cereals - Excluding Beer",
                 #"Meat",
                 #"Milk - Excluding Butter",
                 #"Sugar Crops",
-                #"Sugar & Sweeteners",
-                "Sugar (Raw Equivalent)",
+                "Sugar & Sweeteners",
+                #"Sugar (Raw Equivalent)",
                 #"Alcoholic Beverages",
                 "Grand Total")
 
@@ -472,7 +473,7 @@ axisTitleSize <- 8
 axisTextSize <- 7
 legendKeySize <- 0.3
 legendTextSize <- axisTextSize
-facetTitleSize <- axisTitleSize
+facetTitleSize <- axisTextSize
 plotTitleSize = axisTextSize
 labelSize <- 2
 #------------------------------------------------------------------------
@@ -536,7 +537,7 @@ dfMod %>% subset(year == 2021) %>%
   select(-c(year, area)) %>% chart.Correlation(histogram=TRUE, pch=19)
 # Manually save using Export in the plot viewer, use width 1500 height 1000
 #------------------------------------------------------------------------
-# Create graphics data frame for regionally disaggregated hunger plots
+# Create graphics data frame for regionally disaggregated IHME GBD data plots
 thisFile <- "IHME-GBD_1990-2021_cNutDef_byAge_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
 dfGraphicsC <- read.csv(thisFilepath, stringsAsFactors = F) %>%
@@ -570,6 +571,8 @@ dfPlot <- dfGraphics %>% subset(year == 2021 &
                                              "Overnutrition"))  %>%
   mutate(area = gsub(" - WB", "", area),
          age = factor(age, levels = unique(age)))
+indChr <- which(dfPlot$Cat == "Chronic hunger")
+dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
 #dfPlot$age <- factor(dfPlot$age, levels = unique(dfPlot$age))
 nColors <- length(unique(dfPlot$cause))
 bag_of_colors <- distinctColorPalette(k = 2 * nColors)
@@ -593,7 +596,7 @@ thisGraphic <- "Hunger DALYs per cap by age group.png"
 thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 8, height = 8)
 #------------------------------------------------------------------------
-# Graphic of burden of hunger over time, by type, disaggregated by WB region
+# Line plot of burden of hunger over time, by type, disaggregated by WB region
 #theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
 theseCauses <- c(hidHcauses, overNutRiskFactors, "Child underweight")
 dfPlot <- dfGraphics %>% subset(age == "All ages" &
@@ -624,9 +627,9 @@ gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
                  strip.text = element_text(size = facetTitleSize))
 thisGraphic <- "Hunger DALYs 1990-2021 by region.png"
 thisFilepath <- paste0(outFolder, thisGraphic)
-ggsave(thisFilepath, width = 8, height = 8)
+ggsave(thisFilepath, width = 8, height = 4)
 #------------------------------------------------------------------------
-# Area stack graphic of the cause composition of burden of hunger over time,
+# Area stack plot of the cause composition of burden of hunger over time,
 # by type, disaggregated by WB region
 #theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
 thisFile <- "IHME-GBD_1990-2021_ChronicHungDecomp_reg.csv"
@@ -672,14 +675,100 @@ for(i in 1:nCat){
   ggsave(thisFilepath, width = 7, height = 3)
 }
 
+#------------------------------------------------------------------------
+# Area stack plot of consumption/capita/day of major food categories 2010-2021
+# By geographic region
+thisFile <- "FAOSTAT_data_en_8-7-2024.csv"
+thisFilepath <- paste0(dataFolder, thisFile)
+sugLook <- c("Sugar Crops", "Sugar & Sweeteners",
+             "Sugar (Raw Equivalent)")
+keepThese <- c("Grand Total", "Animal Products",
+               "Cereals - Excluding Beer", "Starchy Roots",
+               "Sugar & Sweeteners",
+               "Pulses", "Vegetable Oils",
+               "Vegetables", "Fruits - Excluding Wine")
+LACvec <- c("South America", "Central America", "Caribbean")
+EAPvec <- c("Australia and New Zealand", "Eastern Asia", "South-eastern Asia")
+EURCAvec <- c("Europe", "Central Asia")
+MENAvec <- c("Northern Africa", "Western Asia")
+allRegs <- c(LACvec, EAPvec, EURCAvec, MENAvec, "Northern America", "Southern Asia", "Africa", "World")
+dfFBSreg <- read.csv(thisFilepath, stringsAsFactors = F) %>%
+  select(Area, Year, Item, Element, Value) %>%
+  subset(Area %in% allRegs)
+# unique(dfFBSreg$Item)
+# unique(dfFBSreg$Element)
+# unique(dfFBSreg$Area)
+# dfLookSugar <- dfFBSreg %>% subset(Item %in% sugLook & Year == 2021)
+# View(dfLookSugar)
+# dfPop <- dfFBSreg %>% subset(Item == "Population")
+# dfFBSreg <- dfFBSreg %>% subset(Item != "Population")
+dfSSA <- dfFBSreg %>% subset(Area %in% c("Africa", "Northern Africa")) %>%
+  spread(Area, Value) %>% mutate(Value = Africa - `Northern Africa`,
+                                 Area = "Sub-Saharan Africa") %>%
+  select(Area, Year, Item, Element, Value)
+dfSSApop <- dfSSA %>% subset(Item == "Population") %>%
+  select(Year, Value) %>% rename(Pop = Value)
+dfSSA <- dfSSA %>% subset(Item != "Population") %>% merge(dfSSApop) %>%
+  mutate(`kcal / capita / day` = Value / Pop * 1000 / 365) %>%
+  select(Area, Year, Item, `kcal / capita / day`)
+u <- dfFBSreg$Area
+dfFBSreg$Area[which(u %in% LACvec)] <- "Latin America & Caribbean"
+dfFBSreg$Area[which(u %in% EAPvec)] <- "East Asia & Pacific"
+dfFBSreg$Area[which(u %in% EURCAvec)] <- "Europe & Central Asia"
+dfFBSreg$Area[which(u %in% MENAvec)] <- "Middle East & North Africa"
+dfFBSreg$Area[grep("Northern America", u)] <- "North America"
+dfFBSreg$Area[grep("Southern Asia", u)] <- "South Asia"
+dfFBSreg <- dfFBSreg %>% subset(Area != "Africa") %>%
+  group_by(Area, Year, Item) %>% summarise(Value = sum(Value, na.rm = T))
+dfPop <- dfFBSreg %>% subset(Item == "Population") %>%
+  select(Area, Year, Value) %>% rename(Pop = Value)
+dfFBSreg <- dfFBSreg %>% subset(Item != "Population") %>%
+  merge(dfPop) %>%
+  mutate(`kcal / capita / day` = Value / Pop * 1000 / 365) %>%
+  select(Area, Year, Item, `kcal / capita / day`) %>%
+  rbind(dfSSA) %>% as.data.frame()
+dfPlot <- dfFBSreg %>%
+  subset(Item %in% keepThese) %>%
+  mutate(Item = gsub("Fruits - Excluding Wine", "F&V", Item)) %>%
+  mutate(Item = gsub("Vegetables", "F&V", Item)) %>%
+  mutate(Item = gsub("Cereals - Excluding Beer", "Cereals", Item)) %>%
+  group_by(Area, Year, Item) %>%
+  summarise(`kcal / capita / day` = sum(`kcal / capita / day`, na.rm = T)) %>%
+  spread(Item, `kcal / capita / day`)
+dfPlot[, -c(1, 2)] <- dfPlot[, -c(1, 2)] / dfPlot$`Grand Total` * 100
+dfPlot$`Grand Total` <- NULL
+dfPlot$Residual <- 100 - rowSums(dfPlot[, -c(1, 2)])
+gatherCols <- colnames(dfPlot)[-c(1, 2)]
+dfPlot <- dfPlot %>% as.data.frame() %>%
+  gather_("Item", "% kcal / capita / day", gatherCols)
+dfPlot$Year <- as.integer(dfPlot$Year) #factor(dfPlot$Year, levels = unique(dfPlot$Year))
+nColors <- length(unique(dfPlot$Item))
+bag_of_colors <- distinctColorPalette(k = 5 * nColors)
+theseColors <- sample(bag_of_colors, nColors)
+gg <- ggplot(dfPlot, aes(x = Year, y = `% kcal / capita / day`, fill = reorder(Item, `% kcal / capita / day`)))
+gg <- gg + geom_area(position = "stack")
+gg <- gg + scale_fill_manual(values = theseColors)
+gg <- gg + scale_x_continuous(breaks = pretty_breaks(n = 4))
+gg <- gg + facet_wrap(~Area, nrow = 2, scales = "free_y")
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text.x = element_text(size = axisTextSize),
+                 axis.title.y = element_text(size = axisTitleSize),
+                 axis.title.x = element_blank(),
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = legendTextSize),
+                 legend.position = "top",
+                 legend.key.size = unit(legendKeySize, "cm"),
+                 strip.text = element_text(size = facetTitleSize))
+gg
+thisGraphic <- "Diet composition 2010-2022 by region.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 8, height = 4)
+
+
+
+
+
 #
-
-
-
-
-
-
-
 # # Graphic demonstrating low confidence around child underweight disease sequelae DALYs
 # # as compared to protein-energy malnourishment DALYs
 # theseCauses <- c("Child underweight", "Protein-energy malnutrition")
