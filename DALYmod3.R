@@ -6,8 +6,17 @@ library(fixest)
 library(modelsummary)
 library(randomcoloR)
 library(scales)
-#library(countries)
 library(PerformanceAnalytics)
+#library(countries)
+#-------------------------------------------------------------------------
+# Set graphic parameters
+axisTitleSize <- 8
+axisTextSize <- 7
+legendKeySize <- 0.3
+legendTextSize <- axisTextSize
+facetTitleSize <- axisTextSize
+plotTitleSize = axisTextSize
+labelSize <- 2
 #-------------------------------------------------------------------------
 # Define folders
 # Working directory:
@@ -41,6 +50,7 @@ dfCauseRaw <- subset(dfCauseRaw, location != "Taiwan (Province of China)")
 #-------------------------------------------------------------------------
 # Create separate data frames for chronic, hidden, and overnutrition DALYs 
 # Chronic hunger DALYs
+# Alternate definition
 # dfChr <- dfCauseRaw %>%
 #   subset(cause == "Protein-energy malnutrition" &
 #            age == "All ages" &
@@ -57,6 +67,7 @@ dfChr <- dfRiskRaw %>%
            measure == "DALYs (Disability-Adjusted Life Years)") %>%
   rename(area = location) %>%
   mutate(Cat = "Chronic hunger") %>%
+  # select(area, year, val, Cat)
   select(area, year, lower, Cat) %>%
   rename(val = lower)
 # Hidden hunger DALYs
@@ -83,7 +94,7 @@ overNutRiskFactors <- c("Diet high in sugar-sweetened beverages",
                         # "Diet low in vegetables",
                         #"Diet low in whole grains",
                         #"Diet low in nuts and seeds",
-                        # "Diet low in seafood omega-3 fatty acids",
+                        "Diet low in seafood omega-3 fatty acids",
                         # "Diet Low in Omega-6 Polyunsaturated Fatty Acids",
                         "Diet low in polyunsaturated fatty acids",
                         "Diet high in trans fatty acids",
@@ -150,6 +161,7 @@ setdiff(unique(dfDaly$area), unique(dfSDI$area))
 u <- dfSDI$area
 unique(u[grep("rkiye", u)])
 dfSDI$area[grep("rkiye", u)] <- "Turkiye"
+dfSDI$sdi <- 100 * dfSDI$sdi
 dfDaly <- dfDaly %>% merge(dfSDI)
 #========================================================================
 # Get population under 25 data from UN Population Data Portal, merge with dfDaly
@@ -228,13 +240,13 @@ theseElems <- c("Food supply (kcal/capita/day)",
                 "Protein supply quantity (g/capita/day)",
                 "Fat supply quantity (g/capita/day)",
                 "Total Population - Both sexes")
-dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"))) %>%
+dfRaw <- dfRaw %>% select(-c(contains("Code"), ends_with("F"), ends_with("N"))) %>%
   subset(Element %in% theseElems)
 yrCols <- colnames(dfRaw)[grep("20", colnames(dfRaw))]
 dfRaw <- dfRaw %>% gather_("year", "value", yrCols)
 dfRaw$year <- gsub("Y", "", dfRaw$year)
 colnames(dfRaw) <- tolower(colnames(dfRaw))
-dfFBSraw <- dfRaw; rm(dfRaw)
+dfFBSraw <- dfRaw; #rm(dfRaw)
 # Harmonize cty names with dfDaly
 dfFBSraw$area[grep("United Kingdom", dfFBSraw$area)] <- "United Kingdom"
 dfFBSraw$area[grep("Netherlands \\(Kingdom", dfFBSraw$area)] <- "Netherlands"
@@ -296,7 +308,7 @@ dfFBS[, -colSkip] <- dfFBS[, -colSkip] / dfFBS$`Grand Total` * 100
 colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element", "Grand Total"))
 dfFBS$Residual <- dfFBS$`Grand Total` - rowSums(dfFBS[, -colSkip])
 # Make sure dfDaly and dfFBS ctys match
-# The FAO data is missing about 23 countries that are included in the IHME DALY data.
+# The FAO data is missing about 12 countries that are included in the IHME DALY data.
 # These will be lost in the merge. Not too important since they are all very small
 # population countries.
 setdiff(dfDaly$area, dfFBS$area)
@@ -317,170 +329,423 @@ apply(dfMod[, -notCols], 2, function(x) sum(is.na(x))) %>% table()
 apply(dfMod[, -notCols], 2, function(x) sum(is.nan(x))) %>% table()
 apply(dfMod[, -notCols], 2, function(x) sum(is.infinite(x))) %>% table()
 apply(dfMod[, -notCols], 2, function(x) sum(x == 0, na.rm = T)) %>% table()
+apply(dfMod[, -notCols], 2, function(x) sum(x < 0, na.rm = T)) %>% table()
 # A handful of ctys have NaN values for all years and food categories.
 # This is because they were zero and then turned NaN when dividing by Grand Total.
 # Drop these.
 dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
 notThese <- dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
 dfMod <- dfMod %>% subset(!(area %in% notThese))
+# There is also one negative chronic hunger (child underweight) DALY value
+# for DRC 2021. Remove it.
+dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique()
+dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
 # There are also zero values due to a handful of ctys where people are not eating pulses
 dfMod$area[which(dfMod$Pulses == 0)] %>% unique()
 #  Replace with 1 so that they will become 0 after log transform.
-# First Save unlogged data for summary stats
+# First Save untransformed data for summary stats
 dfModSumStats <- dfMod
 # Log transform
 dfMod$Pulses[which(dfMod$Pulses == 0)] <- 1
 dfMod[, -notCols] <- as.data.frame(apply(dfMod[, -notCols], 2, log))
+apply(dfMod[, -notCols], 2, function(x) sum(is.nan(x)))
+#dfMod$area[which(is.nan(dfMod$`DALYs / 100,000 capita`))]
 #-----------------------------------------------------------------------
 # Separate into data frames for each hunger model
 catCol <- which(colnames(dfMod) == "Cat")
 dfModHid <- dfMod %>% subset(Cat == "Hidden hunger") %>% select (-catCol)
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger") %>% select (-catCol)
 dfModOve <- dfMod %>% subset(Cat == "Overnutrition") %>% select (-catCol)
+# Center data so that cty FEs can be interpreted as mean logged DALYs/100,000 capita
+# (or the log of the geometric mean of DALYs/100,000 capita)
+dfModChr[, -c(1, 2)] <- scale(dfModChr[, -c(1, 2)], scale = F) %>% as.data.frame()
+dfModHid[, -c(1, 2)] <- scale(dfModHid[, -c(1, 2)], scale = F) %>% as.data.frame()
+dfModOve[, -c(1, 2)] <- scale(dfModOve[, -c(1, 2)], scale = F) %>% as.data.frame()
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
 colnames(dfModChr)[3] <- "y"
 varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
 varsChr2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
 varsChr3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
-varsChr4 <- c("GDP / capita", "Cereals",
+              "Pulses", "Sugar & Sweeteners")
+varsChr4 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses", "Sugar & Sweeteners")
+varsChr5 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
 varsChr1 <- paste0("`", varsChr1, "`")
 varsChr2 <- paste0("`", varsChr2, "`")
 varsChr3 <- paste0("`", varsChr3, "`")
 varsChr4 <- paste0("`", varsChr4, "`")
-modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
-#modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("area", "year"))
-modChr2 <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
-modChr3 <- feols(y ~ .[varsChr3] | area, data = dfModChr, vcov = "hetero")
-modChr4 <- feols(y ~ .[varsChr4] | area, data = dfModChr, vcov = "hetero")
-summary(modChr1)
-summary(modChr2)
-summary(modChr3)
-summary(modChr4)
-plot(modChr1$fitted.values, modChr1$residuals)
-plot(modChr2$fitted.values, modChr2$residuals)
-plot(modChr3$fitted.values, modChr3$residuals)
-plot(modChr4$fitted.values, modChr4$residuals)
-hist(fixef(modChr1)$area, breaks = 15)
-hist(fixef(modChr2)$area, breaks = 15)
-hist(fixef(modChr3)$area, breaks = 15)
-hist(fixef(modChr4)$area, breaks = 15)
-#plot(fixef(modChr1)$area - fixef(modChr2)$area)
-#mean(fixef(modChr1)$area - fixef(modChr2)$area)
-models <- list(modChr1, modChr2, modChr3, modChr4)
-thisFile <- "ctyFEmods_Chr.docx"
+varsChr5 <- paste0("`", varsChr5, "`")
+modChr1a <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
+modChr1b <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("area", "year"))
+modChr2a <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
+modChr2b <- feols(y ~ .[varsChr2] | area, data = dfModChr, cluster = c("area", "year"))
+modChr3a <- feols(y ~ .[varsChr3] | area, data = dfModChr, vcov = "hetero")
+modChr3b <- feols(y ~ .[varsChr3] | area, data = dfModChr, cluster = c("area", "year"))
+modChr4a <- feols(y ~ .[varsChr4] | area, data = dfModChr, vcov = "hetero")
+modChr4b <- feols(y ~ .[varsChr4] | area, data = dfModChr, cluster = c("area", "year"))
+modChr5a <- feols(y ~ .[varsChr5] | area, data = dfModChr, vcov = "hetero")
+modChr5b <- feols(y ~ .[varsChr5] | area, data = dfModChr, cluster = c("area", "year"))
+modChr5c <- feols(y ~ .[varsChr5] | year, data = dfModChr, cluster = c("area", "year")) # Lenaerts & Demont
+modChr1a
+modChr1b
+modChr2a
+modChr2b
+modChr3a
+modChr3b
+modChr4a
+modChr4b
+modChr5a
+modChr5b
+modChr5c
+# Plot of residuals v fitted values
+plot(modChr1a$fitted.values, modChr1a$residuals)
+# Looks like there are some outliers
+# Remove outliers (abs(error) > 3 s.d.) and fit again
+errVec <- modChr1a$residuals
+names(errVec) <- dfModChr$area
+sdErr <- sd(errVec)
+indOutlier <- which(abs(errVec) > 3 * sdErr); names(indOutlier)
+dfModChr <- dfModChr[-indOutlier, ]
+# By informal visual inspection of e(t) v e(t-1) plot, it seems there's
+# not much serial autocorrelation (after dropping outliers),
+# while inspection of residuals v fitted values plot reveals some heteroskedasticity.
+# So maybe it's better to report heteroskedasticity-robust standard errors instead of
+# cty clustered standard errors.
+errVec <- modChr1a$residuals
+dfErr <- data.frame(area = dfModChr$area, err = errVec, yHat = modChr1a$fitted.values) %>% group_by(area) %>%
+  mutate(errDif = c(NA, diff(err))) %>% as.data.frame()
+dfErr <- dfErr[-which(is.na(dfErr$errDif)), ]
+plot(dfErr$err, dfErr$errDif)
+plot(modChr2a$fitted.values, modChr2a$residuals)
+plot(modChr3a$fitted.values, modChr3a$residuals)
+plot(modChr4a$fitted.values, modChr4a$residuals)
+plot(modChr5a$fitted.values, modChr5a$residuals)
+plot(modChr5c$fitted.values, modChr5c$residuals)
+# Assess multicollinearity, heteroskedasticity for single years
+# VIFs are all < 5 for all regressors and years it seems
+# BP test indicates heteroskedasticity for some years, not for others
+theseVars <- gsub("`", "", varsChr2)
+dfTest <- dfModChr %>% subset(year == 2019) %>%
+  select(y, all_of(theseVars))
+modTest <- lm(y~., dfTest)
+car::vif(modTest)
+lmtest::bptest(modTest)
+# Save estimations to word files for reporting
+modelsA <- list(modChr1a, modChr2a, modChr3a, modChr4a, modChr5a, modChr5c)
+modelsB <- list(modChr1b, modChr2b, modChr3b, modChr4b, modChr5b)
+thisFile <- "ctyFEmods_Chr_htrskRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(models, output = thisFilepath, statistic = "p.value")
-#-----------------------------------------------------------------------
+modelsummary(modelsA, output = thisFilepath, statistic = "p.value")
+thisFile <- "ctyFEmods_Chr_clstRob.docx"
+thisFilepath <- paste0(outFolder, thisFile)
+modelsummary(modelsB, output = thisFilepath, statistic = "p.value")
+# Pretty resid v fitted plots for reporting
+areaVec <- dfModChr$area; yrVec <- dfModChr$year
+dfErr1 <- data.frame(area = areaVec, year = yrVec, yHat = modChr1a$fitted.values, residual = modChr1a$residuals, model = 1)
+dfErr2 <- data.frame(area = areaVec, year = yrVec, yHat = modChr2a$fitted.values, residual = modChr2a$residuals, model = 2)
+dfErr3 <- data.frame(area = areaVec, year = yrVec, yHat = modChr3a$fitted.values, residual = modChr3a$residuals, model = 3)
+dfErr4 <- data.frame(area = areaVec, year = yrVec, yHat = modChr4a$fitted.values, residual = modChr4a$residuals, model = 4)
+dfErr5 <- data.frame(area = areaVec, year = yrVec, yHat = modChr5a$fitted.values, residual = modChr5a$residuals, model = 5)
+dfErr6 <- data.frame(area = areaVec, year = yrVec, yHat = modChr5c$fitted.values, residual = modChr5c$residuals, model = 6)
+dfErr <- do.call(rbind, list(dfErr1, dfErr2, dfErr3, dfErr4, dfErr5, dfErr6)) %>% as.data.frame()
+gg <- ggplot(dfErr,  aes(x = yHat, y = residual)) + geom_point(size = 0.15)
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + labs(x = "fitted value")
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                            axis.title = element_text(size = axisTitleSize),
+                            strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "errorYhatPlot_chr.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 10, height = 2)
+# Histograms of cty FEs, which may be interpreted as
+# logged geometric mean of DALYs/100,000 since the data is centered
+areaVec <- unique(areaVec)
+dfGM1 <- data.frame(area = areaVec, FE = fixef(modChr1a)$area, model = 1)
+dfGM2 <- data.frame(area = areaVec, FE = fixef(modChr2a)$area, model = 2)
+dfGM3 <- data.frame(area = areaVec, FE = fixef(modChr3a)$area, model = 3)
+dfGM4 <- data.frame(area = areaVec, FE = fixef(modChr4a)$area, model = 4)
+dfGM5 <- data.frame(area = areaVec, FE = fixef(modChr5a)$area, model = 5)
+dfGM <- do.call(rbind, list(dfGM1, dfGM2, dfGM3, dfGM4, dfGM5)) %>% as.data.frame()
+gg <- ggplot(dfGM, aes(x = FE))
+gg <- gg + geom_histogram(aes(y = ..density..),
+               colour = 1, fill = "white", binwidth = 0.5)
+gg <- gg + geom_density()
+gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to chronic hunger\n(country fixed effects)")
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                 axis.title = element_text(size = axisTitleSize),
+                 strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "FEdensityPlot_chr.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 9, height = 2)
+#=======================================================================
 # Burden of hidden hunger model
 colnames(dfModHid)[3] <- "y"
 varsHid1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
 varsHid2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
 varsHid3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
 varsHid4 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
+varsHid5 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses")
 varsHid1 <- paste0("`", varsHid1, "`")
 varsHid2 <- paste0("`", varsHid2, "`")
 varsHid3 <- paste0("`", varsHid3, "`")
 varsHid4 <- paste0("`", varsHid4, "`")
-modHid1 <- feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero")
-modHid2 <- feols(y ~ .[varsHid2] | area, data = dfModHid, vcov = "hetero")
-modHid3 <- feols(y ~ .[varsHid3] | area, data = dfModHid, vcov = "hetero")
-modHid4 <- feols(y ~ .[varsHid4] | area, data = dfModHid, vcov = "hetero")
-summary(modHid1)
-summary(modHid2)
-summary(modHid3)
-summary(modHid4)
-plot(modHid1$fitted.values, modHid1$residuals)
-plot(modHid2$fitted.values, modHid2$residuals)
-plot(modHid3$fitted.values, modHid3$residuals)
-plot(modHid4$fitted.values, modHid4$residuals)
-hist(fixef(modHid1)$area, breaks = 15)
-hist(fixef(modHid2)$area, breaks = 15)
-hist(fixef(modHid3)$area, breaks = 15)
-hist(fixef(modHid4)$area, breaks = 15)
-# plot(fixef(modHid1)$area - fixef(modHid2)$area)
-# mean(fixef(modHid1)$area - fixef(modHid2)$area)
-models <- list(modHid1, modHid2, modHid3, modHid4)
-thisFile <- "ctyFEmods_Hid.docx"
+varsHid5 <- paste0("`", varsHid5, "`")
+modHid1a <- feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero")
+modHid1b <- feols(y ~ .[varsHid1] | area, data = dfModHid, cluster = c("area", "year"))
+modHid2a <- feols(y ~ .[varsHid2] | area, data = dfModHid, vcov = "hetero")
+modHid2b <- feols(y ~ .[varsHid2] | area, data = dfModHid, cluster = c("area", "year"))
+modHid3a <- feols(y ~ .[varsHid3] | area, data = dfModHid, vcov = "hetero")
+modHid3b <- feols(y ~ .[varsHid3] | area, data = dfModHid, cluster = c("area", "year"))
+modHid4a <- feols(y ~ .[varsHid4] | area, data = dfModHid, vcov = "hetero")
+modHid4b <- feols(y ~ .[varsHid4] | area, data = dfModHid, cluster = c("area", "year"))
+modHid5a <- feols(y ~ .[varsHid5] | area, data = dfModHid, vcov = "hetero")
+modHid5b <- feols(y ~ .[varsHid5] | area, data = dfModHid, cluster = c("area", "year"))
+modHid5c <- feols(y ~ .[varsHid5] | year, data = dfModHid, cluster = c("area", "year")) # Lenaerts & Demont
+modHid1a
+modHid1b
+modHid2a
+modHid2b
+modHid3a
+modHid3b
+modHid4a
+modHid4b
+modHid5a
+modHid5b
+modHid5c
+# Plot of residuals v fitted values
+plot(modHid1a$fitted.values, modHid1a$residuals)
+# Doesn't look like there are any outliers
+# By informal visual inspection of e(t) v e(t-1) plot, it seems there's
+# not much serial autocorrelation (after dropping outliers),
+# while inspection of residuals v fitted values plot reveals some heteroskedasticity.
+# So maybe it's better to report heteroskedasticity-robust standard errors instead of
+# cty clustered standard errors.
+errVec <- modHid1a$residuals
+dfErr <- data.frame(area = dfModHid$area, err = errVec, yHat = modHid1a$fitted.values) %>% group_by(area) %>%
+  mutate(errDif = c(NA, diff(err))) %>% as.data.frame()
+dfErr <- dfErr[-which(is.na(dfErr$errDif)), ]
+plot(dfErr$err, dfErr$errDif)
+plot(modHid2a$fitted.values, modHid2a$residuals)
+plot(modHid3a$fitted.values, modHid3a$residuals)
+plot(modHid4a$fitted.values, modHid4a$residuals)
+plot(modHid5a$fitted.values, modHid5a$residuals)
+plot(modHid5c$fitted.values, modHid5c$residuals)
+# Assess multicollinearity, heteroskedasticity for single years
+# VIFs are all < 5 for all regressors and years it seems
+# BP test indicates heteroskedasticity for all years
+theseVars <- gsub("`", "", varsHid1)
+dfTest <- dfModHid %>% subset(year == 2012) %>%
+  select(y, all_of(theseVars))
+modTest <- lm(y~., dfTest)
+car::vif(modTest)
+lmtest::bptest(modTest)
+# Save estimations to word files for reporting
+modelsA <- list(modHid1a, modHid2a, modHid3a, modHid4a, modHid5a, modHid5c)
+modelsB <- list(modHid1b, modHid2b, modHid3b, modHid4b, modHid5b)
+thisFile <- "ctyFEmods_Hid_htrskRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(models, output = thisFilepath, statistic = "p.value")
-#-----------------------------------------------------------------------
+modelsummary(modelsA, output = thisFilepath, statistic = "p.value")
+thisFile <- "ctyFEmods_Hid_clstRob.docx"
+thisFilepath <- paste0(outFolder, thisFile)
+modelsummary(modelsB, output = thisFilepath, statistic = "p.value")
+# Pretty resid v fitted plots for reporting
+areaVec <- dfModHid$area; yrVec <- dfModHid$year
+dfErr1 <- data.frame(area = areaVec, year = yrVec, yHat = modHid1a$fitted.values, residual = modHid1a$residuals, model = 1)
+dfErr2 <- data.frame(area = areaVec, year = yrVec, yHat = modHid2a$fitted.values, residual = modHid2a$residuals, model = 2)
+dfErr3 <- data.frame(area = areaVec, year = yrVec, yHat = modHid3a$fitted.values, residual = modHid3a$residuals, model = 3)
+dfErr4 <- data.frame(area = areaVec, year = yrVec, yHat = modHid4a$fitted.values, residual = modHid4a$residuals, model = 4)
+dfErr5 <- data.frame(area = areaVec, year = yrVec, yHat = modHid5a$fitted.values, residual = modHid5a$residuals, model = 5)
+dfErr6 <- data.frame(area = areaVec, year = yrVec, yHat = modHid5c$fitted.values, residual = modHid5c$residuals, model = 6)
+dfErr <- do.call(rbind, list(dfErr1, dfErr2, dfErr3, dfErr4, dfErr5, dfErr6)) %>% as.data.frame()
+gg <- ggplot(dfErr,  aes(x = yHat, y = residual)) + geom_point(size = 0.15)
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + labs(x = "fitted value")
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                 axis.title = element_text(size = axisTitleSize),
+                 strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "errorYhatPlot_Hid.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 10, height = 2)
+# Histograms of cty FEs, which may be interpreted as
+# logged geometric mean of DALYs/100,000 since the data is centered
+areaVec <- unique(areaVec)
+dfGM1 <- data.frame(area = areaVec, FE = fixef(modHid1a)$area, model = 1)
+dfGM2 <- data.frame(area = areaVec, FE = fixef(modHid2a)$area, model = 2)
+dfGM3 <- data.frame(area = areaVec, FE = fixef(modHid3a)$area, model = 3)
+dfGM4 <- data.frame(area = areaVec, FE = fixef(modHid4a)$area, model = 4)
+dfGM5 <- data.frame(area = areaVec, FE = fixef(modHid5a)$area, model = 5)
+dfGM <- do.call(rbind, list(dfGM1, dfGM2, dfGM3, dfGM4, dfGM5)) %>% as.data.frame()
+gg <- ggplot(dfGM, aes(x = FE))
+gg <- gg + geom_histogram(aes(y = ..density..),
+                          colour = 1, fill = "white", binwidth = 0.25)
+gg <- gg + geom_density()
+gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to hidden hunger\n(country fixed effects)")
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                 axis.title = element_text(size = axisTitleSize),
+                 strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "FEdensityPlot_Hid.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 9, height = 2)
+# Note the hidden hunger cty FEs histogram is bimodal.
+# What ctys are in the higher risk category?
+dfGM %>% subset(FE > 0) %>% .$area %>% unique() # Looks like low income developing ctys
+#=======================================================================
 # Burden of overnutrition model
 colnames(dfModOve)[3] <- "y"
 varsOve1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
 varsOve2 <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")
 varsOve3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
 varsOve4 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar (Raw Equivalent)")
+              "Pulses", "Sugar & Sweeteners")
+varsOve5 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses")
 varsOve1 <- paste0("`", varsOve1, "`")
 varsOve2 <- paste0("`", varsOve2, "`")
 varsOve3 <- paste0("`", varsOve3, "`")
 varsOve4 <- paste0("`", varsOve4, "`")
-modOve1 <- feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero")
-modOve2 <- feols(y ~ .[varsOve2] | area, data = dfModOve, cluster = "area")# vcov = "hetero")
-modOve3 <- feols(y ~ .[varsOve3] | area, data = dfModOve, vcov = "hetero")
-modOve4 <- feols(y ~ .[varsOve4] | area, data = dfModOve, vcov = "hetero")
-summary(modOve1)
-summary(modOve2)
-summary(modOve3)
-summary(modOve4)
-plot(modOve1$fitted.values, modOve1$residuals)
-plot(modOve2$fitted.values, modOve2$residuals)
-plot(modOve3$fitted.values, modOve3$residuals)
-plot(modOve4$fitted.values, modOve4$residuals)
-hist(fixef(modOve1)$area, breaks = 15)
-hist(fixef(modOve2)$area, breaks = 15)
-hist(fixef(modOve3)$area, breaks = 15)
-hist(fixef(modOve4)$area, breaks = 15)
-# hist(exp(fixef(modOve1)$area), breaks = 15)
-# hist(exp(fixef(modOve2)$area), breaks = 15)
-# plot(fixef(modOve2)$area - fixef(modOve1)$area)
-models <- list(modOve1, modOve2, modOve3, modOve4)
-thisFile <- "ctyFEmods_Ove.docx"
+varsOve5 <- paste0("`", varsOve5, "`")
+modOve1a <- feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero")
+modOve1b <- feols(y ~ .[varsOve1] | area, data = dfModOve, cluster = c("area", "year"))
+modOve2a <- feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
+modOve2b <- feols(y ~ .[varsOve2] | area, data = dfModOve, cluster = c("area", "year"))
+modOve3a <- feols(y ~ .[varsOve3] | area, data = dfModOve, vcov = "hetero")
+modOve3b <- feols(y ~ .[varsOve3] | area, data = dfModOve, cluster = c("area", "year"))
+modOve4a <- feols(y ~ .[varsOve4] | area, data = dfModOve, vcov = "hetero")
+modOve4b <- feols(y ~ .[varsOve4] | area, data = dfModOve, cluster = c("area", "year"))
+modOve5a <- feols(y ~ .[varsOve5] | area, data = dfModOve, vcov = "hetero")
+modOve5b <- feols(y ~ .[varsOve5] | area, data = dfModOve, cluster = c("area", "year"))
+modOve5c <- feols(y ~ .[varsOve5] | year, data = dfModOve, cluster = c("area", "year")) # Lenaerts & Demont
+modOve1a
+modOve1b
+modOve2a
+modOve2b
+modOve3a
+modOve3b
+modOve4a
+modOve4b
+modOve5a
+modOve5b
+modOve5c
+# Plot of residuals v fitted values
+plot(modOve1a$fitted.values, modOve1a$residuals)
+# Doesn't look like there are any outliers.
+# By informal visual inspection of e(t) v e(t-1) plot, it seems there's
+# not much serial autocorrelation (after dropping outliers),
+# while inspection of residuals v fitted values plot reveals some heteroskedasticity.
+# So maybe it's better to report heteroskedasticity-robust standard errors instead of
+# cty clustered standard errors.
+errVec <- modOve1a$residuals
+dfErr <- data.frame(area = dfModOve$area, err = errVec, yHat = modOve1a$fitted.values) %>% group_by(area) %>%
+  mutate(errDif = c(NA, diff(err))) %>% as.data.frame()
+dfErr <- dfErr[-which(is.na(dfErr$errDif)), ]
+plot(dfErr$err, dfErr$errDif)
+plot(modOve2a$fitted.values, modOve2a$residuals)
+plot(modOve3a$fitted.values, modOve3a$residuals)
+plot(modOve4a$fitted.values, modOve4a$residuals)
+plot(modOve5a$fitted.values, modOve5a$residuals)
+plot(modOve5c$fitted.values, modOve5c$residuals)
+# Assess multicollinearity, heteroskedasticity for single years
+# VIFs are all < 5 for all regressors and years it seems
+# BP test indicates heteroskedasticity for some years, not for others
+theseVars <- gsub("`", "", varsOve1)
+dfTest <- dfModOve %>% subset(year == 2012) %>%
+  select(y, all_of(theseVars))
+modTest <- lm(y~., dfTest)
+car::vif(modTest)
+lmtest::bptest(modTest)
+# Save estimations to word files for reporting
+modelsA <- list(modOve1a, modOve2a, modOve3a, modOve4a, modOve5a, modOve5c)
+modelsB <- list(modOve1b, modOve2b, modOve3b, modOve4b, modOve5b)
+thisFile <- "ctyFEmods_Ove_htrskRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(models, output = thisFilepath, statistic = "p.value")
+modelsummary(modelsA, output = thisFilepath, statistic = "p.value")
+thisFile <- "ctyFEmods_Ove_clstRob.docx"
+thisFilepath <- paste0(outFolder, thisFile)
+modelsummary(modelsB, output = thisFilepath, statistic = "p.value")
+# Pretty resid v fitted plots for reporting
+areaVec <- dfModOve$area; yrVec <- dfModOve$year
+dfErr1 <- data.frame(area = areaVec, year = yrVec, yHat = modOve1a$fitted.values, residual = modOve1a$residuals, model = 1)
+dfErr2 <- data.frame(area = areaVec, year = yrVec, yHat = modOve2a$fitted.values, residual = modOve2a$residuals, model = 2)
+dfErr3 <- data.frame(area = areaVec, year = yrVec, yHat = modOve3a$fitted.values, residual = modOve3a$residuals, model = 3)
+dfErr4 <- data.frame(area = areaVec, year = yrVec, yHat = modOve4a$fitted.values, residual = modOve4a$residuals, model = 4)
+dfErr5 <- data.frame(area = areaVec, year = yrVec, yHat = modOve5a$fitted.values, residual = modOve5a$residuals, model = 5)
+dfErr6 <- data.frame(area = areaVec, year = yrVec, yHat = modOve5c$fitted.values, residual = modOve5c$residuals, model = 6)
+dfErr <- do.call(rbind, list(dfErr1, dfErr2, dfErr3, dfErr4, dfErr5, dfErr6)) %>% as.data.frame()
+gg <- ggplot(dfErr,  aes(x = yHat, y = residual)) + geom_point(size = 0.15)
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + labs(x = "fitted value")
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                 axis.title = element_text(size = axisTitleSize),
+                 strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "errorYhatPlot_Ove.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 10, height = 2)
+# Histograms of cty FEs, which may be interpreted as
+# logged geometric mean of DALYs/100,000 since the data is centered
+areaVec <- unique(areaVec)
+dfGM1 <- data.frame(area = areaVec, FE = fixef(modOve1a)$area, model = 1)
+dfGM2 <- data.frame(area = areaVec, FE = fixef(modOve2a)$area, model = 2)
+dfGM3 <- data.frame(area = areaVec, FE = fixef(modOve3a)$area, model = 3)
+dfGM4 <- data.frame(area = areaVec, FE = fixef(modOve4a)$area, model = 4)
+dfGM5 <- data.frame(area = areaVec, FE = fixef(modOve5a)$area, model = 5)
+dfGM <- do.call(rbind, list(dfGM1, dfGM2, dfGM3, dfGM4, dfGM5)) %>% as.data.frame()
+gg <- ggplot(dfGM, aes(x = FE))
+gg <- gg + geom_histogram(aes(y = ..density..),
+                          colour = 1, fill = "white", binwidth = 0.25)
+gg <- gg + geom_density()
+gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to overnutrition\n(country fixed effects)")
+gg <- gg + facet_wrap(~model, nrow = 1)
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text = element_text(size = axisTextSize),
+                 axis.title = element_text(size = axisTitleSize),
+                 strip.text = element_text(size = facetTitleSize))
+thisGraphic <- "FEdensityPlot_Ove.png"
+thisFilepath <- paste0(outFolder, thisGraphic)
+ggsave(thisFilepath, width = 9, height = 2)
+# Note the higher overnutrition cty FEs include many developed & ex-USSR ctys
+dfGM %>% subset(FE > 0.5) %>% .$area %>% unique()
 #========================================================================
 #========================================================================
 #========================================================================
 # Graphics/tables
 #========================================================================
 #========================================================================
-# Set graphic parameters
-axisTitleSize <- 8
-axisTextSize <- 7
-legendKeySize <- 0.3
-legendTextSize <- axisTextSize
-facetTitleSize <- axisTextSize
-plotTitleSize = axisTextSize
-labelSize <- 2
-#------------------------------------------------------------------------
 # Summary statistic tables
 # Hunger summary stats by type, year
-thisFile <- "Hunger summary statistics.png"
-thisFilepath <- paste0(outFolder, thisFile)
 dfModSumStats %>% select(year, Cat, `DALYs / 100,000 capita`) %>%
   group_by(Cat, year) %>% summarize_all(list(#N = "length",
                                         mean = "mean",
@@ -501,11 +766,11 @@ dfModSumStats %>% select(year, Cat, `DALYs / 100,000 capita`) %>%
         axis.text = element_text(size = axisTextSize),
         plot.title = element_text(size = plotTitleSize),
         strip.text = element_text(size = facetTitleSize))
+thisFile <- "Hunger summary statistics.png"
+thisFilepath <- paste0(outFolder, thisFile)
 ggsave(thisFilepath, height = 4, width = 5)
 #------------------------------------------------------------------------
 # Socioeconomic/demographic regressor summary stats by year
-thisFile <- "Regressor summary statistics.png"
-thisFilepath <- paste0(outFolder, thisFile)
 regrssrs <- colnames(dfModSumStats)[-c(1:4)]
 dfModSumStats %>% subset(Cat == "Chronic hunger") %>%
   select(year, regrssrs) %>%
@@ -529,6 +794,8 @@ dfModSumStats %>% subset(Cat == "Chronic hunger") %>%
         axis.text = element_text(size = axisTextSize),
         plot.title = element_text(size = plotTitleSize),
         strip.text = element_text(size = facetTitleSize))
+thisFile <- "Regressor summary statistics.png"
+thisFilepath <- paste0(outFolder, thisFile)
 ggsave(thisFilepath, height = 6, width = 5)
 #------------------------------------------------------------------------
 # Correlation plot
@@ -608,6 +875,7 @@ dfPlot <- dfGraphics %>% subset(age == "All ages" &
   mutate(area = gsub(" - WB", "", area))
 dfPlot <- dfPlot %>% group_by(area, year, Cat) %>%
   summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`))
+dfPlot$area[grep("Global", dfPlot$area)] <- "World"
 nColors <- length(unique(dfPlot$Cat))
 bag_of_colors <- distinctColorPalette(k = 2 * nColors)
 theseColors <- sample(bag_of_colors, nColors)
@@ -630,7 +898,7 @@ thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 8, height = 4)
 #------------------------------------------------------------------------
 # Area stack plot of the cause composition of burden of hunger over time,
-# by type, disaggregated by WB region
+# by type, disaggregated by WB region 1990-2021
 #theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
 thisFile <- "IHME-GBD_1990-2021_ChronicHungDecomp_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
@@ -648,6 +916,7 @@ dfPlot <- dfGraphics %>% subset(age == "All ages" &
   select(area, year, Cat, cause, `DALYs / 100,000 capita`) %>%
   rbind(dfChrDecomp) %>% as.data.frame() %>%
   mutate(area = gsub(" - WB", "", area))
+dfPlot$area[grep("Global", dfPlot$area)] <- "World"
 catVec <- unique(dfPlot$Cat)
 nCat <- length(catVec)
 for(i in 1:nCat){
@@ -676,7 +945,7 @@ for(i in 1:nCat){
 }
 
 #------------------------------------------------------------------------
-# Area stack plot of consumption/capita/day of major food categories 2010-2021
+# Area stack plot of consumption/capita/day of major food categories 2010-2022
 # By geographic region
 thisFile <- "FAOSTAT_data_en_8-7-2024.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
@@ -727,6 +996,15 @@ dfFBSreg <- dfFBSreg %>% subset(Item != "Population") %>%
   mutate(`kcal / capita / day` = Value / Pop * 1000 / 365) %>%
   select(Area, Year, Item, `kcal / capita / day`) %>%
   rbind(dfSSA) %>% as.data.frame()
+# dfCheck <- dfFBSraw %>% merge(dfModChr[, c(1, 2)]) %>%
+#   subset(element == "Food supply (kcal/capita/day)" &
+#                                  item %in% c("Eggs", "Fish, Seafood", "Milk - Excluding Butter", "Animal Products")) %>%
+#   spread(item, value)
+# apply(dfCheck, 2, function(x) sum(is.na(x))) %>% table()
+# apply(dfCheck, 2, function(x) sum(is.nan(x))) %>% table()
+# apply(dfCheck, 2, function(x) sum(is.infinite(x))) %>% table()
+# apply(dfCheck, 2, function(x) sum(x == 0)) %>% table()
+# sum(dfCheck$`Fish, Seafood` == 0)
 dfPlot <- dfFBSreg %>%
   subset(Item %in% keepThese) %>%
   mutate(Item = gsub("Fruits - Excluding Wine", "F&V", Item)) %>%
