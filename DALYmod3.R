@@ -365,7 +365,6 @@ dfModHid[, -notTheseCols] <- scale(dfModHid[, -notTheseCols], scale = F) %>% as.
 dfModOve[, -notTheseCols] <- scale(dfModOve[, -notTheseCols], scale = F) %>% as.data.frame()
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
-colnames(dfModChr)[3] <- "y"
 varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners")
@@ -386,6 +385,7 @@ varsChr2 <- paste0("`", varsChr2, "`")
 varsChr3 <- paste0("`", varsChr3, "`")
 varsChr4 <- paste0("`", varsChr4, "`")
 varsChr5 <- paste0("`", varsChr5, "`")
+colnames(dfModChr)[3] <- "y"
 modChr1a <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
 modChr1b <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("area", "year"))
 modChr2a <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
@@ -495,7 +495,6 @@ thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 9, height = 2)
 #=======================================================================
 # Burden of hidden hunger model
-colnames(dfModHid)[3] <- "y"
 varsHid1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners")
@@ -516,6 +515,7 @@ varsHid2 <- paste0("`", varsHid2, "`")
 varsHid3 <- paste0("`", varsHid3, "`")
 varsHid4 <- paste0("`", varsHid4, "`")
 varsHid5 <- paste0("`", varsHid5, "`")
+colnames(dfModHid)[3] <- "y"
 modHid1a <- feols(y ~ .[varsHid1] | area, data = dfModHid, vcov = "hetero")
 modHid1b <- feols(y ~ .[varsHid1] | area, data = dfModHid, cluster = c("area", "year"))
 modHid2a <- feols(y ~ .[varsHid2] | area, data = dfModHid, vcov = "hetero")
@@ -620,7 +620,6 @@ ggsave(thisFilepath, width = 9, height = 2)
 dfGM %>% subset(FE > 5.5) %>% .$area %>% unique() # Looks like low income developing ctys
 #=======================================================================
 # Burden of overnutrition model
-colnames(dfModOve)[3] <- "y"
 varsOve1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners")
@@ -641,6 +640,7 @@ varsOve2 <- paste0("`", varsOve2, "`")
 varsOve3 <- paste0("`", varsOve3, "`")
 varsOve4 <- paste0("`", varsOve4, "`")
 varsOve5 <- paste0("`", varsOve5, "`")
+colnames(dfModOve)[3] <- "y"
 modOve1a <- feols(y ~ .[varsOve1] | area, data = dfModOve, vcov = "hetero")
 modOve1b <- feols(y ~ .[varsOve1] | area, data = dfModOve, cluster = c("area", "year"))
 modOve2a <- feols(y ~ .[varsOve2] | area, data = dfModOve, vcov = "hetero")
@@ -834,11 +834,19 @@ dfGraphicsR$Cat <- NA
 dfGraphicsR$Cat[grep("Child underweight", dfGraphicsR$cause)] <- "Chronic hunger"
 dfGraphicsR$Cat[which(dfGraphicsR$cause %in% overNutRiskFactors)] <- "Overnutrition"
 dfGraphics <- rbind(dfGraphicsC, dfGraphicsR) %>% as.data.frame()
+#dfGraphics$cause %>% unique()
+# Accommodate cause names for plotting
+dfGraphics$cause <- gsub("Diet Low in Omega-6 Polyunsaturated Fatty Acids",
+                     "Diet Low in Omega-6\nPolyunsaturated Fatty Acids", dfGraphics$cause)
+dfGraphics$cause <- gsub("Diet low in seafood omega-3 fatty acids",
+                     "Diet low in seafood\nomega-3 fatty acids", dfGraphics$cause)
+dfGraphics$cause <- gsub("Diet high in sugar-sweetened beverages",
+                     "Diet high in\nsugar-sweetened beverages", dfGraphics$cause)
 #------------------------------------------------------------------------
 # Graphic demonstrating that nutrition DALYs/capita are age sensitive
 dfPlot <- dfGraphics %>% subset(year == 2021 &
                                   age != "All ages" &
-                                  metric == "Rate" &
+                                  metric == "Number" &
                                   measure == "DALYs (Disability-Adjusted Life Years)" &
                                   area != "Global" &
                                   Cat %in% c("Chronic hunger",
@@ -852,17 +860,12 @@ dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
 nColors <- length(unique(dfPlot$cause))
 bag_of_colors <- distinctColorPalette(k = 4 * nColors)
 theseColors <- sample(bag_of_colors, nColors)
-dfPlot$cause <- gsub("Diet Low in Omega-6 Polyunsaturated Fatty Acids",
-                     "Diet Low in Omega-6\nPolyunsaturated Fatty Acids", dfPlot$cause)
-dfPlot$cause <- gsub("Diet low in seafood omega-3 fatty acids",
-                     "Diet low in seafood\nomega-3 fatty acids", dfPlot$cause)
-dfPlot$cause <- gsub("Diet high in sugar-sweetened beverages",
-                     "Diet high in\nsugar-sweetened beverages", dfPlot$cause)
 gg <- ggplot(dfPlot, aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
 #gg <- ggplot(subset(dfPlot, area == "North America" & Cat == "Overnutrition"), aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
 gg <- gg + geom_bar(stat = "identity", position = "stack")
 gg <- gg + facet_grid(Cat~area, scales = "free")
 gg <- gg + scale_fill_manual(values = theseColors)
+#gg <- gg + labs(y = "DALYs")
 gg <- gg + theme_bw()
 gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
                                             angle = 60, hjust = 1),
@@ -888,13 +891,14 @@ dfPlot <- dfGraphics %>% subset(age == "All ages" &
                                            "Hidden hunger",
                                            "Overnutrition")) %>%
   mutate(area = gsub(" - WB", "", area))
+indChr <- which(dfPlot$Cat == "Chronic hunger")
+dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
 dfPlot <- dfPlot %>% group_by(area, year, Cat) %>%
   summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`))
 dfPlot$area[grep("Global", dfPlot$area)] <- "World"
 nColors <- length(unique(dfPlot$Cat))
 bag_of_colors <- distinctColorPalette(k = 2 * nColors)
 theseColors <- sample(bag_of_colors, nColors)
-dfPlot$cause <- gsub()
 gg <- ggplot(dfPlot, aes(x = year, y = `DALYs / 100,000 capita`, group = Cat, color = Cat))
 gg <- gg + geom_line(lwd = 1)
 gg <- gg + scale_color_manual(values = theseColors)
@@ -923,7 +927,8 @@ dfChrDecomp <- read.csv(thisFilepath, stringsAsFactors = F) %>%
          metric == "Rate" &
          measure == "DALYs (Disability-Adjusted Life Years)") %>%
   rename(Cat = rei, area = location) %>% mutate(Cat = "Chronic hunger") %>%
-  select(area, year, Cat, cause, val) %>% rename(`DALYs / 100,000 capita` = val)
+  select(area, year, Cat, cause, val) %>%
+  rename(`DALYs / 100,000 capita` = val)
 dfPlot <- dfGraphics %>% subset(age == "All ages" &
                                   metric == "Rate" &
                                   measure == "DALYs (Disability-Adjusted Life Years)" &
@@ -933,6 +938,7 @@ dfPlot <- dfGraphics %>% subset(age == "All ages" &
   rbind(dfChrDecomp) %>% as.data.frame() %>%
   mutate(area = gsub(" - WB", "", area))
 dfPlot$area[grep("Global", dfPlot$area)] <- "World"
+#dfPlot$cause %>% unique()
 catVec <- unique(dfPlot$Cat)
 nCat <- length(catVec)
 for(i in 1:nCat){
@@ -941,13 +947,12 @@ for(i in 1:nCat){
   nColors <- length(unique(thisDfPlot$cause))
   bag_of_colors <- distinctColorPalette(k = 2 * nColors)
   theseColors <- sample(bag_of_colors, nColors)
-  gg <- ggplot(thisDfPlot, aes(x = year, y = `DALYs / 100,000 capita`, fill = cause))
+  gg <- ggplot(thisDfPlot, aes(x = year, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
   gg <- gg + geom_area(position = "stack")
   gg <- gg + scale_fill_manual(values = theseColors)
   gg <- gg + facet_wrap(~area, nrow = 2, scales = "free_y")
   gg <- gg + theme_bw()
-  gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
-                                              angle = 60, hjust = 1),
+  gg <- gg + theme(axis.text.x = element_text(size = axisTextSize),
                    axis.title.y = element_text(size = axisTitleSize),
                    axis.title.x = element_blank(),
                    legend.title = element_blank(),
