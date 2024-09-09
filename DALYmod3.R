@@ -360,9 +360,9 @@ dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 # geometric mean of logged DALYs/100,000 capita
 # (or the log of the geometric mean of DALYs/100,000 capita)
 notTheseCols <- which(colnames(dfMod) %in% c("area", "year", "Cat", "DALYs / 100,000 capita"))
-dfModChr[, -notTheseCols] <- scale(dfModChr[, -notTheseCols], scale = F) %>% as.data.frame()
-dfModHid[, -notTheseCols] <- scale(dfModHid[, -notTheseCols], scale = F) %>% as.data.frame()
-dfModOve[, -notTheseCols] <- scale(dfModOve[, -notTheseCols], scale = F) %>% as.data.frame()
+# dfModChr[, -notTheseCols] <- scale(dfModChr[, -notTheseCols], scale = F) %>% as.data.frame()
+# dfModHid[, -notTheseCols] <- scale(dfModHid[, -notTheseCols], scale = F) %>% as.data.frame()
+# dfModOve[, -notTheseCols] <- scale(dfModOve[, -notTheseCols], scale = F) %>% as.data.frame()
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
 varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
@@ -418,7 +418,7 @@ sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 3 * sdErr); names(indOutlier)
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 dfModChr <- dfModChr[-indOutlier, ]
-dfModChr[, -notTheseCols] <- scale(dfModChr[, -notTheseCols], scale = F) %>% as.data.frame()
+#dfModChr[, -notTheseCols] <- scale(dfModChr[, -notTheseCols], scale = F) %>% as.data.frame()
 # By informal visual inspection of e(t) v e(t-1) plot, it seems there's
 # not much serial autocorrelation (after dropping outliers),
 # while inspection of residuals v fitted values plot reveals some heteroskedasticity.
@@ -443,6 +443,19 @@ dfTest <- dfModChr %>% subset(year == 2019) %>%
 modTest <- lm(y~., dfTest)
 car::vif(modTest)
 lmtest::bptest(modTest)
+# Save coefficients and FEs to csv
+dfOut1 <- data.frame(model = 2, var = names(modChr2a$coefficients),
+                     coef = modChr2a$coefficients)
+dfOut2 <- data.frame(model = 5, var = names(modChr5a$coefficients),
+                     coef = modChr5a$coefficients)
+dfCoefsChr <- rbind(dfOut1, dfOut2) %>% as.data.frame()
+dfFEsChr1 <- data.frame(model = 2, cty = names(fixef(modChr2a)$area), FE = fixef(modChr2a)$area)
+dfFEsChr2 <- data.frame(model = 5, cty = names(fixef(modChr5a)$area), FE = fixef(modChr5a)$area)
+dfFEsChr <- rbind(dfFEsChr1, dfFEsChr2) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Chr hung model FEs.csv")
+write.csv(dfFEsChr, thisFilepath, row.names = F)
+thisFilepath <- paste0(outFolder, "Chr hung model coefs.csv")
+write.csv(dfCoefsChr, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsA <- list(modChr1a, modChr2a, modChr3a, modChr4a, modChr5a, modChr5c)
 modelsB <- list(modChr1b, modChr2b, modChr3b, modChr4b, modChr5b)
@@ -565,6 +578,19 @@ dfTest <- dfModHid %>% subset(year == 2012) %>%
 modTest <- lm(y~., dfTest)
 car::vif(modTest)
 lmtest::bptest(modTest)
+# Save coefficients and FEs to csv
+dfOut1 <- data.frame(model = 2, var = names(modHid2a$coefficients),
+                     coef = modHid2a$coefficients)
+dfOut2 <- data.frame(model = 5, var = names(modHid5a$coefficients),
+                     coef = modHid5a$coefficients)
+dfCoefsHid <- rbind(dfOut1, dfOut2) %>% as.data.frame()
+dfFEsHid1 <- data.frame(model = 2, cty = names(fixef(modHid2a)$area), FE = fixef(modHid2a)$area)
+dfFEsHid2 <- data.frame(model = 5, cty = names(fixef(modHid5a)$area), FE = fixef(modHid5a)$area)
+dfFEsHid <- rbind(dfFEsHid1, dfFEsHid2) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Hid hung model FEs.csv")
+write.csv(dfFEsHid, thisFilepath, row.names = F)
+thisFilepath <- paste0(outFolder, "Hid hung model coefs.csv")
+write.csv(dfCoefsHid, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsA <- list(modHid1a, modHid2a, modHid3a, modHid4a, modHid5a, modHid5c)
 modelsB <- list(modHid1b, modHid2b, modHid3b, modHid4b, modHid5b)
@@ -690,6 +716,19 @@ dfTest <- dfModOve %>% subset(year == 2012) %>%
 modTest <- lm(y~., dfTest)
 car::vif(modTest)
 lmtest::bptest(modTest)
+# Save coefficients and FEs to csv
+dfOut1 <- data.frame(model = 2, var = names(modOve2a$coefficients),
+                     coef = modOve2a$coefficients)
+dfOut2 <- data.frame(model = 5, var = names(modOve5a$coefficients),
+                     coef = modOve5a$coefficients)
+dfCoefsOve <- rbind(dfOut1, dfOut2) %>% as.data.frame()
+dfFEsOve1 <- data.frame(model = 2, cty = names(fixef(modOve2a)$area), FE = fixef(modOve2a)$area)
+dfFEsOve2 <- data.frame(model = 5, cty = names(fixef(modOve5a)$area), FE = fixef(modOve5a)$area)
+dfFEsOve <- rbind(dfFEsOve1, dfFEsOve2) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Ove hung model FEs.csv")
+write.csv(dfFEsOve, thisFilepath, row.names = F)
+thisFilepath <- paste0(outFolder, "Ove hung model coefs.csv")
+write.csv(dfCoefsOve, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsA <- list(modOve1a, modOve2a, modOve3a, modOve4a, modOve5a, modOve5c)
 modelsB <- list(modOve1b, modOve2b, modOve3b, modOve4b, modOve5b)
