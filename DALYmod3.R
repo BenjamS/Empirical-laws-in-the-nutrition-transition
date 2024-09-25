@@ -51,25 +51,25 @@ dfCauseRaw <- subset(dfCauseRaw, location != "Taiwan (Province of China)")
 # Create separate data frames for chronic, hidden, and overnutrition DALYs 
 # Chronic hunger DALYs
 # Alternate definition
-# dfChr <- dfCauseRaw %>%
-#   subset(cause == "Protein-energy malnutrition" &
-#            age == "All ages" &
-#            metric == "Rate" &
-#            measure == "DALYs (Disability-Adjusted Life Years)") %>%
-#   rename(area = location) %>%
-#   mutate(Cat = "Chronic hunger") %>%
-#   select(area, year, val, Cat)
-# Original definition
-dfChr <- dfRiskRaw %>%
-  subset(rei == "Child underweight" &
+dfChr <- dfCauseRaw %>%
+  subset(cause == "Protein-energy malnutrition" &
            age == "All ages" &
            metric == "Rate" &
            measure == "DALYs (Disability-Adjusted Life Years)") %>%
   rename(area = location) %>%
   mutate(Cat = "Chronic hunger") %>%
-  # select(area, year, val, Cat)
-  select(area, year, lower, Cat) %>%
-  rename(val = lower)
+  select(area, year, val, Cat)
+# Original definition
+# dfChr <- dfRiskRaw %>%
+#   subset(rei == "Child underweight" &
+#            age == "All ages" &
+#            metric == "Rate" &
+#            measure == "DALYs (Disability-Adjusted Life Years)") %>%
+#   rename(area = location) %>%
+#   mutate(Cat = "Chronic hunger") %>%
+#   # select(area, year, val, Cat)
+#   select(area, year, lower, Cat) %>%
+#   rename(val = lower)
 # Hidden hunger DALYs
 hidHcauses <- c("Iodine deficiency",
                 "Dietary iron deficiency",
@@ -301,12 +301,6 @@ dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.na(x))) %>% table()
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.nan(x))) %>% table()
 apply(dfFBS[, -c(1:3)], 2, function(x) sum(is.infinite(x))) %>% table()
-# Convert to diet share terms by dividing by grand total
-colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element"))
-dfFBS[, -colSkip] <- dfFBS[, -colSkip] / dfFBS$`Grand Total` * 100
-# Calculate residual kcal category
-colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element", "Grand Total"))
-dfFBS$Residual <- dfFBS$`Grand Total` - rowSums(dfFBS[, -colSkip])
 # Make sure dfDaly and dfFBS ctys match
 # The FAO data is missing about 12 countries that are included in the IHME DALY data.
 # These will be lost in the merge. Not too important since they are all very small
@@ -316,7 +310,7 @@ setdiff(dfDaly$area, dfFBS$area)
 # unique(dfFBS$area[grep("Greenland", dfFBS$area)])
 # unique(dfDaly$area[grep("Greenland", dfDaly$area)])
 # Separate into FBS commodity and FBS macnut dfs
-dfFBScom <- dfFBS %>% subset(element == "Food supply (kcal/capita/day)") %>% select(-c(element, `Grand Total`))
+dfFBScom <- dfFBS %>% subset(element == "Food supply (kcal/capita/day)") %>% select(-c(element))#, `Grand Total`))
 #=======================================================================
 # Model estimation
 dfMod <- dfDaly %>% merge(dfFBScom)
@@ -333,14 +327,89 @@ apply(dfMod[, -notCols], 2, function(x) sum(x < 0, na.rm = T)) %>% table()
 # A handful of ctys have NaN values for all years and food categories.
 # This is because they were zero and then turned NaN when dividing by Grand Total.
 # Drop these.
-dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
+dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique() # Look
 notThese <- dfMod$area[which(is.nan(dfMod$`Animal Products`))] %>% unique()
 dfMod <- dfMod %>% subset(!(area %in% notThese))
-# There is also one negative chronic hunger (child underweight) DALY value
-# for DRC 2021. Remove it.
-dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique()
-dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
-# There are also zero values due to a handful of ctys where people are not eating pulses
+# Any negative DALY values?
+dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique() # Look
+#dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
+#-----------------------------------------------------------------------
+# Harmonize with IMPACT cty names
+# Use the new v3.6 model documentation as main cty guide:
+# https://cgspace.cgiar.org/items/4a89cd40-7e86-4392-88dc-464bde71a5b8
+# thisFile <- "impactCTYnames.csv" # This is from the old v3.3 Reportgen.xlsx
+# thisFilepath <- paste0(dataFolder, thisFile)
+# dfIMPctys <- read.csv(thisFilepath, stringsAsFactors = F)
+# setdiff(dfIMPctys$LongName, dfMod$area)
+# setdiff(dfMod$area, dfIMPctys$LongName)
+balticStates <- "Latvia|Estonia|Lithuania"
+otherBalkans <- "Montenegro|Serbia|Macedonia|Bosnia|Herzegovina"
+otherCarib <- "Virgin|Wallis|Futuna|Antigua|Barbuda|Bahamas|Barbados|Aruba|Cayman|Dominica|Grenada|Guadeloupe|Martinique|Montserrat|Antilles|Puerto Rico|Saint Kitts and Nevis|Saint Lucia|Trinidad and Tobago"
+otherPacIs <- "Samoa|Cook Islands|Polynesia|Kiribati|Guam|Marshall|Micronesia|Nauru|Caledonia|Niue|Norfolk Island|Tokelau|Tonga|Tuvalu"
+guyanasSA <- "French Guiana|Guyana|Suriname"
+otherAtlant <- "Falkland|Bermuda|Cape Verde|Cabo Verde|Saint Helena|Saint Pierre and Miquelon|Saint Vincent and the Grenadines|Sao Tome and Principe"
+otherSEAsia <- "Brunei|Singapore"
+restOfArab <- "Bahrain|Kuwait|Qatar|Oman|United Arab Emirates"
+otherIndian <- "Comoros|Maldives|Mauritius|Seychelles"
+GBandFaroe <- "United Kingdom|Faroe"
+u <- dfMod$area
+# Look first
+dfMod$area[grep(balticStates, u)] %>% unique()
+dfMod$area[grep(otherBalkans, u)] %>% unique()
+dfMod$area[grep(otherCarib, u)] %>% unique()
+dfMod$area[grep(otherPacIs, u)] %>% unique()
+dfMod$area[grep(guyanasSA, u)] %>% unique()
+dfMod$area[grep(otherAtlant, u)] %>% unique()
+dfMod$area[grep(otherSEAsia, u)] %>% unique()
+dfMod$area[grep(restOfArab, u)] %>% unique()
+dfMod$area[grep(otherIndian, u)] %>% unique()
+dfMod$area[grep(GBandFaroe, u)] %>% unique()
+# Rename and aggregate
+dfMod$area[grep(balticStates, u)] <- "Baltic States"
+dfMod$area[grep(otherBalkans, u)] <- "Other Balkans"
+dfMod$area[grep(otherCarib, u)] <- "Other Caribbean"
+dfMod$area[grep(otherPacIs, u)] <- "Other Pacific Ocean"
+dfMod$area[grep(guyanasSA, u)] <- "Guyanas South America"
+dfMod$area[grep(otherAtlant, u)] <- "Other Atlantic Ocean"
+#dfMod$area[grep(otherSEAsia, u)] %>% unique()
+dfMod$area[grep(restOfArab, u)] <- "Rest of Arab Peninsula"
+dfMod$area[grep(otherIndian, u)] <- "Other Indian Ocean"
+dfMod$area[grep(GBandFaroe, u)] <- "Great Britain and nearby protectorates"
+
+dfPop <- dfFBSraw %>% subset(item == "Population") %>%
+  select(area, year, value) %>% rename(Population = value) %>%
+  mutate(Population = 1000 * Population)
+dfPop$element <- NULL; dfPop$item <- NULL
+dfx <- dfMod %>% merge(dfPop) %>% as.data.frame()
+colSkip <- which(colnames(dfx) %in% c("area", "year", "Cat", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+dfx[, -colSkip] <- dfx[, -colSkip] * dfx$Population
+dfx <- dfx %>% group_by(Cat, area, year) %>%
+  summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`),
+            sdi = mean(sdi),
+            `Pct Pop < 15` = mean(`Pct Pop < 15`),
+            `Pct Pop < 25` = mean(`Pct Pop < 25`),
+            `GDP / capita` = sum(`GDP / capita`),
+            `Animal Products` = sum(`Animal Products`),
+            Cereals = sum(Cereals),
+            `F&V` = sum(`F&V`),
+            Pulses = sum(Pulses),
+            `Starchy Roots` = sum(`Starchy Roots`),
+            `Sugar & Sweeteners` = sum(`Sugar & Sweeteners`),
+            `Vegetable Oils` = sum(`Vegetable Oils`),
+            `Grand Total` = sum(`Grand Total`),
+            Population = sum(Population)
+            )
+colSkip <- which(colnames(dfx) %in% c("area", "year", "Cat", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+dfx[, -colSkip] <- dfx[, -colSkip] / dfx$Population
+#-----------------------------------------------------------------------
+# Convert to diet share terms by dividing by grand total
+colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element"))
+dfFBS[, -colSkip] <- dfFBS[, -colSkip] / dfFBS$`Grand Total` * 100
+# Calculate residual kcal category
+colSkip <- which(colnames(dfFBS) %in% c("area", "year", "element", "Grand Total"))
+dfFBS$Residual <- dfFBS$`Grand Total` - rowSums(dfFBS[, -colSkip])
+#-----------------------------------------------------------------------
+# There are some zero values due to a handful of ctys where people are not eating pulses
 dfMod$area[which(dfMod$Pulses == 0)] %>% unique()
 # Replace with 1 so that they will become 0 after log transform.
 # But first preserve an untransformed dataset for regressor summary statistics
@@ -351,6 +420,8 @@ dfMod[, -notCols] <- as.data.frame(apply(dfMod[, -notCols], 2, log))
 apply(dfMod[, -notCols], 2, function(x) sum(is.nan(x)))
 #dfMod$area[which(is.nan(dfMod$`DALYs / 100,000 capita`))]
 #-----------------------------------------------------------------------
+# Create clustering variable
+
 # Separate into data frames for each hunger model
 #catCol <- which(colnames(dfMod) == "Cat")
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger") #%>% select (-catCol)
@@ -408,6 +479,25 @@ modChr4b
 modChr5a
 modChr5b
 modChr5c
+# library(sandwich)
+# vcov_cluster <- vcovHC(modChr1b, type = "HC1", cluster = "area")
+# lmtest::coeftest(modChr1a, vcov_cluster)
+dfPlot <- data.frame(residuals = modChr1a$residuals, id = dfModChr$area, year = dfModChr$year)
+ggplot(dfPlot, aes(x = factor(id), y = residuals)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
+        axis.text.y = element_text(size = axisTextSize),
+        axis.title = element_text(size = axisTitleSize)) +
+  labs(title = "Residuals by Group (id)", x = "Group (id)", y = "Residuals") 
+dfPlot <- data.frame(residuals = modChr1a$residuals, var = dfModChr$`GDP / capita`, year = dfModChr$year)
+ggplot(dfPlot, aes(x = factor(id), y = residuals)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
+        axis.text.y = element_text(size = axisTextSize),
+        axis.title = element_text(size = axisTitleSize)) +
+  labs(title = "Residuals by Group (id)", x = "Group (id)", y = "Residuals") 
+
+
 # Plot of residuals v fitted values
 plot(modChr1a$fitted.values, modChr1a$residuals)
 # Looks like there are some outliers
