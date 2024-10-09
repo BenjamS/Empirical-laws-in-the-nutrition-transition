@@ -342,46 +342,53 @@ dfMod$Pulses[which(dfMod$Pulses == 0)] <- 1
 dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique() # Look
 #dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
 #-----------------------------------------------------------------------
-# Create regional clustering variable
-thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
-theseFiles <- list.files(thisFolder)
-listVec <- list()
-for(i in 1:length(theseFiles)){
-  print(theseFiles[i])
-  thisPath <- paste0(thisFolder, theseFiles[i])
-  thisDf <- read.csv(thisPath, stringsAsFactors = F)
-  thisVec <- thisDf$Area
-  listVec[[theseFiles[i]]] <- thisVec
-}
-ctyInAsansCWA <- listVec[[theseFiles[1]]]
-ctyInCWANA <- listVec[[theseFiles[2]]]
-ctyInEur <- listVec[[theseFiles[3]]]
-ctyInLAC <- listVec[[theseFiles[4]]]
-ctyInNAMEURAUSNZ <- listVec[[theseFiles[5]]]
-ctyInSSA <- listVec[[theseFiles[6]]]
-dfMod$Region <- NA
-dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
-#dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
-dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "N. Amer. / Aus. / NZ"
-dfMod$Region[which(dfMod$area %in% ctyInEur)] <- "Europe"
-dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
-dfMod$Region[which(dfMod$area %in% ctyInCWANA)] <- "CWANA"
-dfMod$Region[which(dfMod$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
-# Which ctys left out?
-unique(dfMod$area[which(is.na(dfMod$Region))])
-dfMod$Region[which(dfMod$area %in% c("United Kingdom", "Netherlands"))] <- "Eur. / N. Amer. /\nAus. / NZ"
-dfMod$Region[which(dfMod$area %in% c("China", "Fiji",
-                                     "Solomon Islands", "Vanuatu",
-                                     "Kiribati", "Samoa",
-                                     "Papua New Guinea"))] <- "Asia\nexcl. C&W Asia"
-dfMod$Region2 <- dfMod$Region
-dfMod$Region2[which(!(dfMod$Region %in% c("Africa South\nof the Sahara",
-                                          "Europe",
-                                          "N. Amer. / Aus. / NZ",
-                                          "CWANA")))] <- "ROW"
+# # Create regional clustering variable
+# thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
+# theseFiles <- list.files(thisFolder)
+# listVec <- list()
+# for(i in 1:length(theseFiles)){
+#   print(theseFiles[i])
+#   thisPath <- paste0(thisFolder, theseFiles[i])
+#   thisDf <- read.csv(thisPath, stringsAsFactors = F)
+#   thisVec <- thisDf$Area
+#   listVec[[theseFiles[i]]] <- thisVec
+# }
+# ctyInAsansCWA <- listVec[[theseFiles[1]]]
+# ctyInCarib <- listVec[[theseFiles[2]]]
+# ctyInCWANA <- listVec[[theseFiles[3]]]
+# ctyInEur <- listVec[[theseFiles[4]]]
+# ctyInLAC <- listVec[[theseFiles[5]]]
+# ctyInNAMEURAUSNZ <- listVec[[theseFiles[6]]]
+# ctyInSSA <- listVec[[theseFiles[7]]]
+# dfMod$Region <- NA
+# dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
+# dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
+# #dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "N. Amer. / Aus. / NZ"
+# #dfMod$Region[which(dfMod$area %in% ctyInEur)] <- "Europe"
+# #dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
+# dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "C&S Amer."
+# dfMod$Region[which(dfMod$area %in% ctyInCarib)] <- "Carib"
+# dfMod$Region[which(dfMod$area %in% ctyInCWANA)] <- "CWANA"
+# dfMod$Region[which(dfMod$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
+# # Which ctys left out?
+# unique(dfMod$area[which(is.na(dfMod$Region))])
+# dfMod$Region[which(dfMod$area %in% c("United Kingdom", "Netherlands"))] <- "Eur. / N. Amer. /\nAus. / NZ"
+# dfMod$Region[which(dfMod$area %in% c("China", "Fiji",
+#                                      "Solomon Islands", "Vanuatu",
+#                                      "Kiribati", "Samoa",
+#                                      "Papua New Guinea"))] <- "Asia\nexcl. C&W Asia"
+# 
+# #dfMod$`GDP/capita centile` <- dfMod$Region
+dfMod$`GDP/capita centile` <- "0-25th centile GDP/capita"
+dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.25))] <- "26th-65th centile GDP/capita"
+dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.65))] <- "66th-100th centile GDP/capita"
+#dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.8))] <- "4 gdp"
 dfMod$yrGrp <- "Non-pandemic"
 dfMod$yrGrp[which(dfMod$year %in% c(2020, 2021))] <- "Pandemic"
-dfMod$Grp <- paste(dfMod$Region2, dfMod$yrGrp)
+dfMod$`GDP/capita centile-Pandemic Yes/No` <- paste0(dfMod$`GDP/capita centile`, "\n", dfMod$yrGrp)
+table(dfMod$Grp)
+dfMod$`GDP/capita centile` <- NULL
+dfMod$yrGrp <- NULL
 # ctyAll <- c(ctyInAsansCWA, ctyInCWANA, ctyInLAC, ctyInSSA, ctyInNAMEURAUSNZ)
 # ctyAll[grep("China", ctyAll)]
 # u[grep("Brunei", u)]
@@ -458,7 +465,7 @@ colSkip <- which(colnames(dfMod) %in% c("Cat", "Region", "Region2", "yrGrp", "Gr
 dfMod[, -colSkip] <- dfMod[, -colSkip] / dfMod$Population
 #-----------------------------------------------------------------------
 # Convert food cunsumption vars to % of diet terms by dividing by grand total
-colSkip <- which(colnames(dfMod) %in% c("Cat", "Region", "Region2", "yrGrp", "Grp", "area", "year", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
 colSkip <- c(colSkip, which(colnames(dfMod) %in% c("DALYs / 100,000 capita",
                                                  "GDP / capita")))
 dfMod[, -colSkip] <- dfMod[, -colSkip] / dfMod$`Grand Total` * 100
@@ -498,219 +505,85 @@ dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 # Burden of chronic hunger model
 varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Pandemic")
+              "Pulses", "Sugar & Sweeteners")#, "Pandemic")
 varsChr2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Pandemic")
+              "Pulses")#, "Pandemic")
 varsChr3 <- c("sdi", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Pandemic")
+              "Pulses")#, "Sugar & Sweeteners")#, "Pandemic")
 varsChr4 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Pandemic")
+              "Pulses", "Sugar & Sweeteners")#, "Pandemic")
 varsChr5 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Pandemic")
+              "Pulses")#, "Pandemic")
 varsChr1 <- paste0("`", varsChr1, "`")
 varsChr2 <- paste0("`", varsChr2, "`")
 varsChr3 <- paste0("`", varsChr3, "`")
 varsChr4 <- paste0("`", varsChr4, "`")
 varsChr5 <- paste0("`", varsChr5, "`")
 colnames(dfModChr)[which(colnames(dfModChr) == "DALYs / 100,000 capita" )] <- "y"
-modChr1a <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
+#modChr1a <- feols(y ~ .[varsChr1] | area, data = dfModChr, vcov = "hetero")
 modChr1b <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("Grp"))
-modChr2a <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
+#modChr2a <- feols(y ~ .[varsChr2] | area, data = dfModChr, vcov = "hetero")
 modChr2b <- feols(y ~ .[varsChr2] | area, data = dfModChr, cluster = c("Grp"))
-modChr3a <- feols(y ~ .[varsChr3] | area, data = dfModChr, vcov = "hetero")
-
-modChr3b <- feols(y ~ .[varsChr3] | area, data = dfModChr, cluster = c("yrGrp"))
-
-modChr4a <- feols(y ~ .[varsChr4] | area, data = dfModChr, vcov = "hetero")
-modChr4b <- feols(y ~ .[varsChr4] | area, data = dfModChr, cluster = c("Grp"))
-modChr5a <- feols(y ~ .[varsChr5] | area, data = dfModChr, vcov = "hetero")
+#modChr3a <- feols(y ~ .[varsChr3] | area, data = dfModChr, vcov = "hetero")
+modChr3b <- feols(y ~ .[varsChr3] | area, data = dfModChr, cluster = c("Grp"))
+#modChr4a <- feols(y ~ .[varsChr4] | area, data = dfModChr, vcov = "hetero")
+#modChr4b <- feols(y ~ .[varsChr4] | area, data = dfModChr, cluster = c("Grp"))
+#modChr5a <- feols(y ~ .[varsChr5] | area, data = dfModChr, vcov = "hetero")
 modChr5b <- feols(y ~ .[varsChr5] | area, data = dfModChr, cluster = c("Grp"))
 modChr5c <- feols(y ~ .[varsChr5] | year, data = dfModChr, cluster = c("Grp")) # Lenaerts & Demont
-modChr1a
+#modChr1a
 modChr1b
-modChr2a
+#modChr2a
 modChr2b
 modChr3a
 modChr3b
-modChr4a
-modChr4b
-modChr5a
+#modChr4a
+#modChr4b
+#modChr5a
 modChr5b
 modChr5c
 # library(sandwich)
 # vcov_cluster <- vcovHC(modChr1b, type = "HC1", cluster = "area")
 # lmtest::coeftest(modChr1a, vcov_cluster)
-dfPlot <- data.frame(residuals = modChr1a$residuals, id = dfModChr$Grp, year = dfModChr$year)
-ggplot(dfPlot, aes(x = factor(id), y = residuals)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
-        axis.text.y = element_text(size = axisTextSize),
-        axis.title = element_text(size = axisTitleSize)) +
-  labs(title = "Residuals by Group (id)", x = "Group (id)", y = "Residuals") 
-dfPlot <- data.frame(obs = paste(dfModChr$area, dfModChr$year), residuals = modChr1a$residuals, id = dfModChr$Grp, year = dfModChr$year)
-ggplot(dfPlot, aes(x = residuals)) +
-  geom_density() + facet_wrap(~id, ncol = 5) +
-  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
-        axis.text.y = element_text(size = axisTextSize),
-        axis.title = element_text(size = axisTitleSize)) +
-  labs(title = "Residuals by Group (id)")
-
-dfPlot %>% subset(id == "Europe Pandemic" & residuals < 0) %>% .$obs
-
-dfModChr %>% subset(area == "Russian Federation") %>% .$Region
-
-dfPca <- dfModChr %>% mutate(obs = paste(area, year),
-                             residuals = modChr1a$residuals) %>%
-  select(-all_of(colSkip)) %>% select(-Pandemic)
-
-dfPca[which(duplicated(dfPca$obs)), ]
-
-obsVec <- dfPca$obs
-X <- dfPca %>%
-  select(-"obs") %>% as.matrix() %>%
-  apply(2, scale)
-#dim(X)
-eigOut <- X %>% cor() %>% eigen()
-eigVals <- eigOut$values
-cumFracExpld <- cumsum(eigVals) / sum(eigVals)
-cutOff <- which(cumFracExpld > 0.75)[1]
-P <- eigOut$vectors[, 1:cutOff]
-G <- diag(eigVals[1:cutOff])
-L <- P %*% sqrt(G)
-dfBar <- L %>% as.data.frame()
-colnames(dfBar) <- paste("PC", 1:cutOff)
-gatherCols <- colnames(dfBar)
-dfBar$var <- colnames(X)
-dfBar <- dfBar %>% gather_("PC", "val", gatherCols)
-dfPlot <- dfBar
-#dfPlot$var <- factor(dfPlot$var, levels = unique(dfPlot$var))
-gg <- ggplot(dfPlot, aes(x = val, y = var))
-gg <- gg + geom_bar(stat = "identity", position = "dodge")
-gg <- gg + geom_hline(yintercept = 0, color = "red")
-#gg <- gg + coord_flip()
-gg <- gg + facet_wrap(~PC, nrow = 1)
-gg
-Lrot <- varimax(L)[[1]]
-Lrot <- matrix(as.numeric(Lrot),
-               attributes(Lrot)$dim,
-               dimnames = attributes(Lrot)$dimnames)
-R <- varimax(L)[[2]]
-R <- matrix(as.numeric(R),
-            attributes(R)$dim,
-            dimnames = attributes(R)$dimnames)
-dfBar <- Lrot %>% as.data.frame()
-fracExpld <- eigVals / sum(eigVals)
-colnames(dfBar) <- paste0("rot. PC ", 1:cutOff, "\n(", round(fracExpld[1:cutOff], 2), ")")
-gatherCols <- colnames(dfBar)
-dfBar$var <- colnames(X)
-#dfBar$`rot. PC 2\n(0.16)` <- -dfBar$`rot. PC 2\n(0.16)`
-dfBar <- dfBar %>% gather_("PC", "val", gatherCols)
-dfPlot <- dfBar
-#dfPlot$var <- factor(dfPlot$var, levels = unique(dfPlot$var))
-gg <- ggplot(dfPlot, aes(x = val, y = var))
-gg <- gg + geom_bar(stat = "identity", position = "dodge", color = "black")
-gg <- gg + geom_hline(yintercept = 0, color = "red")
-gg <- gg + facet_wrap(~PC, nrow = 1)
-gg <- gg + labs(x = "Correlation with PC")
-gg <- gg + theme_bw()
-gg <- gg + theme(legend.position = "top",
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = axisTextSize),
-                 axis.text = element_text(size = axisTextSize),
-                 axis.title.y = element_blank(),
-                 axis.title.x = element_text(size = axisTitleSize))
-gg
-
-dfPC <- as.data.frame(X %*% P %*% R)
-dfPC$obs <- obsVec
-# dfPC$Region <- NA
-# dfPC$Region[which(dfPC$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
-# dfPC$Region[which(dfPC$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
-# dfPC$Region[which(dfPC$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
-# dfPC$Region[which(dfPC$area %in% ctyInCWANA)] <- "CWANA"
-# dfPC$Region[which(dfPC$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
-# unique(dfPC$area[which(is.na(dfPC$Region))])
-colnames(dfPC) <- gsub("V", "PC", colnames(dfPC))
-gg <- ggplot(dfPC, aes(x = PC1, y = PC2))#, group = Region, color = Region))
-gg <- gg + geom_point()
-gg <- gg + geom_text(aes(label = obs), size = 2, vjust = 1)
-gg <- gg + theme_bw()
-gg
-
-k2 <- kmeans(X, centers = 20, nstart = 25)
-factoextra::fviz_cluster(k2, data = X)
-
-library(cluster)
-row.names(dfPC) <- dfPC$obs
-pamOut <- pam(dfPC[, c(1, 2)], k = 2)
-p <- fviz_cluster(pamOut, labelsize = 5)
-hull_data <-  p$data %>%
-  group_by(cluster) %>%
-  slice(chull(x, y)) %>%
-  rename(area = name,
-         PC1 = x, PC2 = y)# %>%
- as.data.frame()
-hull_data$area <- as.character(hull_data$area)
-hull_data$cluster <- as.numeric(hull_data$cluster)
-gg <- ggplot(dfPC, aes(x = PC1, y = PC2, group = Region, color = Region))
-gg <- gg + geom_point()
-gg <- gg + geom_text(aes(label = area), size = 2, vjust = 1)
-gg <- gg + theme_bw()
-gg
-
-
-#
-
-
-
-
 
 # vcov_cluster <- sandwich::vcovHC(modChr1a, type = "HC0", cluster = "Region")
 # coeftest(modChr1b, vcov_cluster)
 # Plot of residuals v fitted values
-plot(modChr1a$fitted.values, modChr1a$residuals)
+plot(modChr1b$fitted.values, modChr1b$residuals)
 # Looks like there are some outliers
 # Remove outliers (abs(error) > 3 s.d.), recenter, and fit again
-errVec <- modChr1a$residuals
+errVec <- modChr1b$residuals
 names(errVec) <- dfModChr$area
 sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 3 * sdErr); names(indOutlier)
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
-dfModChr <- dfModChr[-indOutlier, ]
-#dfModChr[, -notTheseCols] <- scale(dfModChr[, -notTheseCols], scale = F) %>% as.data.frame()
-# By informal visual inspection of e(t) v e(t-1) plot, it seems there's
-# not much serial autocorrelation (after dropping outliers),
-# while inspection of residuals v fitted values plot reveals some heteroskedasticity.
-# So maybe it's better to report heteroskedasticity-robust standard errors instead of
-# cty clustered standard errors.
-errVec <- modChr1a$residuals
-dfErr <- data.frame(area = dfModChr$area, err = errVec, yHat = modChr1a$fitted.values) %>% group_by(area) %>%
-  mutate(errDif = c(NA, diff(err))) %>% as.data.frame()
-dfErr <- dfErr[-which(is.na(dfErr$errDif)), ]
-plot(dfErr$err, dfErr$errDif)
-plot(modChr2a$fitted.values, modChr2a$residuals)
-plot(modChr3a$fitted.values, modChr3a$residuals)
-plot(modChr4a$fitted.values, modChr4a$residuals)
-plot(modChr5a$fitted.values, modChr5a$residuals)
-plot(modChr5c$fitted.values, modChr5c$residuals)
+dfModChr <- dfModChr[-indOutlier, ] # Now go back to define y and estimate all models again.
+
+dfPlot <- data.frame(residuals = modChr1b$residuals, id = dfModChr$Grp, year = dfModChr$year)
+ggplot(dfPlot, aes(x = residuals)) +
+  geom_density() + geom_vline(xintercept = 0, color = "red") +
+  geom_hline(yintercept = 0) + facet_wrap(~id, ncol = 2) +
+  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
+        axis.text.y = element_text(size = axisTextSize),
+        axis.title = element_text(size = axisTitleSize))
 # Assess multicollinearity, heteroskedasticity for single years
 # VIFs are all < 5 for all regressors and years it seems
 # BP test indicates heteroskedasticity for some years, not for others
 theseVars <- gsub("`", "", varsChr2)
-dfTest <- dfModChr %>% subset(year == 2019) %>%
+dfTest <- dfModChr %>% subset(year == 2020) %>%
   select(y, all_of(theseVars))
 modTest <- lm(y~., dfTest)
 car::vif(modTest)
 lmtest::bptest(modTest)
 # Save coefficients and FEs to csv
-dfOut1 <- data.frame(model = 2, var = names(modChr2a$coefficients),
-                     coef = modChr2a$coefficients)
-dfOut2 <- data.frame(model = 5, var = names(modChr5a$coefficients),
-                     coef = modChr5a$coefficients)
+dfOut1 <- data.frame(model = 2, var = names(modChr2b$coefficients),
+                     coef = modChr2b$coefficients)
+dfOut2 <- data.frame(model = 5, var = names(modChr5b$coefficients),
+                     coef = modChr5b$coefficients)
 dfCoefsChr <- rbind(dfOut1, dfOut2) %>% as.data.frame()
 dfFEsChr1 <- data.frame(model = 2, cty = names(fixef(modChr2a)$area), FE = fixef(modChr2a)$area)
 dfFEsChr2 <- data.frame(model = 5, cty = names(fixef(modChr5a)$area), FE = fixef(modChr5a)$area)
@@ -2787,3 +2660,107 @@ ggsave(saveTo, width = 8, height = 6)
 #   "Blindness and vision loss",
 #   "Total burden related to hepatitis B",
 #   "Total burden related to hepatitis C")
+
+
+
+# dfPca <- dfModChr %>% mutate(obs = paste(area, year),
+#                              residuals = modChr1a$residuals) %>%
+#   select(-all_of(colSkip)) %>% select(-Pandemic)
+# 
+# dfPca[which(duplicated(dfPca$obs)), ]
+# 
+# obsVec <- dfPca$obs
+# X <- dfPca %>%
+#   select(-"obs") %>% as.matrix() %>%
+#   apply(2, scale)
+# #dim(X)
+# eigOut <- X %>% cor() %>% eigen()
+# eigVals <- eigOut$values
+# cumFracExpld <- cumsum(eigVals) / sum(eigVals)
+# cutOff <- which(cumFracExpld > 0.75)[1]
+# P <- eigOut$vectors[, 1:cutOff]
+# G <- diag(eigVals[1:cutOff])
+# L <- P %*% sqrt(G)
+# dfBar <- L %>% as.data.frame()
+# colnames(dfBar) <- paste("PC", 1:cutOff)
+# gatherCols <- colnames(dfBar)
+# dfBar$var <- colnames(X)
+# dfBar <- dfBar %>% gather_("PC", "val", gatherCols)
+# dfPlot <- dfBar
+# #dfPlot$var <- factor(dfPlot$var, levels = unique(dfPlot$var))
+# gg <- ggplot(dfPlot, aes(x = val, y = var))
+# gg <- gg + geom_bar(stat = "identity", position = "dodge")
+# gg <- gg + geom_hline(yintercept = 0, color = "red")
+# #gg <- gg + coord_flip()
+# gg <- gg + facet_wrap(~PC, nrow = 1)
+# gg
+# Lrot <- varimax(L)[[1]]
+# Lrot <- matrix(as.numeric(Lrot),
+#                attributes(Lrot)$dim,
+#                dimnames = attributes(Lrot)$dimnames)
+# R <- varimax(L)[[2]]
+# R <- matrix(as.numeric(R),
+#             attributes(R)$dim,
+#             dimnames = attributes(R)$dimnames)
+# dfBar <- Lrot %>% as.data.frame()
+# fracExpld <- eigVals / sum(eigVals)
+# colnames(dfBar) <- paste0("rot. PC ", 1:cutOff, "\n(", round(fracExpld[1:cutOff], 2), ")")
+# gatherCols <- colnames(dfBar)
+# dfBar$var <- colnames(X)
+# #dfBar$`rot. PC 2\n(0.16)` <- -dfBar$`rot. PC 2\n(0.16)`
+# dfBar <- dfBar %>% gather_("PC", "val", gatherCols)
+# dfPlot <- dfBar
+# #dfPlot$var <- factor(dfPlot$var, levels = unique(dfPlot$var))
+# gg <- ggplot(dfPlot, aes(x = val, y = var))
+# gg <- gg + geom_bar(stat = "identity", position = "dodge", color = "black")
+# gg <- gg + geom_hline(yintercept = 0, color = "red")
+# gg <- gg + facet_wrap(~PC, nrow = 1)
+# gg <- gg + labs(x = "Correlation with PC")
+# gg <- gg + theme_bw()
+# gg <- gg + theme(legend.position = "top",
+#                  legend.title = element_blank(),
+#                  legend.text = element_text(size = axisTextSize),
+#                  axis.text = element_text(size = axisTextSize),
+#                  axis.title.y = element_blank(),
+#                  axis.title.x = element_text(size = axisTitleSize))
+# gg
+# 
+# dfPC <- as.data.frame(X %*% P %*% R)
+# dfPC$obs <- obsVec
+# dfPC$Grp <- dfModChr$Grp
+# dfPC$Region <- dfModChr$Region
+# dfPC$yrGrp <- dfModChr$yrGrp
+# # dfPC$Region[which(dfPC$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
+# # dfPC$Region[which(dfPC$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
+# # dfPC$Region[which(dfPC$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
+# # dfPC$Region[which(dfPC$area %in% ctyInCWANA)] <- "CWANA"
+# # dfPC$Region[which(dfPC$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
+# # unique(dfPC$area[which(is.na(dfPC$Region))])
+# colnames(dfPC) <- gsub("V", "PC", colnames(dfPC))
+# gg <- ggplot(dfPC, aes(x = PC1, y = PC4, group = yrGrp, color = yrGrp))#, group = Region, color = Region))
+# gg <- gg + geom_point()
+# gg <- gg + geom_text(aes(label = obs), size = 2, vjust = 1)
+# gg <- gg + theme_bw()
+# gg
+# 
+# k2 <- kmeans(X, centers = 20, nstart = 25)
+# factoextra::fviz_cluster(k2, data = X)
+# 
+# library(cluster)
+# row.names(dfPC) <- dfPC$obs
+# pamOut <- pam(dfPC[, c(1, 2)], k = 8)
+# p <- factoextra::fviz_cluster(pamOut, labelsize = 5)
+# hull_data <-  p$data %>%
+#   group_by(cluster) %>%
+#   slice(chull(x, y)) %>%
+#   rename(area = name,
+#          PC1 = x, PC2 = y)# %>%
+# #as.data.frame()
+# hull_data$area <- as.character(hull_data$area)
+# hull_data$cluster <- as.numeric(hull_data$cluster)
+# gg <- ggplot(dfPC, aes(x = PC1, y = PC2, group = Grp, color = Grp))
+# gg <- gg + geom_point()
+# gg <- gg + geom_text(aes(label = obs), size = 2, vjust = 1)
+# gg <- gg + theme_bw()
+# gg
+# 
