@@ -51,25 +51,23 @@ dfCauseRaw <- subset(dfCauseRaw, location != "Taiwan (Province of China)")
 # Create separate data frames for chronic, hidden, and overnutrition DALYs 
 # Chronic hunger DALYs
 # Alternate definition
-dfChr <- dfCauseRaw %>%
-  subset(cause == "Protein-energy malnutrition" &
+# dfChr <- dfCauseRaw %>%
+#   subset(cause == "Protein-energy malnutrition" &
+#            age == "All ages" &
+#            metric == "Rate" &
+#            measure == "DALYs (Disability-Adjusted Life Years)") %>%
+#   rename(area = location) %>%
+#   mutate(Cat = "Chronic hunger") %>%
+#   select(area, year, val, Cat)
+# Original definition
+dfChr <- dfRiskRaw %>%
+  subset(rei == "Child underweight" &
            age == "All ages" &
            metric == "Rate" &
            measure == "DALYs (Disability-Adjusted Life Years)") %>%
   rename(area = location) %>%
   mutate(Cat = "Chronic hunger") %>%
   select(area, year, val, Cat)
-# Original definition
-# dfChr <- dfRiskRaw %>%
-#   subset(rei == "Child underweight" &
-#            age == "All ages" &
-#            metric == "Rate" &
-#            measure == "DALYs (Disability-Adjusted Life Years)") %>%
-#   rename(area = location) %>%
-#   mutate(Cat = "Chronic hunger") %>%
-#   # select(area, year, val, Cat)
-#   select(area, year, lower, Cat) %>%
-#   rename(val = lower)
 # Hidden hunger DALYs
 hidHcauses <- c("Iodine deficiency",
                 "Dietary iron deficiency",
@@ -116,15 +114,15 @@ dfDaly <- do.call(rbind, listDf) %>% as.data.frame() %>%
   rename(`DALYs / 100,000 capita` = val)
 #=========================================================================
 # Get IHME's Socio-demographic index (SDI), merge with dfDaly
-# Source: https://ghdx.healthdata.org/record/global-burden-disease-study-2021-gbd-2021-socio-demographic-index-sdi-1950%E2%80%932021
+# Source: https://ghdx.healthdata.org/record/global-burden-disease-study-2021-gbd-2021-socio-demographic-index-SDI-1950%E2%80%932021
 #thisFile <- "IHME_GBD_2019_SDI_1990_2019_Y2020M10D15.xlsx" # 2019 release
 thisFile <- "IHME_GBD_SDI_2021_SDI_1950_2021_Y2024M05D16.csv" # 2021 release
 thisFilePath <- paste0(dataFolder, thisFile)
 dfRaw <- read.csv(thisFilePath, stringsAsFactors = F)
 dfRaw <- dfRaw %>% rename(area = location_name,
-                          sdi = mean_value,
+                          SDI = mean_value,
                           year = year_id) %>%
-  select(area, year, sdi)
+  select(area, year, SDI)
 # For some reason, some region level areas are duplicated
 dfRaw %>% group_by(year) %>%
   mutate(dup = duplicated(area)) %>%
@@ -146,12 +144,12 @@ dfRaw <- dfRaw %>% subset(dup == F) %>% select(-dup)
 dfGeorgia <- dfRaw %>% subset(area == "Georgia") %>%
   mutate(dup = as.integer(duplicated(year))) %>%
   mutate(area = paste(area, dup)) %>% select(-dup) %>%
-  spread(area, sdi) 
+  spread(area, SDI) 
 # Visual inspection of dfGeorgia reveals that "Georgia 0" has the lower SDI
 # in recent years and so this must refer to the cty.
 dfGeorgia <- dfGeorgia %>% select(-`Georgia 1`) %>%
-  rename(sdi = `Georgia 0`) %>% mutate(area = "Georgia") %>%
-  select(area, year, sdi)
+  rename(SDI = `Georgia 0`) %>% mutate(area = "Georgia") %>%
+  select(area, year, SDI)
 dfSDI <- dfRaw %>% subset(area != "Georgia") %>%
   rbind(dfGeorgia) %>% as.data.frame()
 rm(dfRaw, dfGeorgia)
@@ -161,7 +159,7 @@ setdiff(unique(dfDaly$area), unique(dfSDI$area))
 u <- dfSDI$area
 unique(u[grep("rkiye", u)])
 dfSDI$area[grep("rkiye", u)] <- "Turkiye"
-dfSDI$sdi <- 100 * dfSDI$sdi
+dfSDI$SDI <- 100 * dfSDI$SDI
 dfDaly <- dfDaly %>% merge(dfSDI)
 #========================================================================
 # Get population under 25 data from UN Population Data Portal, merge with dfDaly
@@ -342,137 +340,136 @@ dfMod$Pulses[which(dfMod$Pulses == 0)] <- 1
 dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique() # Look
 #dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
 #-----------------------------------------------------------------------
-# # Create regional clustering variable
-# thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
-# theseFiles <- list.files(thisFolder)
-# listVec <- list()
-# for(i in 1:length(theseFiles)){
-#   print(theseFiles[i])
-#   thisPath <- paste0(thisFolder, theseFiles[i])
-#   thisDf <- read.csv(thisPath, stringsAsFactors = F)
-#   thisVec <- thisDf$Area
-#   listVec[[theseFiles[i]]] <- thisVec
-# }
-# ctyInAsansCWA <- listVec[[theseFiles[1]]]
-# ctyInCarib <- listVec[[theseFiles[2]]]
-# ctyInCWANA <- listVec[[theseFiles[3]]]
-# ctyInEur <- listVec[[theseFiles[4]]]
-# ctyInLAC <- listVec[[theseFiles[5]]]
-# ctyInNAMEURAUSNZ <- listVec[[theseFiles[6]]]
-# ctyInSSA <- listVec[[theseFiles[7]]]
-# dfMod$Region <- NA
-# dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
-# dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
+# # # Create regional clustering variable
+# # thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
+# # theseFiles <- list.files(thisFolder)
+# # listVec <- list()
+# # for(i in 1:length(theseFiles)){
+# #   print(theseFiles[i])
+# #   thisPath <- paste0(thisFolder, theseFiles[i])
+# #   thisDf <- read.csv(thisPath, stringsAsFactors = F)
+# #   thisVec <- thisDf$Area
+# #   listVec[[theseFiles[i]]] <- thisVec
+# # }
+# # ctyInAsansCWA <- listVec[[theseFiles[1]]]
+# # ctyInCarib <- listVec[[theseFiles[2]]]
+# # ctyInCWANA <- listVec[[theseFiles[3]]]
+# # ctyInEur <- listVec[[theseFiles[4]]]
+# # ctyInLAC <- listVec[[theseFiles[5]]]
+# # ctyInNAMEURAUSNZ <- listVec[[theseFiles[6]]]
+# # ctyInSSA <- listVec[[theseFiles[7]]]
+# # dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
+# # dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
 # #dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "N. Amer. / Aus. / NZ"
 # #dfMod$Region[which(dfMod$area %in% ctyInEur)] <- "Europe"
 # #dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "Lat. Amer. /\nCaribbean"
-# dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "C&S Amer."
-# dfMod$Region[which(dfMod$area %in% ctyInCarib)] <- "Carib"
-# dfMod$Region[which(dfMod$area %in% ctyInCWANA)] <- "CWANA"
-# dfMod$Region[which(dfMod$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
+# # dfMod$Region[which(dfMod$area %in% ctyInLAC)] <- "C&S Amer."
+# # dfMod$Region[which(dfMod$area %in% ctyInCarib)] <- "Carib"
+# # dfMod$Region[which(dfMod$area %in% ctyInCWANA)] <- "CWANA"
+# # dfMod$Region[which(dfMod$area %in% ctyInSSA)] <- "Africa South\nof the Sahara"
 # # Which ctys left out?
-# unique(dfMod$area[which(is.na(dfMod$Region))])
-# dfMod$Region[which(dfMod$area %in% c("United Kingdom", "Netherlands"))] <- "Eur. / N. Amer. /\nAus. / NZ"
-# dfMod$Region[which(dfMod$area %in% c("China", "Fiji",
-#                                      "Solomon Islands", "Vanuatu",
-#                                      "Kiribati", "Samoa",
-#                                      "Papua New Guinea"))] <- "Asia\nexcl. C&W Asia"
+# # unique(dfMod$area[which(is.na(dfMod$Region))])
+# # dfMod$Region[which(dfMod$area %in% c("United Kingdom", "Netherlands"))] <- "Eur. / N. Amer. /\nAus. / NZ"
+# # dfMod$Region[which(dfMod$area %in% c("China", "Fiji",
+# #                                      "Solomon Islands", "Vanuatu",
+# #                                      "Kiribati", "Samoa",
+# #                                      "Papua New Guinea"))] <- "Asia\nexcl. C&W Asia"
+# # 
+# # #dfMod$`GDP/capita centile` <- dfMod$Region
 # 
-# #dfMod$`GDP/capita centile` <- dfMod$Region
-
-dfx <- dfMod %>% subset(Cat == "Chronic hunger") %>% select(area, year, `GDP / capita`)
-dfx$`GDP/capita centile` <- "0-25th centile GDP/capita"
-dfx$`GDP/capita centile`[which(dfx$`GDP / capita` > quantile(dfx$`GDP / capita`, 0.25))] <- "26th-65th centile GDP/capita"
-dfx$`GDP/capita centile`[which(dfx$`GDP / capita` > quantile(dfx$`GDP / capita`, 0.65))] <- "66th-100th centile GDP/capita"
-dfx$`GDP / capita` <- NULL
-dfMod <- dfMod %>% merge(dfx)
-# dfMod$`GDP/capita centile` <- "0-25th centile GDP/capita"
-# dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.25))] <- "26th-65th centile GDP/capita"
-# dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.65))] <- "66th-100th centile GDP/capita"
-#dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.8))] <- "4 gdp"
-dfMod$yrGrp <- "Non-pandemic"
-dfMod$yrGrp[which(dfMod$year %in% c(2020, 2021))] <- "Pandemic"
-dfMod$`Grp` <- paste0(dfMod$`GDP/capita centile`, "\n", dfMod$yrGrp)
-table(dfMod$Grp)
-dfMod$`GDP/capita centile` <- NULL
-dfMod$yrGrp <- NULL
-# ctyAll <- c(ctyInAsansCWA, ctyInCWANA, ctyInLAC, ctyInSSA, ctyInNAMEURAUSNZ)
-# ctyAll[grep("China", ctyAll)]
-# u[grep("Brunei", u)]
-# ctyInNAMEURAUSNZ[grep("United Kingdom of", ctyInNAMEURAUSNZ)] <- "United Kingdom"
-# ctyInNAMEURAUSNZ[grep("Netherlands", ctyInNAMEURAUSNZ)] <- "Netherlands"
-# ctyInAsansCWA[grep("China, mainland", ctyInAsansCWA)] <- "China"
-# dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
-# dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
-# unique(dfMod$area[which(is.na(dfMod$Region))])
-# dfMod <- dfMod[, c("area", "Region", colnames(dfMod)[-c(1, ncol(dfMod))])]
-#-----------------------------------------------------------------------
-# Harmonize with IMPACT cty names
-# Use the new v3.6 model documentation as main cty guide:
-# https://cgspace.cgiar.org/items/4a89cd40-7e86-4392-88dc-464bde71a5b8
-# thisFile <- "impactCTYnames.csv" # This is from the old v3.3 Reportgen.xlsx
-# thisFilepath <- paste0(dataFolder, thisFile)
-# dfIMPctys <- read.csv(thisFilepath, stringsAsFactors = F)
-# setdiff(dfIMPctys$LongName, dfMod$area)
-# setdiff(dfMod$area, dfIMPctys$LongName)
-balticStates <- "Latvia|Estonia|Lithuania"
-otherBalkans <- "Montenegro|Serbia|Macedonia|Bosnia|Herzegovina"
-otherCarib <- "Virgin|Wallis|Futuna|Antigua|Barbuda|Bahamas|Barbados|Aruba|Cayman|Dominica|Grenada|Guadeloupe|Martinique|Montserrat|Antilles|Puerto Rico|Saint Kitts and Nevis|Saint Lucia|Trinidad and Tobago"
-otherPacIs <- "Samoa|Cook Islands|Polynesia|Kiribati|Guam|Marshall|Micronesia|Nauru|Caledonia|Niue|Norfolk Island|Tokelau|Tonga|Tuvalu"
-guyanasSA <- "French Guiana|Guyana|Suriname"
-otherAtlant <- "Falkland|Bermuda|Cape Verde|Cabo Verde|Saint Helena|Saint Pierre and Miquelon|Saint Vincent and the Grenadines|Sao Tome and Principe"
-otherSEAsia <- "Brunei|Singapore"
-restOfArab <- "Bahrain|Kuwait|Qatar|Oman|United Arab Emirates"
-otherIndian <- "Comoros|Maldives|Mauritius|Seychelles"
-GBandFaroe <- "United Kingdom|Faroe"
-u <- dfMod$area
-# Look first
-dfMod$area[grep(balticStates, u)] %>% unique()
-dfMod$area[grep(otherBalkans, u)] %>% unique()
-dfMod$area[grep(otherCarib, u)] %>% unique()
-dfMod$area[grep(otherPacIs, u)] %>% unique()
-dfMod$area[grep(guyanasSA, u)] %>% unique()
-dfMod$area[grep(otherAtlant, u)] %>% unique()
-dfMod$area[grep(otherSEAsia, u)] %>% unique()
-dfMod$area[grep(restOfArab, u)] %>% unique()
-dfMod$area[grep(otherIndian, u)] %>% unique()
-dfMod$area[grep(GBandFaroe, u)] %>% unique()
-# Rename and aggregate
-dfMod$area[grep(balticStates, u)] <- "Baltic States"
-dfMod$area[grep(otherBalkans, u)] <- "Other Balkans"
-dfMod$area[grep(otherCarib, u)] <- "Other Caribbean"
-dfMod$area[grep(otherPacIs, u)] <- "Other Pacific Ocean"
-dfMod$area[grep(guyanasSA, u)] <- "Guyanas South America"
-dfMod$area[grep(otherAtlant, u)] <- "Other Atlantic Ocean"
-#dfMod$area[grep(otherSEAsia, u)] %>% unique()
-dfMod$area[grep(restOfArab, u)] <- "Rest of Arab Peninsula"
-dfMod$area[grep(otherIndian, u)] <- "Other Indian Ocean"
-dfMod$area[grep(GBandFaroe, u)] <- "Great Britain and nearby protectorates"
-
-colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year",
-                                        "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
-dfMod[, -colSkip] <- dfMod[, -colSkip] * dfMod$Population
-dfMod <- dfMod %>% group_by(Cat, `Grp`, area, year) %>%
-  summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`),
-            sdi = mean(sdi),
-            `Pct Pop < 15` = mean(`Pct Pop < 15`),
-            `Pct Pop < 25` = mean(`Pct Pop < 25`),
-            `GDP / capita` = sum(`GDP / capita`),
-            `Animal Products` = sum(`Animal Products`),
-            Cereals = sum(Cereals),
-            `F&V` = sum(`F&V`),
-            Pulses = sum(Pulses),
-            `Starchy Roots` = sum(`Starchy Roots`),
-            `Sugar & Sweeteners` = sum(`Sugar & Sweeteners`),
-            `Vegetable Oils` = sum(`Vegetable Oils`),
-            `Grand Total` = sum(`Grand Total`),
-            Population = sum(Population)
-            ) %>% as.data.frame()
-colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
-dfMod[, -colSkip] <- dfMod[, -colSkip] / dfMod$Population
+# dfx <- dfMod %>% subset(Cat == "Chronic hunger") %>% select(area, year, `GDP / capita`)
+# dfx$`GDP/capita centile` <- "0-25th centile GDP/capita"
+# dfx$`GDP/capita centile`[which(dfx$`GDP / capita` > quantile(dfx$`GDP / capita`, 0.25))] <- "26th-65th centile GDP/capita"
+# dfx$`GDP/capita centile`[which(dfx$`GDP / capita` > quantile(dfx$`GDP / capita`, 0.65))] <- "66th-100th centile GDP/capita"
+# dfx$`GDP / capita` <- NULL
+# dfMod <- dfMod %>% merge(dfx)
+# # dfMod$`GDP/capita centile` <- "0-25th centile GDP/capita"
+# # dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.25))] <- "26th-65th centile GDP/capita"
+# # dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.65))] <- "66th-100th centile GDP/capita"
+# #dfMod$`GDP/capita centile`[which(dfMod$`GDP / capita` > quantile(dfMod$`GDP / capita`, 0.8))] <- "4 gdp"
+# dfMod$yrGrp <- "Non-pandemic"
+# dfMod$yrGrp[which(dfMod$year %in% c(2020, 2021))] <- "Pandemic"
+# dfMod$`Grp` <- paste0(dfMod$`GDP/capita centile`, "\n", dfMod$yrGrp)
+# table(dfMod$Grp)
+# dfMod$`GDP/capita centile` <- NULL
+# dfMod$yrGrp <- NULL
+# # ctyAll <- c(ctyInAsansCWA, ctyInCWANA, ctyInLAC, ctyInSSA, ctyInNAMEURAUSNZ)
+# # ctyAll[grep("China", ctyAll)]
+# # u[grep("Brunei", u)]
+# # ctyInNAMEURAUSNZ[grep("United Kingdom of", ctyInNAMEURAUSNZ)] <- "United Kingdom"
+# # ctyInNAMEURAUSNZ[grep("Netherlands", ctyInNAMEURAUSNZ)] <- "Netherlands"
+# # ctyInAsansCWA[grep("China, mainland", ctyInAsansCWA)] <- "China"
+# # dfMod$Region[which(dfMod$area %in% ctyInNAMEURAUSNZ)] <- "Eur. / N. Amer. /\nAus. / NZ"
+# # dfMod$Region[which(dfMod$area %in% ctyInAsansCWA)] <- "Asia\nexcl. C&W Asia"
+# # unique(dfMod$area[which(is.na(dfMod$Region))])
+# # dfMod <- dfMod[, c("area", "Region", colnames(dfMod)[-c(1, ncol(dfMod))])]
+# #-----------------------------------------------------------------------
+# # Harmonize with IMPACT cty names
+# # Use the new v3.6 model documentation as main cty guide:
+# # https://cgspace.cgiar.org/items/4a89cd40-7e86-4392-88dc-464bde71a5b8
+# # thisFile <- "impactCTYnames.csv" # This is from the old v3.3 Reportgen.xlsx
+# # thisFilepath <- paste0(dataFolder, thisFile)
+# # dfIMPctys <- read.csv(thisFilepath, stringsAsFactors = F)
+# # setdiff(dfIMPctys$LongName, dfMod$area)
+# # setdiff(dfMod$area, dfIMPctys$LongName)
+# balticStates <- "Latvia|Estonia|Lithuania"
+# otherBalkans <- "Montenegro|Serbia|Macedonia|Bosnia|Herzegovina"
+# otherCarib <- "Virgin|Wallis|Futuna|Antigua|Barbuda|Bahamas|Barbados|Aruba|Cayman|Dominica|Grenada|Guadeloupe|Martinique|Montserrat|Antilles|Puerto Rico|Saint Kitts and Nevis|Saint Lucia|Trinidad and Tobago"
+# otherPacIs <- "Samoa|Cook Islands|Polynesia|Kiribati|Guam|Marshall|Micronesia|Nauru|Caledonia|Niue|Norfolk Island|Tokelau|Tonga|Tuvalu"
+# guyanasSA <- "French Guiana|Guyana|Suriname"
+# otherAtlant <- "Falkland|Bermuda|Cape Verde|Cabo Verde|Saint Helena|Saint Pierre and Miquelon|Saint Vincent and the Grenadines|Sao Tome and Principe"
+# otherSEAsia <- "Brunei|Singapore"
+# restOfArab <- "Bahrain|Kuwait|Qatar|Oman|United Arab Emirates"
+# otherIndian <- "Comoros|Maldives|Mauritius|Seychelles"
+# GBandFaroe <- "United Kingdom|Faroe"
+# u <- dfMod$area
+# # Look first
+# dfMod$area[grep(balticStates, u)] %>% unique()
+# dfMod$area[grep(otherBalkans, u)] %>% unique()
+# dfMod$area[grep(otherCarib, u)] %>% unique()
+# dfMod$area[grep(otherPacIs, u)] %>% unique()
+# dfMod$area[grep(guyanasSA, u)] %>% unique()
+# dfMod$area[grep(otherAtlant, u)] %>% unique()
+# dfMod$area[grep(otherSEAsia, u)] %>% unique()
+# dfMod$area[grep(restOfArab, u)] %>% unique()
+# dfMod$area[grep(otherIndian, u)] %>% unique()
+# dfMod$area[grep(GBandFaroe, u)] %>% unique()
+# # Rename and aggregate
+# dfMod$area[grep(balticStates, u)] <- "Baltic States"
+# dfMod$area[grep(otherBalkans, u)] <- "Other Balkans"
+# dfMod$area[grep(otherCarib, u)] <- "Other Caribbean"
+# dfMod$area[grep(otherPacIs, u)] <- "Other Pacific Ocean"
+# dfMod$area[grep(guyanasSA, u)] <- "Guyanas South America"
+# dfMod$area[grep(otherAtlant, u)] <- "Other Atlantic Ocean"
+# #dfMod$area[grep(otherSEAsia, u)] %>% unique()
+# dfMod$area[grep(restOfArab, u)] <- "Rest of Arab Peninsula"
+# dfMod$area[grep(otherIndian, u)] <- "Other Indian Ocean"
+# dfMod$area[grep(GBandFaroe, u)] <- "Great Britain and nearby protectorates"
+# 
+# colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year",
+#                                         "SDI", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+# dfMod[, -colSkip] <- dfMod[, -colSkip] * dfMod$Population
+# dfMod <- dfMod %>% group_by(Cat, `Grp`, area, year) %>%
+#   summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`),
+#             SDI = mean(SDI),
+#             `Pct Pop < 15` = mean(`Pct Pop < 15`),
+#             `Pct Pop < 25` = mean(`Pct Pop < 25`),
+#             `GDP / capita` = sum(`GDP / capita`),
+#             `Animal Products` = sum(`Animal Products`),
+#             Cereals = sum(Cereals),
+#             `F&V` = sum(`F&V`),
+#             Pulses = sum(Pulses),
+#             `Starchy Roots` = sum(`Starchy Roots`),
+#             `Sugar & Sweeteners` = sum(`Sugar & Sweeteners`),
+#             `Vegetable Oils` = sum(`Vegetable Oils`),
+#             `Grand Total` = sum(`Grand Total`),
+#             Population = sum(Population)
+#             ) %>% as.data.frame()
+# colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year", "SDI", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+# dfMod[, -colSkip] <- dfMod[, -colSkip] / dfMod$Population
 #-----------------------------------------------------------------------
 # Convert food cunsumption vars to % of diet terms by dividing by grand total
-colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year", "sdi", "Pct Pop < 15", "Pct Pop < 25", "Population"))
+colSkip <- which(colnames(dfMod) %in% c("Cat", "Grp", "area", "year", "SDI", "Pct Pop < 15", "Pct Pop < 25", "Population"))
 colSkip <- c(colSkip, which(colnames(dfMod) %in% c("DALYs / 100,000 capita",
                                                  "GDP / capita")))
 dfMod[, -colSkip] <- dfMod[, -colSkip] / dfMod$`Grand Total` * 100
@@ -493,8 +490,37 @@ dfMod[, -colSkip] <- as.data.frame(apply(dfMod[, -colSkip], 2, log))
 apply(dfMod[, -colSkip], 2, function(x) sum(is.nan(x)))
 #dfMod$area[which(is.nan(dfMod$`DALYs / 100,000 capita`))]
 #-----------------------------------------------------------------------
+# Create "anomalous health event" dummy variables for
+# 1) The abrupt drop in trans fatty acid DALYs in some countries during covid-19 years
+# 2) The spike in protein-energy malnutrition DALYs in Somalia, and simultaneous
+# drop in protein-energy malnutrition DALYs in the US and Canada, during the
+# 2011 East African drought.
+# First the trans fatty drop dummy
+dfCheck <- dfRiskRaw %>% subset(rei == "Diet high in trans fatty acids" &
+                                  year > 2014 &
+                                  measure == "DALYs (Disability-Adjusted Life Years)" &
+                                  age == "All ages" &
+                                  metric == "Rate") %>%
+  rename(area = location) %>%
+  select(rei, measure, metric, age, area, year, val)
+ctyTransFat0 <- dfCheck %>% { .$area[which(.$val == 0 & .$year %in% c(2019:2021))] } %>% unique
+ctyTransFatAnomaly <- dfCheck %>% subset(area %in% ctyTransFat0 & year == 2018 & val > 60) %>%
+  .$area %>% unique
+dfMod$`Covid transfat anomaly` <- 0
+dfMod$`Covid transfat anomaly`[which(dfMod$area %in% ctyTransFatAnomaly & dfMod$year %in% c(2019:2021))] <- 1
 dfMod$Pandemic <- 0
-dfMod$Pandemic[which(dfMod$year %in% c(2020, 2021))] <- 1
+dfMod$Pandemic[which(dfMod$year %in% c(2019:2021))] <- 1
+# thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
+# theseFiles <- list.files(thisFolder)
+# thisPath <- paste0(thisFolder, theseFiles[7])
+# thisDf <- read.csv(thisPath, stringsAsFactors = F)
+# ctyInSSA <- thisDf$Area
+# ctyInEAf <- c("Somalia")
+indCrisis2011 <- intersect(which(dfMod$area %in% c("Somalia", "United States of America", "Canada")),
+                        which(dfMod$year == 2011))
+dfMod$`E. Africa crisis` <- 0
+dfMod$`E. Africa crisis`[indCrisis2011] <- 1
+dfMod <- dfMod %>% rename(country = area)
 #-----------------------------------------------------------------------
 # Separate into data frames for each hunger model
 #catCol <- which(colnames(dfMod) == "Cat")
@@ -510,88 +536,116 @@ dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 # dfModOve[, -notTheseCols] <- scale(dfModOve[, -notTheseCols], scale = F) %>% as.data.frame()
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
-varsChr1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
+# varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
+#               "Starchy Roots", "F&V", "Vegetable Oils",
+#               "Pulses", "Sugar & Sweeteners", "SSA 2011", "Pandemic")
+varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners")#, "Pandemic")
-varsChr2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
+              "Pulses", "Sugar & Sweeteners", "Pandemic")
+varsChr1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
+               "Starchy Roots", "F&V", "Vegetable Oils",
+               "Pulses", "E. Africa crisis", "Pandemic")
+varsChr2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
-varsChr3 <- c("sdi", "Animal Products", "Cereals",
+              "Pulses", "Sugar & Sweeteners", "E. Africa crisis", "Pandemic")
+varsChr2b <- c("GDP / capita", "Animal Products", "Cereals",
+               "Starchy Roots", "F&V", "Vegetable Oils",
+               "Pulses", "E. Africa crisis", "Pandemic")
+varsChr3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Sugar & Sweeteners")#, "Pandemic")
-varsChr4 <- c("GDP / capita", "Animal Products", "Cereals",
-              "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
-varsChr1 <- paste0("`", varsChr1, "`")
-varsChr2 <- paste0("`", varsChr2, "`")
+              "Pulses", "E. Africa crisis", "Pandemic")
+varsChr1a <- paste0("`", varsChr1a, "`")
+varsChr1b <- paste0("`", varsChr1b, "`")
+varsChr2a <- paste0("`", varsChr2a, "`")
+varsChr2b <- paste0("`", varsChr2b, "`")
 varsChr3 <- paste0("`", varsChr3, "`")
-varsChr4 <- paste0("`", varsChr4, "`")
 colnames(dfModChr)[which(colnames(dfModChr) == "DALYs / 100,000 capita" )] <- "y"
-modChr1 <- feols(y ~ .[varsChr1] | area, data = dfModChr, cluster = c("Grp"))
-modChr2a <- feols(y ~ .[varsChr2] | area, data = dfModChr, cluster = c("Grp"))
-modChr2b <- feols(y ~ .[varsChr2] | year, data = dfModChr, cluster = c("year", "area"))
-modChr3 <- feols(y ~ .[varsChr3] | area, data = dfModChr, cluster = c("Grp"))
-modChr4 <- feols(y ~ .[varsChr4] | area, data = dfModChr, cluster = c("Grp"))
-modChr1
+modChr1a <- feols(y ~ .[varsChr1a] | country, data = dfModChr, cluster = c("country"))
+modChr1b <- feols(y ~ .[varsChr1b] | country, data = dfModChr, cluster = c("country"))
+modChr2a <- feols(y ~ .[varsChr2a] | country, data = dfModChr, cluster = c("country"))
+modChr2b <- feols(y ~ .[varsChr2b] | country, data = dfModChr, cluster = c("country"))
+modChr2c <- feols(y ~ .[varsChr2a] | year, data = dfModChr, cluster = c("year", "country"))
+modChr3 <- feols(y ~ .[varsChr3] | country, data = dfModChr, cluster = c("country"))
+modChr1a
+modChr1b
 modChr2a
 modChr2b
+modChr2c
 modChr3
-modChr4
 # Plot of residuals v fitted values
 plot(modChr2a$fitted.values, modChr2a$residuals)
-# Looks like there are some outliers
-# Remove outliers (abs(error) > 4 s.d.), recenter, and fit again
+# Remove outliers (abs(error) > 4 s.d.) and fit again
 errVec <- modChr2a$residuals
-names(errVec) <- dfModChr$area
+names(errVec) <- dfModChr$country
 sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 dfModChr <- dfModChr[-indOutlier, ]
 #-----------------------------------------------------------------------------
-# 6 outliers removed (Cty-number of years): Austria-1, Norway-1, Somalia-4
+# 4 outliers removed (Cty-number of years): Iran-1, Norway-1, Somalia-1, Yemen-1
 # Go back up to define y and estimate all models again before proceeding
 #-----------------------------------------------------------------------------
 # Density plots of clustered residuals
-dfPlot <- data.frame(residuals = modChr2a$residuals, id = dfModChr$Grp, year = dfModChr$year)
-gg <- ggplot(dfPlot, aes(x = residuals)) + geom_hline(yintercept = 0)
-gg <- gg + geom_histogram(aes(y = ..density..),
-                            colour = 1, fill = "white", binwidth = 0.125)
-gg <- gg + geom_density() + geom_vline(xintercept = 0, color = "red") +
-  facet_wrap(~id, ncol = 2) +
-  theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
-        axis.text.y = element_text(size = axisTextSize),
-        axis.title = element_text(size = axisTitleSize))
-thisGraphic <- "clustrdResids_chr.png"
-thisFilepath <- paste0(outFolder, thisGraphic)
-ggsave(thisFilepath, width = 4, height = 5)
+# dfPlot <- data.frame(residuals = modChr2a$residuals, id = dfModChr$Grp, year = dfModChr$year)
+# gg <- ggplot(dfPlot, aes(x = residuals)) + geom_hline(yintercept = 0)
+# gg <- gg + geom_histogram(aes(y = ..density..),
+#                             colour = 1, fill = "white", binwidth = 0.125)
+# gg <- gg + geom_density() + geom_vline(xintercept = 0, color = "red") +
+#   facet_wrap(~id, ncol = 2) +
+#   theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
+#         axis.text.y = element_text(size = axisTextSize),
+#         axis.title = element_text(size = axisTitleSize))
+# thisGraphic <- "clustrdResids_chr.png"
+# thisFilepath <- paste0(outFolder, thisGraphic)
+# ggsave(thisFilepath, width = 4, height = 5)
 # Assess multicollinearity, heteroskedasticity for single years
 # VIFs are all < 5 for all regressors and years it seems
 # BP test indicates heteroskedasticity for some years, not for others
-theseVars <- gsub("`", "", varsChr2)
-dfTest <- dfModChr %>% subset(year == 2020) %>%
-  select(y, all_of(theseVars))
-modTest <- lm(y~., dfTest)
-car::vif(modTest)
-lmtest::bptest(modTest)
+regressorsList <- list(varsChr1a, varsChr1b, varsChr2a, varsChr2b, varsChr3)
+nMods <- length(regressorsList)
+yrVec <- unique(dfMod$year); nYrs <- length(yrVec)
+maxVIFmat <- matrix(NA, nYrs, nMods)
+for(j in 1:nMods){
+  theseVars <- gsub("`", "", regressorsList[[j]])
+  theseVars <- setdiff(theseVars, c("E. Africa crisis", "Pandemic"))
+  for(i in 1:nYrs){
+    dfTest <- dfModChr %>% subset(year == yrVec[i]) %>%
+      select(y, all_of(theseVars))
+    modTest <- lm(y~., dfTest)
+    maxVIFmat[i, j] <- max(car::vif(modTest))
+    #lmtest::bptest(modTest)
+  }
+}
+max(maxVIFmat) < 5
 # Save coefficients and FEs to csv
+dfOut1a <- data.frame(model = "1a", var = names(modChr1a$coefficients),
+                      coef = modChr1a$coefficients)
+dfOut1b <- data.frame(model = "1a", var = names(modChr1b$coefficients),
+                      coef = modChr1b$coefficients)
 dfOut2a <- data.frame(model = "2a", var = names(modChr2a$coefficients),
                      coef = modChr2a$coefficients)
+dfOut2b <- data.frame(model = "2b", var = names(modChr2b$coefficients),
+                      coef = modChr2b$coefficients)
+dfOut2c <- data.frame(model = "2c", var = names(modChr2c$coefficients),
+                      coef = modChr2c$coefficients)
 dfOut3 <- data.frame(model = 3, var = names(modChr3$coefficients),
                      coef = modChr3$coefficients)
-dfOut4 <- data.frame(model = 4, var = names(modChr4$coefficients),
-                     coef = modChr4$coefficients)
-dfCoefsChr <- do.call(rbind, list(dfOut2a, dfOut3, dfOut4)) %>% as.data.frame()
+dfCoefsChr <- do.call(rbind, list(dfOut1a, dfOut1b, dfOut2a, dfOut2b, dfOut2c, dfOut3)) %>% as.data.frame()
 thisFilepath <- paste0(outFolder, "Chr hung model coefs.csv")
 write.csv(dfCoefsChr, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
-modelsList <- list(modChr1, modChr2a, modChr2b, modChr3, modChr4)
+modelsList <- list(modChr1a, modChr1b, modChr2a, modChr2b, modChr2c, modChr3)
+coefOrder <- gsub("`", "", unique(c(varsChr1a, varsChr1b, varsChr2a, varsChr2b, varsChr3)))
+theseFirst <- c("Pct Pop < 15", "GDP / capita", "SDI")
+coefOrder <- unique(c(theseFirst, coefOrder))
 thisFile <- "ctyFEmods_Chr_clstRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(modelsList, output = thisFilepath, statistic = "p.value", estimate = "{estimate}{stars}")
+modelsummary(modelsList, output = thisFilepath, statistic = "p.value",
+             estimate = "{estimate}{stars}", coef_map = coefOrder)
 # Graphic comparing resid v fitted plots of cty FE and year FE models
-areaVec <- dfModChr$area; yrVec <- dfModChr$year
-dfErr2a <- data.frame(area = areaVec, year = yrVec, yHat = modChr2a$fitted.values, residual = modChr2a$residuals, model = "Model 2a (Country FE)")
-dfErr2b <- data.frame(area = areaVec, year = yrVec, yHat = modChr2b$fitted.values, residual = modChr2b$residuals, model = "Model 2b (Year FE)")
+countryVec <- dfModChr$country; yrVec <- dfModChr$year
+dfErr2a <- data.frame(country = countryVec, year = yrVec, yHat = modChr2a$fitted.values, residual = modChr2a$residuals, model = "Model 2a (Country FE)")
+dfErr2b <- data.frame(country = countryVec, year = yrVec, yHat = modChr2b$fitted.values, residual = modChr2b$residuals, model = "Model 2b (Year FE)")
 dfErr <- rbind(dfErr2a, dfErr2b) %>% as.data.frame()
 gg <- ggplot(dfErr,  aes(x = yHat, y = residual)) + geom_hline(yintercept = 0, color = "red")
 gg <- gg + geom_point(size = 0.15)
@@ -607,11 +661,11 @@ ggsave(thisFilepath, width = 5, height = 2)
 # Histograms of cty FEs, which may be interpreted as
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
-areaVec <- unique(areaVec)
-dfGM1 <- data.frame(area = areaVec, FE = fixef(modChr1)$area, model = 1)
-dfGM2a <- data.frame(area = areaVec, FE = fixef(modChr2a)$area, model = "2a")
-dfGM3 <- data.frame(area = areaVec, FE = fixef(modChr3)$area, model = 3)
-dfGM4 <- data.frame(area = areaVec, FE = fixef(modChr4)$area, model = 4)
+countryVec <- unique(countryVec)
+dfGM1 <- data.frame(country = countryVec, FE = fixef(modChr1)$country, model = 1)
+dfGM2a <- data.frame(country = countryVec, FE = fixef(modChr2a)$country, model = "2a")
+dfGM3 <- data.frame(country = countryVec, FE = fixef(modChr3)$country, model = 3)
+dfGM4 <- data.frame(country = countryVec, FE = fixef(modChr4)$country, model = 4)
 dfGM <- do.call(rbind, list(dfGM1, dfGM2a, dfGM3, dfGM4)) %>% as.data.frame()
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
@@ -629,36 +683,36 @@ thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 7, height = 2)
 #=======================================================================
 # Burden of hidden hunger model
-varsHid1 <- c("Pct Pop < 15", "Animal Products", "Cereals",
+varsHid1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners")#, "Pandemic")
-varsHid2 <- c("Pct Pop < 15", "Animal Products", "Cereals",
+varsHid1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")#, "Pandemic")
-varsHid3 <- c("sdi", "Animal Products", "Cereals",
+varsHid2 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")#, "Sugar & Sweeteners")#, "Pandemic")
-varsHid4 <- c("GDP / capita", "Animal Products", "Cereals",
+varsHid3 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses")#, "Pandemic")
-varsHid1 <- paste0("`", varsHid1, "`")
+varsHid1a <- paste0("`", varsHid1a, "`")
+varsHid1b <- paste0("`", varsHid1b, "`")
 varsHid2 <- paste0("`", varsHid2, "`")
 varsHid3 <- paste0("`", varsHid3, "`")
-varsHid4 <- paste0("`", varsHid4, "`")
 colnames(dfModHid)[3] <- "y"
-modHid1 <- feols(y ~ .[varsHid1] | area, data = dfModHid, cluster = c("Grp"))
-modHid2 <- feols(y ~ .[varsHid2] | area, data = dfModHid, cluster = c("Grp"))
-modHid3 <- feols(y ~ .[varsHid3] | area, data = dfModHid, cluster = c("Grp"))
-modHid4 <- feols(y ~ .[varsHid4] | area, data = dfModHid, cluster = c("Grp"))
-modHid1
+modHid1a <- feols(y ~ .[varsHid1a] | country, data = dfModHid, cluster = c("country"))
+modHid1b <- feols(y ~ .[varsHid1b] | country, data = dfModHid, cluster = c("country"))
+modHid2 <- feols(y ~ .[varsHid2] | country, data = dfModHid, cluster = c("country"))
+modHid3 <- feols(y ~ .[varsHid3] | country, data = dfModHid, cluster = c("country"))
+modHid1a
+modHid1b
 modHid2
 modHid3
-modHid4
 # Plot of residuals v fitted values
-plot(modHid2$fitted.values, modHid2$residuals)
-# Remove outliers (abs(error) > 4 s.d.), recenter, and fit again
-errVec <- modHid2$residuals
-names(errVec) <- dfModHid$area
+plot(modHid1b$fitted.values, modHid1b$residuals)
+# Remove outliers (abs(error) > 4 s.d.) and fit again
+errVec <- modHid1b$residuals
+names(errVec) <- dfModHid$country
 sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
 dfModHid <- dfMod %>% subset(Cat == "Hidden hunger")
@@ -707,11 +761,11 @@ modelsummary(modelsList, output = thisFilepath, statistic = "p.value", estimate 
 # Histograms of cty FEs, which may be interpreted as
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
-areaVec <- unique(dfModHid$area)
-dfGM1 <- data.frame(area = areaVec, FE = fixef(modHid1)$area, model = 1)
-dfGM2 <- data.frame(area = areaVec, FE = fixef(modHid2)$area, model = 2)
-dfGM3 <- data.frame(area = areaVec, FE = fixef(modHid3)$area, model = 3)
-dfGM4 <- data.frame(area = areaVec, FE = fixef(modHid4)$area, model = 4)
+countryVec <- unique(dfModHid$country)
+dfGM1 <- data.frame(country = countryVec, FE = fixef(modHid1)$country, model = 1)
+dfGM2 <- data.frame(country = countryVec, FE = fixef(modHid2)$country, model = 2)
+dfGM3 <- data.frame(country = countryVec, FE = fixef(modHid3)$country, model = 3)
+dfGM4 <- data.frame(country = countryVec, FE = fixef(modHid4)$country, model = 4)
 dfGM <- do.call(rbind, list(dfGM1, dfGM2, dfGM3, dfGM4)) %>% as.data.frame()
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
@@ -730,36 +784,36 @@ ggsave(thisFilepath, width = 5, height = 2)
 # Note the hidden hunger cty FEs histogram is bimodal.
 #=======================================================================
 # Burden of overnutrition model
-varsOve1 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+varsOve1a <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners")#, "Pandemic")
-varsOve2 <- c("Pct Pop < 25", "Animal Products", "Cereals",
+              "Pulses", "Sugar & Sweeteners", "Covid transfat anomaly")
+varsOve1b <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
-varsOve3 <- c("sdi", "Animal Products", "Cereals",
+              "Pulses", "Covid transfat anomaly")
+varsOve2 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Sugar & Sweeteners")#, "Pandemic")
-varsOve4 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Pulses", "Covid transfat anomaly")
+varsOve3 <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
-varsOve1 <- paste0("`", varsOve1, "`")
+              "Pulses", "Covid transfat anomaly")
+varsOve1a <- paste0("`", varsOve1a, "`")
+varsOve1b <- paste0("`", varsOve1b, "`")
 varsOve2 <- paste0("`", varsOve2, "`")
 varsOve3 <- paste0("`", varsOve3, "`")
-varsOve4 <- paste0("`", varsOve4, "`")
 colnames(dfModOve)[3] <- "y"
-modOve1 <- feols(y ~ .[varsOve1] | area, data = dfModOve, cluster = c("Grp"))
-modOve2 <- feols(y ~ .[varsOve2] | area, data = dfModOve, cluster = c("Grp"))
-modOve3 <- feols(y ~ .[varsOve3] | area, data = dfModOve, cluster = c("Grp"))
-modOve4 <- feols(y ~ .[varsOve4] | area, data = dfModOve, cluster = c("Grp"))
-modOve1
+modOve1a <- feols(y ~ .[varsOve1a] | country, data = dfModOve, cluster = c("country"))
+modOve1b <- feols(y ~ .[varsOve1b] | country, data = dfModOve, cluster = c("country"))
+modOve2 <- feols(y ~ .[varsOve2] | country, data = dfModOve, cluster = c("country"))
+modOve3 <- feols(y ~ .[varsOve3] | country, data = dfModOve, cluster = c("country"))
+modOve1a
+modOve1b
 modOve2
 modOve3
-modOve4
 # Plot of residuals v fitted values
-plot(modOve2$fitted.values, modOve2$residuals)
-# Remove outliers (abs(error) > 4 s.d.), recenter, and fit again
-errVec <- modOve2$residuals
-names(errVec) <- dfModOve$area
+plot(modOve1b$fitted.values, modOve1b$residuals)
+# Remove outliers (abs(error) > 4 s.d.) and fit again
+errVec <- modOve1b$residuals
+names(errVec) <- dfModOve$country
 sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
 dfModOve <- dfMod %>% subset(Cat == "Overnutrition")
@@ -809,11 +863,11 @@ modelsummary(modelsList, output = thisFilepath, statistic = "p.value", estimate 
 # Histograms of cty FEs, which may be interpreted as
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
-areaVec <- unique(dfModOve$area)
-dfGM1 <- data.frame(area = areaVec, FE = fixef(modOve1)$area, model = 1)
-dfGM2 <- data.frame(area = areaVec, FE = fixef(modOve2)$area, model = 2)
-dfGM3 <- data.frame(area = areaVec, FE = fixef(modOve3)$area, model = 3)
-dfGM4 <- data.frame(area = areaVec, FE = fixef(modOve4)$area, model = 4)
+countryVec <- unique(dfModOve$country)
+dfGM1 <- data.frame(country = countryVec, FE = fixef(modOve1)$country, model = 1)
+dfGM2 <- data.frame(country = countryVec, FE = fixef(modOve2)$country, model = 2)
+dfGM3 <- data.frame(country = countryVec, FE = fixef(modOve3)$country, model = 3)
+dfGM4 <- data.frame(country = countryVec, FE = fixef(modOve4)$country, model = 4)
 dfGM <- do.call(rbind, list(dfGM1, dfGM2, dfGM3, dfGM4)) %>% as.data.frame()
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
@@ -865,7 +919,7 @@ ggsave(thisFilepath, height = 4, width = 7)
 #------------------------------------------------------------------------
 # Socioeconomic/demographic regressor summary stats by year
 regrssrs <- colnames(dfRgrsrSumStats)[-c(1:3)]
-regrssrs <- setdiff(regrssrs, "Residual")
+regrssrs <- setdiff(regrssrs, c("Residual", "Population", "Grp"))
 dfRgrsrSumStats %>%
   select(year, regrssrs) %>%
   gather_("var", "val", regrssrs) %>%
@@ -893,10 +947,10 @@ thisFilepath <- paste0(outFolder, thisFile)
 ggsave(thisFilepath, height = 6, width = 7)
 #------------------------------------------------------------------------
 # Correlation plot
-dfMod %>% subset(year == 2021) %>%
-  spread(Cat, `DALYs / 100,000 capita`) %>%
-  select(-c(year, area)) %>% chart.Correlation(histogram=TRUE, pch=19)
-# Manually save using Export in the plot viewer, use width 1500 height 1000
+# dfMod %>% subset(year == 2021) %>%
+#   spread(Cat, `DALYs / 100,000 capita`) %>%
+#   select(-c(year, area)) %>% chart.Correlation(histogram=TRUE, pch=19)
+# # Manually save using Export in the plot viewer, use width 1500 height 1000
 #------------------------------------------------------------------------
 # Create graphics data frame for regionally disaggregated IHME GBD data plots
 thisFile <- "IHME-GBD_1990-2021_cNutDef_byAge_reg.csv"
@@ -905,7 +959,7 @@ dfGraphicsC <- read.csv(thisFilepath, stringsAsFactors = F) %>%
   subset(cause %in% hidHcauses) %>%
   rename(`DALYs / 100,000 capita` = val,
          area = location) %>%
-  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`, lower) %>%
+  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`) %>%
   mutate(Cat = "Hidden hunger")
 thisFile <- "IHME-GBD_1990-2021_rNutDef_byAge_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
@@ -916,7 +970,7 @@ dfGraphicsR <- read.csv(thisFilepath, stringsAsFactors = F) %>%
   rename(`DALYs / 100,000 capita` = val,
          area = location,
          cause = rei) %>%
-  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`, lower)
+  select(area, year, cause, age, metric, measure, `DALYs / 100,000 capita`)
 dfGraphicsR$Cat <- NA
 dfGraphicsR$Cat[grep("Child underweight", dfGraphicsR$cause)] <- "Chronic hunger"
 dfGraphicsR$Cat[which(dfGraphicsR$cause %in% overNutRiskFactors)] <- "Overnutrition"
@@ -931,42 +985,42 @@ dfGraphics$cause <- gsub("Diet high in sugar-sweetened beverages",
                      "Diet high in\nsugar-sweetened beverages", dfGraphics$cause)
 #------------------------------------------------------------------------
 # Graphic demonstrating that nutrition DALYs/capita are age sensitive
-dfPlot <- dfGraphics %>% subset(year == 2021 &
-                                  age != "All ages" &
-                                  metric == "Number" &
-                                  measure == "DALYs (Disability-Adjusted Life Years)" &
-                                  area != "Global" &
-                                  Cat %in% c("Chronic hunger",
-                                             "Hidden hunger",
-                                             "Overnutrition"))  %>%
-  mutate(area = gsub(" - WB", "", area),
-         age = factor(age, levels = unique(age)))
-indChr <- which(dfPlot$Cat == "Chronic hunger")
-dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
-#dfPlot$age <- factor(dfPlot$age, levels = unique(dfPlot$age))
-nColors <- length(unique(dfPlot$cause))
-bag_of_colors <- distinctColorPalette(k = 4 * nColors)
-theseColors <- sample(bag_of_colors, nColors)
-gg <- ggplot(dfPlot, aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
-#gg <- ggplot(subset(dfPlot, area == "North America" & Cat == "Overnutrition"), aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
-gg <- gg + geom_bar(stat = "identity", position = "stack")
-gg <- gg + facet_grid(Cat~area, scales = "free")
-gg <- gg + scale_fill_manual(values = theseColors)
-#gg <- gg + labs(y = "DALYs")
-gg <- gg + theme_bw()
-gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
-                                            angle = 60, hjust = 1),
-                 axis.title.x = element_text(size = axisTitleSize),
-                 axis.title.y = element_blank(),
-                 legend.title = element_blank(),
-                 legend.text = element_text(size = legendTextSize),
-                 legend.position = "top",
-                 legend.key.size = unit(legendKeySize, "cm"),
-                 strip.text = element_text(size = facetTitleSize))
-gg <- gg + coord_flip()
-thisGraphic <- "Hunger DALYs per cap by age group.png"
-thisFilepath <- paste0(outFolder, thisGraphic)
-ggsave(thisFilepath, width = 10, height = 8)
+# dfPlot <- dfGraphics %>% subset(year == 2021 &
+#                                   age != "All ages" &
+#                                   metric == "Number" &
+#                                   measure == "DALYs (Disability-Adjusted Life Years)" &
+#                                   area != "Global" &
+#                                   Cat %in% c("Chronic hunger",
+#                                              "Hidden hunger",
+#                                              "Overnutrition"))  %>%
+#   mutate(area = gsub(" - WB", "", area),
+#          age = factor(age, levels = unique(age)))
+# indChr <- which(dfPlot$Cat == "Chronic hunger")
+# dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
+# #dfPlot$age <- factor(dfPlot$age, levels = unique(dfPlot$age))
+# nColors <- length(unique(dfPlot$cause))
+# bag_of_colors <- distinctColorPalette(k = 4 * nColors)
+# theseColors <- sample(bag_of_colors, nColors)
+# gg <- ggplot(dfPlot, aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
+# #gg <- ggplot(subset(dfPlot, area == "North America" & Cat == "Overnutrition"), aes(x = age, y = `DALYs / 100,000 capita`, fill = reorder(cause, `DALYs / 100,000 capita`)))
+# gg <- gg + geom_bar(stat = "identity", position = "stack")
+# gg <- gg + facet_grid(Cat~area, scales = "free")
+# gg <- gg + scale_fill_manual(values = theseColors)
+# #gg <- gg + labs(y = "DALYs")
+# gg <- gg + theme_bw()
+# gg <- gg + theme(axis.text.x = element_text(size = axisTextSize,
+#                                             angle = 60, hjust = 1),
+#                  axis.title.x = element_text(size = axisTitleSize),
+#                  axis.title.y = element_blank(),
+#                  legend.title = element_blank(),
+#                  legend.text = element_text(size = legendTextSize),
+#                  legend.position = "top",
+#                  legend.key.size = unit(legendKeySize, "cm"),
+#                  strip.text = element_text(size = facetTitleSize))
+# gg <- gg + coord_flip()
+# thisGraphic <- "Hunger DALYs per cap by age group.png"
+# thisFilepath <- paste0(outFolder, thisGraphic)
+# ggsave(thisFilepath, width = 10, height = 8)
 #------------------------------------------------------------------------
 # Line plot of burden of hunger over time, by type, disaggregated by WB region
 #theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
@@ -979,7 +1033,6 @@ dfPlot <- dfGraphics %>% subset(age == "All ages" &
                                            "Overnutrition")) %>%
   mutate(area = gsub(" - WB", "", area))
 indChr <- which(dfPlot$Cat == "Chronic hunger")
-dfPlot$`DALYs / 100,000 capita`[indChr] <- dfPlot$lower[indChr]
 dfPlot <- dfPlot %>% group_by(area, year, Cat) %>%
   summarise(`DALYs / 100,000 capita` = sum(`DALYs / 100,000 capita`))
 dfPlot$area[grep("Global", dfPlot$area)] <- "World"
@@ -1009,6 +1062,36 @@ ggsave(thisFilepath, width = 8, height = 4)
 #theseCauses <- c(hidHcauses, overNutRiskFactors, "Protein-energy malnutrition")
 thisFile <- "IHME-GBD_1990-2021_ChronicHungDecomp_reg.csv"
 thisFilepath <- paste0(dataFolder, thisFile)
+dfChrDecomp <- read.csv(thisFilepath, stringsAsFactors = F) %>%
+  subset(age == "All ages" &
+           metric == "Rate" &
+           measure == "DALYs (Disability-Adjusted Life Years)" &
+           location == "Global") %>%
+  rename(Cat = rei, area = location) %>% mutate(Cat = "Chronic hunger") %>%
+  select(area, year, Cat, cause, val, upper, lower) %>%
+  rename(`DALYs / 100,000 capita` = val)
+gg <- ggplot(dfChrDecomp, aes(x = year))
+gg <- gg + geom_ribbon(aes(ymin = lower, ymax = upper), fill='orange', alpha=0.3)
+gg <- gg + geom_line(aes(y = `DALYs / 100,000 capita`))
+gg <- gg + geom_line(aes(y = upper), color = "grey")
+gg <- gg + geom_line(aes(y = lower), color = "grey")
+gg <- gg + facet_wrap(~cause)
+gg <- gg + theme_bw()
+gg <- gg + theme(axis.text.x = element_text(size = axisTextSize),
+                 axis.title.y = element_text(size = axisTitleSize),
+                 axis.title.x = element_blank(),
+                 legend.title = element_blank(),
+                 legend.text = element_text(size = legendTextSize),
+                 legend.position = "top",
+                 legend.key.size = unit(legendKeySize, "cm"),
+                 strip.text = element_text(size = facetTitleSize))
+gg
+
+
+
+
+
+
 dfChrDecomp <- read.csv(thisFilepath, stringsAsFactors = F) %>%
   subset(age == "All ages" &
          metric == "Rate" &
@@ -1329,7 +1412,7 @@ ggsave(thisFilepath)
 
 # # Test multicollinearity
 # dfModChrTest <- dfModChr %>% subset(year == 2019) %>%
-#   select(-c(area, year, sdi))
+#   select(-c(area, year, SDI))
 # modTest <- lm(y~., dfModChrTest)
 # summary(modTest)
 # car::vif(modTest)
@@ -1343,8 +1426,8 @@ ggsave(thisFilepath)
 #   select(Area, Year, PctPopUrban)
 # colnames(dfIV)[1:2] <- tolower(colnames(dfIV)[1:2])
 # dfModChrTest <- dfModChr %>% merge(dfIV)
-# varsChr2SLS <- setdiff(varsChr1, c("`Animal Products`", "`sdi`"))
-# #varsChr2SLS <- setdiff(varsChr2, c("`Cereals`", "`sdi`"))
+# varsChr2SLS <- setdiff(varsChr1, c("`Animal Products`", "`SDI`"))
+# #varsChr2SLS <- setdiff(varsChr2, c("`Cereals`", "`SDI`"))
 # modChr2SLS <- feols(y ~ .[varsChr2SLS] | area | `Animal Products` ~ PctPopUrban, data = dfModChrTest, cluster = "area")
 # modChr2SLS
 # plot(modChr2SLS$fitted.values, modChr2SLS$residuals)
@@ -1363,7 +1446,7 @@ ggsave(thisFilepath)
 # 
 # 
 # 
-# modChrEndogSDI <- feols(y ~ sdi | area, data = dfModChr, vcov = "hetero")
+# modChrEndogSDI <- feols(y ~ SDI | area, data = dfModChr, vcov = "hetero")
 # summary(modChrEndogSDI); plot(modChrEndogSDI$fitted.values, modChrEndogSDI$residuals)
 # modChrEndogPop <- feols(y ~ `Pct Pop < 15` | area, data = dfModChr, vcov = "hetero")
 # summary(modChrEndogPop)
@@ -1508,7 +1591,7 @@ dfSDImerge <- dfSDI %>% subset(year == thisYr) %>% select(-year)
 dfPopYoungMerge <- dfPopYoung %>% subset(year == thisYr) %>%
   select(-year)
 dfSocioD <- dfSDImerge %>% merge(dfPopYoungMerge) %>%
-  gather(Issue, val, sdi:pop14)
+  gather(Issue, val, SDI:pop14)
 dfSocioD <- dfSocioD[, colnames(dfrPCA)]
 keepAreas <- intersect(dfSocioD$area, dfrPCA$area)
 dfSocioD <- dfSocioD %>% subset(area %in% keepAreas)
@@ -1583,7 +1666,7 @@ dfPlot$Type[which(u %in% chldMatern)] <- "Child and maternal malnutrition"
 dfPlot$Type[which(u %in% metab)] <- "Metabolic risks"
 dfPlot$Type[which(u %in% environ)] <- "Environmental risks"
 dfPlot$Type[which(u %in% subAbuse)] <- "Substance abuse"
-dfPlot$Type[which(u %in% c("sdi", "pop14"))] <- "Socio-demog"
+dfPlot$Type[which(u %in% c("SDI", "pop14"))] <- "Socio-demog"
 dfPlot$Type <- factor(dfPlot$Type, levels = unique(dfPlot$Type))
 dfPlot$var <- factor(dfPlot$var, levels = unique(dfPlot$var))
 gg <- ggplot(dfPlot, aes(x = val, y = var, fill = Type))
