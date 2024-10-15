@@ -495,7 +495,7 @@ apply(dfMod[, -colSkip], 2, function(x) sum(is.nan(x)))
 # 2) The spike in protein-energy malnutrition DALYs in Somalia, and simultaneous
 # drop in protein-energy malnutrition DALYs in the US and Canada, during the
 # 2011 East African drought.
-# First the trans fatty drop dummy
+# First the COVID-19 trans fatty anomaly dummy
 dfCheck <- dfRiskRaw %>% subset(rei == "Diet high in trans fatty acids" &
                                   year > 2014 &
                                   measure == "DALYs (Disability-Adjusted Life Years)" &
@@ -506,8 +506,8 @@ dfCheck <- dfRiskRaw %>% subset(rei == "Diet high in trans fatty acids" &
 ctyTransFat0 <- dfCheck %>% { .$area[which(.$val == 0 & .$year %in% c(2019:2021))] } %>% unique
 ctyTransFatAnomaly <- dfCheck %>% subset(area %in% ctyTransFat0 & year == 2018 & val > 60) %>%
   .$area %>% unique
-dfMod$`Covid transfat anomaly` <- 0
-dfMod$`Covid transfat anomaly`[which(dfMod$area %in% ctyTransFatAnomaly & dfMod$year %in% c(2019:2021))] <- 1
+dfMod$`COVID-19 transfat anomaly` <- 0
+dfMod$`COVID-19 transfat anomaly`[which(dfMod$area %in% ctyTransFatAnomaly & dfMod$year %in% c(2019:2021))] <- 1
 dfMod$Pandemic <- 0
 dfMod$Pandemic[which(dfMod$year %in% c(2019:2021))] <- 1
 # thisFolder <- "D:/OneDrive - CGIAR/Documents 1/CIAT 2/FnM Initiative/DALYs/Data/Region-cty keys/"
@@ -516,17 +516,19 @@ dfMod$Pandemic[which(dfMod$year %in% c(2019:2021))] <- 1
 # thisDf <- read.csv(thisPath, stringsAsFactors = F)
 # ctyInSSA <- thisDf$Area
 # ctyInEAf <- c("Somalia")
-indCrisis2011 <- intersect(which(dfMod$area %in% c("Somalia", "United States of America", "Canada")),
-                        which(dfMod$year == 2011))
-dfMod$`E. Africa crisis` <- 0
-dfMod$`E. Africa crisis`[indCrisis2011] <- 1
 dfMod <- dfMod %>% rename(country = area)
+indSomalia2011 <- which(dfMod$country == "Somalia" & dfMod$year == 2011)
+dfMod$`Somalia 2011` <- 0
+dfMod$`Somalia 2011`[indSomalia2011] <- 1
+indOtherNutAnom2011 <- which(dfMod$country %in% c("United States of America", "Canada") & dfMod$year == 2011)
+dfMod$`Other nut. 2011 anomaly` <- 0
+dfMod$`Other nut. 2011 anomaly`[indOtherNutAnom2011] <- 1
 #-----------------------------------------------------------------------
 # Separate into data frames for each hunger model
 #catCol <- which(colnames(dfMod) == "Cat")
-dfModChr <- dfMod %>% subset(Cat == "Chronic hunger") #%>% select (-catCol)
-dfModHid <- dfMod %>% subset(Cat == "Hidden hunger") #%>% select (-catCol)
-dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
+# dfModChr <- dfMod %>% subset(Cat == "Chronic hunger") #%>% select (-catCol)
+# dfModHid <- dfMod %>% subset(Cat == "Hidden hunger") #%>% select (-catCol)
+# dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 # Center the regressor data so that cty FEs can be interpreted as
 # geometric mean of logged DALYs/100,000 capita
 # (or the log of the geometric mean of DALYs/100,000 capita)
@@ -536,24 +538,22 @@ dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 # dfModOve[, -notTheseCols] <- scale(dfModOve[, -notTheseCols], scale = F) %>% as.data.frame()
 #-----------------------------------------------------------------------
 # Burden of chronic hunger model
-# varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
-#               "Starchy Roots", "F&V", "Vegetable Oils",
-#               "Pulses", "Sugar & Sweeteners", "SSA 2011", "Pandemic")
+dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "E. Africa crisis", "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "Somalia 2011", "Pandemic")
 varsChr1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
-               "Pulses", "E. Africa crisis", "Pandemic")
+               "Pulses", "Somalia 2011", "Pandemic")
 varsChr2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "E. Africa crisis", "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "Somalia 2011", "Pandemic")
 varsChr2b <- c("GDP / capita", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
-               "Pulses", "E. Africa crisis", "Pandemic")
+               "Pulses", "Somalia 2011", "Pandemic")
 varsChr3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "E. Africa crisis", "Pandemic")
+              "Pulses", "Somalia 2011", "Pandemic")
 varsChr1a <- paste0("`", varsChr1a, "`")
 varsChr1b <- paste0("`", varsChr1b, "`")
 varsChr2a <- paste0("`", varsChr2a, "`")
@@ -583,6 +583,7 @@ dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 dfModChr <- dfModChr[-indOutlier, ]
 #-----------------------------------------------------------------------------
 # 4 outliers removed (Cty-number of years): Iran-1, Norway-1, Somalia-1, Yemen-1
+# Somalia 2011 outlier dropped so no need for E. Africa crisis???!
 # Go back up to define y and estimate all models again before proceeding
 #-----------------------------------------------------------------------------
 # Density plots of clustered residuals
@@ -685,35 +686,42 @@ thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 7, height = 2)
 #=======================================================================
 # Burden of hidden hunger model
+dfModHid <- dfMod %>% subset(Cat == "Hidden hunger")
 varsHid1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners")#, "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "Other nut. 2011 anomaly", "Pandemic")
 varsHid1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
-varsHid2 <- c("SDI", "Animal Products", "Cereals",
+              "Pulses", "Other nut. 2011 anomaly", "Pandemic")
+varsHid2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Sugar & Sweeteners")#, "Pandemic")
-varsHid3 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Pulses", "Sugar & Sweeteners", "Other nut. 2011 anomaly", "Pandemic")
+varsHid2b <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses")#, "Pandemic")
+              "Pulses", "Other nut. 2011 anomaly", "Pandemic")
+varsHid3 <- c("SDI", "Animal Products", "Cereals",
+              "Starchy Roots", "F&V", "Vegetable Oils",
+              "Pulses", "Other nut. 2011 anomaly", "Pandemic")
 varsHid1a <- paste0("`", varsHid1a, "`")
 varsHid1b <- paste0("`", varsHid1b, "`")
-varsHid2 <- paste0("`", varsHid2, "`")
+varsHid2a <- paste0("`", varsHid2a, "`")
+varsHid2b <- paste0("`", varsHid2b, "`")
 varsHid3 <- paste0("`", varsHid3, "`")
 colnames(dfModHid)[3] <- "y"
 modHid1a <- feols(y ~ .[varsHid1a] | country, data = dfModHid, cluster = c("country"))
 modHid1b <- feols(y ~ .[varsHid1b] | country, data = dfModHid, cluster = c("country"))
-modHid2 <- feols(y ~ .[varsHid2] | country, data = dfModHid, cluster = c("country"))
+modHid2a <- feols(y ~ .[varsHid2a] | country, data = dfModHid, cluster = c("country"))
+modHid2b <- feols(y ~ .[varsHid2b] | country, data = dfModHid, cluster = c("country"))
 modHid3 <- feols(y ~ .[varsHid3] | country, data = dfModHid, cluster = c("country"))
 modHid1a
 modHid1b
-modHid2
+modHid2a
+modHid2b
 modHid3
 # Plot of residuals v fitted values
-plot(modHid1b$fitted.values, modHid1b$residuals)
+plot(modHid2a$fitted.values, modHid2a$residuals)
 # Remove outliers (abs(error) > 4 s.d.) and fit again
-errVec <- modHid1b$residuals
+errVec <- modHid2a$residuals
 names(errVec) <- dfModHid$country
 sdErr <- sd(errVec)
 indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
@@ -786,33 +794,40 @@ ggsave(thisFilepath, width = 5, height = 2)
 # Note the hidden hunger cty FEs histogram is bimodal.
 #=======================================================================
 # Burden of overnutrition model
+dfModOve <- dfMod %>% subset(Cat == "Overnutrition")
 varsOve1a <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Covid transfat anomaly")
+              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")
 varsOve1b <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Covid transfat anomaly")
-varsOve2 <- c("SDI", "Animal Products", "Cereals",
+              "Pulses", "COVID-19 transfat anomaly")
+varsOve2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Covid transfat anomaly")
-varsOve3 <- c("GDP / capita", "Animal Products", "Cereals",
+              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")
+varsOve2b <- c("GDP / capita", "Animal Products", "Cereals",
+               "Starchy Roots", "F&V", "Vegetable Oils",
+               "Pulses", "COVID-19 transfat anomaly")
+varsOve3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Covid transfat anomaly")
+              "Pulses", "COVID-19 transfat anomaly")
 varsOve1a <- paste0("`", varsOve1a, "`")
 varsOve1b <- paste0("`", varsOve1b, "`")
-varsOve2 <- paste0("`", varsOve2, "`")
+varsOve2a <- paste0("`", varsOve2a, "`")
+varsOve2b <- paste0("`", varsOve2b, "`")
 varsOve3 <- paste0("`", varsOve3, "`")
 colnames(dfModOve)[3] <- "y"
 modOve1a <- feols(y ~ .[varsOve1a] | country, data = dfModOve, cluster = c("country"))
 modOve1b <- feols(y ~ .[varsOve1b] | country, data = dfModOve, cluster = c("country"))
-modOve2 <- feols(y ~ .[varsOve2] | country, data = dfModOve, cluster = c("country"))
+modOve2a <- feols(y ~ .[varsOve2a] | country, data = dfModOve, cluster = c("country"))
+modOve2b <- feols(y ~ .[varsOve2b] | country, data = dfModOve, cluster = c("country"))
 modOve3 <- feols(y ~ .[varsOve3] | country, data = dfModOve, cluster = c("country"))
 modOve1a
 modOve1b
-modOve2
+modOve2a
+modOve2b
 modOve3
 # Plot of residuals v fitted values
-plot(modOve1b$fitted.values, modOve1b$residuals)
+plot(modOve1a$fitted.values, modOve1a$residuals)
 # Remove outliers (abs(error) > 4 s.d.) and fit again
 errVec <- modOve1b$residuals
 names(errVec) <- dfModOve$country
