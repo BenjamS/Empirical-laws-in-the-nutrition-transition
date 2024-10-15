@@ -541,7 +541,7 @@ dfModOve <- dfMod %>% subset(Cat == "Overnutrition") #%>% select (-catCol)
 #               "Pulses", "Sugar & Sweeteners", "SSA 2011", "Pandemic")
 varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "E. Africa crisis", "Pandemic")
 varsChr1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
                "Pulses", "E. Africa crisis", "Pandemic")
@@ -616,7 +616,7 @@ for(j in 1:nMods){
     #lmtest::bptest(modTest)
   }
 }
-max(maxVIFmat) < 5
+max(maxVIFmat) < 5 # If TRUE then no multicollinearity issue
 # Save coefficients and FEs to csv
 dfOut1a <- data.frame(model = "1a", var = names(modChr1a$coefficients),
                       coef = modChr1a$coefficients)
@@ -644,13 +644,13 @@ modelsummary(modelsList, output = thisFilepath, statistic = "p.value",
              estimate = "{estimate}{stars}", coef_map = coefOrder)
 # Graphic comparing resid v fitted plots of cty FE and year FE models
 countryVec <- dfModChr$country; yrVec <- dfModChr$year
-dfErr2a <- data.frame(country = countryVec, year = yrVec, yHat = modChr2a$fitted.values, residual = modChr2a$residuals, model = "Model 2a (Country FE)")
-dfErr2b <- data.frame(country = countryVec, year = yrVec, yHat = modChr2b$fitted.values, residual = modChr2b$residuals, model = "Model 2b (Year FE)")
-dfErr <- rbind(dfErr2a, dfErr2b) %>% as.data.frame()
-gg <- ggplot(dfErr,  aes(x = yHat, y = residual)) + geom_hline(yintercept = 0, color = "red")
+dfErr2a <- data.frame(country = countryVec, year = yrVec, yHat = modChr2a$fitted.values, Residual = modChr2a$residuals, model = "Model 2a (Country FE)")
+dfErr2c <- data.frame(country = countryVec, year = yrVec, yHat = modChr2c$fitted.values, Residual = modChr2c$residuals, model = "Model 2c (Year FE)")
+dfErr <- rbind(dfErr2a, dfErr2c) %>% as.data.frame()
+gg <- ggplot(dfErr,  aes(x = yHat, y = Residual)) + geom_hline(yintercept = 0, color = "red")
 gg <- gg + geom_point(size = 0.15)
 gg <- gg + facet_wrap(~model, nrow = 1)
-gg <- gg + labs(x = "fitted value")
+gg <- gg + labs(x = "Fitted value")
 gg <- gg + theme_bw()
 gg <- gg + theme(axis.text = element_text(size = axisTextSize),
                             axis.title = element_text(size = axisTitleSize),
@@ -662,22 +662,24 @@ ggsave(thisFilepath, width = 5, height = 2)
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
 countryVec <- unique(countryVec)
-dfGM1 <- data.frame(country = countryVec, FE = fixef(modChr1)$country, model = 1)
-dfGM2a <- data.frame(country = countryVec, FE = fixef(modChr2a)$country, model = "2a")
-dfGM3 <- data.frame(country = countryVec, FE = fixef(modChr3)$country, model = 3)
-dfGM4 <- data.frame(country = countryVec, FE = fixef(modChr4)$country, model = 4)
-dfGM <- do.call(rbind, list(dfGM1, dfGM2a, dfGM3, dfGM4)) %>% as.data.frame()
+dfGM1a <- data.frame(country = countryVec, FE = fixef(modChr1a)$country, model = "Model 1a")
+dfGM1b <- data.frame(country = countryVec, FE = fixef(modChr1b)$country, model = "Model 1b")
+dfGM2a <- data.frame(country = countryVec, FE = fixef(modChr2a)$country, model = "Model 2a")
+dfGM2b <- data.frame(country = countryVec, FE = fixef(modChr2b)$country, model = "Model 2b")
+dfGM3 <- data.frame(country = countryVec, FE = fixef(modChr3)$country, model = "Model 3")
+dfGM <- do.call(rbind, list(dfGM1a, dfGM1b, dfGM2a, dfGM2b, dfGM3)) %>% as.data.frame()
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
                colour = 1, fill = "white", binwidth = 1.5)
 gg <- gg + geom_density()
-gg <- gg + labs(x = "Country fixed effects")
+gg <- gg + labs(x = "Country fixed effects", y = "Density", title = "Fixed effects, burden of chronic hunger models")
 #gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to chronic hunger\n(country fixed effects)")
 gg <- gg + facet_wrap(~model, nrow = 1)
 gg <- gg + theme_bw()
 gg <- gg + theme(axis.text = element_text(size = axisTextSize),
                  axis.title = element_text(size = axisTitleSize),
-                 strip.text = element_text(size = facetTitleSize))
+                 strip.text = element_text(size = facetTitleSize),
+                 plot.title = element_text(size = axisTitleSize))
 thisGraphic <- "FEdensityPlot_chr.png"
 thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 7, height = 2)
