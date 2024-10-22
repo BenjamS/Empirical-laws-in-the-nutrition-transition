@@ -283,6 +283,9 @@ theseItems <- c("Cereals - Excluding Beer",
                 "Sugar & Sweeteners",
                 #"Sugar (Raw Equivalent)",
                 #"Alcoholic Beverages",
+                #"Groundnuts",
+                #"Soyabeans",
+                #"Nuts and products",
                 "Grand Total")
 
 dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
@@ -291,6 +294,7 @@ dfFBS <- dfFBSraw %>% select(area, year, item, element, value) %>%
   mutate(item = gsub("Fruits - Excluding Wine", "F&V", item)) %>%
   mutate(item = gsub("Vegetables", "F&V", item)) %>%
   mutate(item = gsub("Cereals - Excluding Beer", "Cereals", item)) %>%
+  #mutate(item = gsub("Soyabeans|Groundnuts|Nuts and products", "Oilseeds/nuts and products", item)) %>%
   group_by(area, year, item, element) %>%
   summarise(value = sum(value, na.rm = T)) %>%
   spread(item, value) %>% as.data.frame()
@@ -336,6 +340,15 @@ dfMod <- dfMod %>% subset(!(area %in% notThese))
 # will become 0 after log transform.
 dfMod$area[which(dfMod$Pulses == 0)] %>% unique() # Look
 dfMod$Pulses[which(dfMod$Pulses == 0)] <- 1
+# # Same for groundnuts, soyabeans, nuts & other products
+# dfMod$area[which(dfMod$`Oilseeds/nuts and products` == 0)] %>% unique() # Look
+# dfMod$`Oilseeds/nuts and products`[which(dfMod$`Oilseeds/nuts and products` == 0)] <- 1
+# dfMod$area[which(dfMod$Groundnuts == 0)] %>% unique() # Look
+# dfMod$Groundnuts[which(dfMod$Groundnuts == 0)] <- 1
+# dfMod$area[which(dfMod$Soyabeans == 0)] %>% unique() # Look
+# dfMod$Soyabeans[which(dfMod$Soyabeans == 0)] <- 1
+# dfMod$area[which(dfMod$`Nuts and products` == 0)] %>% unique() # Look
+# dfMod$`Nuts and products`[which(dfMod$`Nuts and products` == 0)] <- 1
 # Any negative DALY values?
 dfMod$area[which(dfMod$`DALYs / 100,000 capita` < 0)] %>% unique() # Look
 #dfMod <- dfMod[-which(dfMod$`DALYs / 100,000 capita` < 0), ]
@@ -542,18 +555,28 @@ dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 varsChr1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners", "Somalia 2011", "Pandemic")
+              #"Oilseeds/nuts and products")
+#              "Soyabeans", "Nuts and products")#, Groundnuts)
 varsChr1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
                "Pulses", "Somalia 2011", "Pandemic")
+               #"Oilseeds/nuts and products")
+ #              "Soyabeans", "Nuts and products")#, "Groundnuts")
 varsChr2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Sugar & Sweeteners", "Somalia 2011", "Pandemic")
+              #"Oilseeds/nuts and products")
+#              "Soyabeans", "Nuts and products")#, "Groundnuts")
 varsChr2b <- c("GDP / capita", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
                "Pulses", "Somalia 2011", "Pandemic")
+               #"Oilseeds/nuts and products")
+ #              "Soyabeans", "Nuts and products")#, "Groundnuts")
 varsChr3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
               "Pulses", "Somalia 2011", "Pandemic")
+              #"Oilseeds/nuts and products")
+#              "Soyabeans", "Nuts and products")#, "Groundnuts")
 varsChr1a <- paste0("`", varsChr1a, "`")
 varsChr1b <- paste0("`", varsChr1b, "`")
 varsChr2a <- paste0("`", varsChr2a, "`")
@@ -582,23 +605,9 @@ indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
 dfModChr <- dfMod %>% subset(Cat == "Chronic hunger")
 dfModChr <- dfModChr[-indOutlier, ]
 #-----------------------------------------------------------------------------
-# 4 outliers removed (Cty-number of years): Iran-1, Norway-1, Somalia-1, Yemen-1
-# Somalia 2011 outlier dropped so no need for E. Africa crisis???!
+# 4 outliers removed (Cty-number of years): Iran-1, Norway-1, Somalia-1, Samoa-1
 # Go back up to define y and estimate all models again before proceeding
 #-----------------------------------------------------------------------------
-# Density plots of clustered residuals
-# dfPlot <- data.frame(residuals = modChr2a$residuals, id = dfModChr$Grp, year = dfModChr$year)
-# gg <- ggplot(dfPlot, aes(x = residuals)) + geom_hline(yintercept = 0)
-# gg <- gg + geom_histogram(aes(y = ..density..),
-#                             colour = 1, fill = "white", binwidth = 0.125)
-# gg <- gg + geom_density() + geom_vline(xintercept = 0, color = "red") +
-#   facet_wrap(~id, ncol = 2) +
-#   theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
-#         axis.text.y = element_text(size = axisTextSize),
-#         axis.title = element_text(size = axisTitleSize))
-# thisGraphic <- "clustrdResids_chr.png"
-# thisFilepath <- paste0(outFolder, thisGraphic)
-# ggsave(thisFilepath, width = 4, height = 5)
 # Assess multicollinearity, heteroskedasticity for single years
 # VIFs are all < 5 for all regressors and years it seems
 # BP test indicates heteroskedasticity for some years, not for others
@@ -621,10 +630,10 @@ for(j in 1:nMods){
 }
 max(maxVIFmat) < 5 # If TRUE then no multicollinearity issue
 sum(BPmat < 0.01)
-# Save coefficients and FEs to csv
+# Save coefficients to csv
 dfOut1a <- data.frame(model = "1a", var = names(modChr1a$coefficients),
                       coef = modChr1a$coefficients)
-dfOut1b <- data.frame(model = "1a", var = names(modChr1b$coefficients),
+dfOut1b <- data.frame(model = "1b", var = names(modChr1b$coefficients),
                       coef = modChr1b$coefficients)
 dfOut2a <- data.frame(model = "2a", var = names(modChr2a$coefficients),
                      coef = modChr2a$coefficients)
@@ -635,7 +644,7 @@ dfOut2c <- data.frame(model = "2c", var = names(modChr2c$coefficients),
 dfOut3 <- data.frame(model = 3, var = names(modChr3$coefficients),
                      coef = modChr3$coefficients)
 dfCoefsChr <- do.call(rbind, list(dfOut1a, dfOut1b, dfOut2a, dfOut2b, dfOut2c, dfOut3)) %>% as.data.frame()
-thisFilepath <- paste0(outFolder, "Chr hung model coefs.csv")
+thisFilepath <- paste0(outFolder, "Chr_hung_model_coefs.csv")
 write.csv(dfCoefsChr, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsList <- list(modChr1a, modChr1b, modChr2a, modChr2b, modChr2c, modChr3)
@@ -649,7 +658,7 @@ modelsummary(modelsList, output = thisFilepath, statistic = "p.value",
 # Graphic comparing resid v fitted plots of cty FE and year FE models
 countryVec <- dfModChr$country; yrVec <- dfModChr$year
 dfErr2a <- data.frame(country = countryVec, year = yrVec, yHat = modChr2a$fitted.values, Residual = modChr2a$residuals, model = "Model 2a (Country FE)")
-dfErr2c <- data.frame(country = countryVec, year = yrVec, yHat = modChr2c$fitted.values, Residual = modChr2c$residuals, model = "Model 2c (Year FE)")
+dfErr2c <- data.frame(country = countryVec, year = yrVec, yHat = modChr2c$fitted.values, Residual = modChr2c$residuals, model = "Model 2a (Year FE)")
 dfErr <- rbind(dfErr2a, dfErr2c) %>% as.data.frame()
 gg <- ggplot(dfErr,  aes(x = yHat, y = Residual)) + geom_hline(yintercept = 0, color = "red")
 gg <- gg + geom_point(size = 0.15)
@@ -662,9 +671,7 @@ gg <- gg + theme(axis.text = element_text(size = axisTextSize),
 thisGraphic <- "errorYhatPlot_chr.png"
 thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 5, height = 2)
-# Histograms of cty FEs, which may be interpreted as
-# logged geometric mean of DALYs/100,000 if the data is centered
-# (For the IFPRI-IMPACT deliverable data are NOT centered.)
+# Save FEs to csv
 countryVec <- unique(countryVec)
 dfGM1a <- data.frame(country = countryVec, FE = fixef(modChr1a)$country, model = "Model 1a")
 dfGM1b <- data.frame(country = countryVec, FE = fixef(modChr1b)$country, model = "Model 1b")
@@ -672,9 +679,14 @@ dfGM2a <- data.frame(country = countryVec, FE = fixef(modChr2a)$country, model =
 dfGM2b <- data.frame(country = countryVec, FE = fixef(modChr2b)$country, model = "Model 2b")
 dfGM3 <- data.frame(country = countryVec, FE = fixef(modChr3)$country, model = "Model 3")
 dfGM <- do.call(rbind, list(dfGM1a, dfGM1b, dfGM2a, dfGM2b, dfGM3)) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Chr_hung_model_FEs.csv")
+write.csv(dfGM, thisFilepath, row.names = F)
+# Histograms of cty FEs, which may be interpreted as
+# logged geometric mean of DALYs/100,000 if the data is centered
+# (For the IFPRI-IMPACT deliverable data are NOT centered.)
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
-               colour = 1, fill = "white", binwidth = 1.5)
+               colour = 1, fill = "white")#, binwidth = 1.5)
 gg <- gg + geom_density()
 gg <- gg + labs(x = "Country fixed effects", y = "Density", title = "Fixed effects, burden of chronic hunger models")
 #gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to chronic hunger\n(country fixed effects)")
@@ -692,19 +704,28 @@ ggsave(thisFilepath, width = 7, height = 2)
 dfModHid <- dfMod %>% subset(Cat == "Hidden hunger")
 varsHid1a <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Nut. def. 2011 anomaly", "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "Nut. def. 2011 anomaly")#,
+#              "Soyabeans", "Nuts and products", "Groundnuts")
+              #"Oilseeds/nuts and products")#, "Pandemic")
 varsHid1b <- c("Pct Pop < 15", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Nut. def. 2011 anomaly", "Pandemic")
+              "Pulses", "Nut. def. 2011 anomaly")#,
+              #"Oilseeds/nuts and products")#, "Pandemic")
+#              "Soyabeans", "Nuts and products", "Groundnuts")
 varsHid2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "Nut. def. 2011 anomaly", "Pandemic")
+              "Pulses", "Sugar & Sweeteners", "Nut. def. 2011 anomaly")#,
+              #"Oilseeds/nuts and products")#, "Pandemic")
+#              "Soyabeans", "Nuts and products", "Groundnuts")
 varsHid2b <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Nut. def. 2011 anomaly", "Pandemic")
+              "Pulses", "Nut. def. 2011 anomaly")#, "Pandemic")
+#              "Soyabeans", "Nuts and products", "Groundnuts")
 varsHid3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Nut. def. 2011 anomaly", "Pandemic")
+              "Pulses", "Nut. def. 2011 anomaly")#,
+              #"Oilseeds/nuts and products")#, "Pandemic")
+              #"Soyabeans", "Nuts and products", "Groundnuts")
 varsHid1a <- paste0("`", varsHid1a, "`")
 varsHid1b <- paste0("`", varsHid1b, "`")
 varsHid2a <- paste0("`", varsHid2a, "`")
@@ -731,9 +752,9 @@ indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
 dfModHid <- dfMod %>% subset(Cat == "Hidden hunger")
 dfModHid <- dfModHid[-indOutlier, ]
 #-----------------------------------------------------------------------------
-# 6 outliers removed (Cty-number of years): Angola-1, Côte d'Ivoire-1, Gabon-1,
-# Germany-1, Uganda-1, Zambia-1
-# Go back up to define y and estimate all models again before proceeding
+# 4 outliers removed (Cty-number of years): Angola-1, Uganda-2, Zambia-1
+# Go back up to define y (line 'colnames(dfModHid)[3] <- "y"')
+# and estimate all models again before proceeding
 #-----------------------------------------------------------------------------
 # Assess multicollinearity, heteroskedasticity for single years
 # VIFs are all < 5 for all regressors and years it seems
@@ -768,16 +789,17 @@ dfOut2b <- data.frame(model = "2b", var = names(modHid2b$coefficients),
 dfOut3 <- data.frame(model = 3, var = names(modHid3$coefficients),
                      coef = modHid3$coefficients)
 dfCoefsHid <- do.call(rbind, list(dfOut1a, dfOut1b, dfOut2a, dfOut2b, dfOut3)) %>% as.data.frame()
-thisFilepath <- paste0(outFolder, "Hid hung model coefs.csv")
+thisFilepath <- paste0(outFolder, "Hid_hung_model_coefs.csv")
 write.csv(dfCoefsHid, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsList <- list(modHid1a, modHid1b, modHid2a, modHid2b, modHid3)
-coefOrder <- gsub("`", "", unique(c(varsChr1a, varsChr1b, varsChr2a, varsChr2b, varsChr3)))
+coefOrder <- gsub("`", "", unique(c(varsHid1a, varsHid1b, varsHid2a, varsHid2b, varsHid3)))
 theseFirst <- c("Pct Pop < 15", "GDP / capita", "SDI")
 coefOrder <- unique(c(theseFirst, coefOrder))
 thisFile <- "ctyFEmods_Hid_clstRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(modelsList, output = thisFilepath, statistic = "p.value", estimate = "{estimate}{stars}")
+modelsummary(modelsList, output = thisFilepath, statistic = "p.value",
+             estimate = "{estimate}{stars}", coef_map = coefOrder)
 # Histograms of cty FEs, which may be interpreted as
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
@@ -788,9 +810,11 @@ dfGM2a <- data.frame(country = countryVec, FE = fixef(modHid2a)$country, model =
 dfGM2b <- data.frame(country = countryVec, FE = fixef(modHid2b)$country, model = "Model 2b")
 dfGM3 <- data.frame(country = countryVec, FE = fixef(modHid3)$country, model = "Model 3")
 dfGM <- do.call(rbind, list(dfGM1a, dfGM1b, dfGM2a, dfGM2b, dfGM3)) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Hid_hung_model_FEs.csv")
+write.csv(dfGM, thisFilepath, row.names = F)
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
-                          colour = 1, fill = "white", binwidth = 1.5)
+                          colour = 1, fill = "white")#, binwidth = 0.3)
 gg <- gg + geom_density()
 gg <- gg + labs(x = "Country fixed effects", y = "Density", title = "Fixed effects, burden of hidden hunger models")
 #gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to chronic hunger\n(country fixed effects)")
@@ -800,28 +824,34 @@ gg <- gg + theme(axis.text = element_text(size = axisTextSize),
                  axis.title = element_text(size = axisTitleSize),
                  strip.text = element_text(size = facetTitleSize),
                  plot.title = element_text(size = axisTitleSize))
-thisGraphic <- "FEdensityPlot_hid.png"
+thisGraphic <- "FEdensityPlot_hid_2.png"
 thisFilepath <- paste0(outFolder, thisGraphic)
 ggsave(thisFilepath, width = 7, height = 2)
 # Note the hidden hunger cty FEs histogram is bimodal.
+dfGM1a %>% subset(FE < 3.5) %>% .$country %>% unique
 #=======================================================================
 # Burden of overnutrition model
 dfModOve <- dfMod %>% subset(Cat == "Overnutrition")
 varsOve1a <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")
+              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")#,
+              #"Oilseeds/nuts and products")
 varsOve1b <- c("Pct Pop < 25", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "COVID-19 transfat anomaly")
+              "Pulses", "COVID-19 transfat anomaly")#,
+              #"Oilseeds/nuts and products")
 varsOve2a <- c("GDP / capita", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")
+              "Pulses", "Sugar & Sweeteners", "COVID-19 transfat anomaly")#,
+              #"Oilseeds/nuts and products")
 varsOve2b <- c("GDP / capita", "Animal Products", "Cereals",
                "Starchy Roots", "F&V", "Vegetable Oils",
-               "Pulses", "COVID-19 transfat anomaly")
+               "Pulses", "COVID-19 transfat anomaly")#,
+               #"Oilseeds/nuts and products")
 varsOve3 <- c("SDI", "Animal Products", "Cereals",
               "Starchy Roots", "F&V", "Vegetable Oils",
-              "Pulses", "COVID-19 transfat anomaly")
+              "Pulses", "COVID-19 transfat anomaly")#,
+              #"Oilseeds/nuts and products")
 varsOve1a <- paste0("`", varsOve1a, "`")
 varsOve1b <- paste0("`", varsOve1b, "`")
 varsOve2a <- paste0("`", varsOve2a, "`")
@@ -839,18 +869,18 @@ modOve2a
 modOve2b
 modOve3
 # Plot of residuals v fitted values
-plot(modOve1a$fitted.values, modOve1a$residuals)
-# Remove outliers (abs(error) > 4 s.d.) and fit again
-errVec <- modOve1b$residuals
+#plot(modOve2a$fitted.values, modOve2a$residuals)
+# Remove outliers (abs(error) > 5 s.d.) and fit again
+errVec <- modOve2a$residuals
 names(errVec) <- dfModOve$country
 sdErr <- sd(errVec)
-indOutlier <- which(abs(errVec) > 4 * sdErr); names(indOutlier)
+indOutlier <- which(abs(errVec) > 5 * sdErr); names(indOutlier)
 dfModOve <- dfMod %>% subset(Cat == "Overnutrition")
 dfModOve <- dfModOve[-indOutlier, ]
 #-----------------------------------------------------------------------------
-# 17 outliers removed (Cty-number of years): Georgia-1, Libya-4, Oman-1,
-# Russian Federation-1, Syrian Arab Republic-8, Venezuela-2
-# Go back up to define y and estimate all models again before proceeding
+# 4 outliers removed (Cty-number of years): Syrian Arab Republic-3, Venezuela-1
+# Go back up to define y (line 'colnames(dfModOve)[3] <- "y"')
+# and estimate all models again before proceeding
 #-----------------------------------------------------------------------------
 # Assess multicollinearity, heteroskedasticity for single years
 # VIFs are all < 5 for all regressors and years it seems
@@ -871,7 +901,7 @@ for(j in 1:nMods){
   }
 }
 max(maxVIFmat) < 5 # If TRUE then no multicollinearity issue
-#sum(BPmat < 0.05)
+sum(BPmat < 0.01)
 # Save coefficients and FEs to csv
 dfOut1a <- data.frame(model = "1a", var = names(modOve1a$coefficients),
                       coef = modOve1a$coefficients)
@@ -884,16 +914,17 @@ dfOut2b <- data.frame(model = "2b", var = names(modOve2b$coefficients),
 dfOut3 <- data.frame(model = 3, var = names(modOve3$coefficients),
                      coef = modOve3$coefficients)
 dfCoefsOve <- do.call(rbind, list(dfOut1a, dfOut1b, dfOut2a, dfOut2b, dfOut3)) %>% as.data.frame()
-thisFilepath <- paste0(outFolder, "Ove hung model coefs.csv")
+thisFilepath <- paste0(outFolder, "Ove_hung_model_coefs.csv")
 write.csv(dfCoefsOve, thisFilepath, row.names = F)
 # Save estimations to word files for reporting
 modelsList <- list(modOve1a, modOve1b, modOve2a, modOve2b, modOve3)
-coefOrder <- gsub("`", "", unique(c(varsChr1a, varsChr1b, varsChr2a, varsChr2b, varsChr3)))
-theseFirst <- c("Pct Pop < 15", "GDP / capita", "SDI")
+coefOrder <- gsub("`", "", unique(c(varsOve1a, varsOve1b, varsOve2a, varsOve2b, varsOve3)))
+theseFirst <- c("Pct Pop < 25", "GDP / capita", "SDI")
 coefOrder <- unique(c(theseFirst, coefOrder))
 thisFile <- "ctyFEmods_Ove_clstRob.docx"
 thisFilepath <- paste0(outFolder, thisFile)
-modelsummary(modelsList, output = thisFilepath, statistic = "p.value", estimate = "{estimate}{stars}")
+modelsummary(modelsList, output = thisFilepath, statistic = "p.value",
+             estimate = "{estimate}{stars}", coef_map = coefOrder)
 # Histograms of cty FEs, which may be interpreted as
 # logged geometric mean of DALYs/100,000 if the data is centered
 # (For the IFPRI-IMPACT deliverable data are NOT centered.)
@@ -904,9 +935,11 @@ dfGM2a <- data.frame(country = countryVec, FE = fixef(modOve2a)$country, model =
 dfGM2b <- data.frame(country = countryVec, FE = fixef(modOve2b)$country, model = "Model 2b")
 dfGM3 <- data.frame(country = countryVec, FE = fixef(modOve3)$country, model = "Model 3")
 dfGM <- do.call(rbind, list(dfGM1a, dfGM1b, dfGM2a, dfGM2b, dfGM3)) %>% as.data.frame()
+thisFilepath <- paste0(outFolder, "Ove_hung_model_FEs.csv")
+write.csv(dfGM, thisFilepath, row.names = F)
 gg <- ggplot(dfGM, aes(x = FE))
 gg <- gg + geom_histogram(aes(y = ..density..),
-                          colour = 1, fill = "white", binwidth = 1.5)
+                          colour = 1, fill = "white")#, binwidth = 1.5)
 gg <- gg + geom_density()
 gg <- gg + labs(x = "Country fixed effects", y = "Density", title = "Fixed effects, burden of overnutrition models")
 #gg <- gg + labs(x = "Logged geometric mean DALYs/100,000 capita due to chronic hunger\n(country fixed effects)")
@@ -951,7 +984,7 @@ dfModSumStats %>% select(year, Cat, y) %>%
         strip.text = element_text(size = facetTitleSize))
 thisFile <- "Hunger summary statistics.png"
 thisFilepath <- paste0(outFolder, thisFile)
-ggsave(thisFilepath, height = 4, width = 7)
+ggsave(thisFilepath, height = 2, width = 7)
 #------------------------------------------------------------------------
 # Socioeconomic/demographic regressor summary stats by year
 regrssrs <- colnames(dfRgrsrSumStats)[-c(1:3)]
@@ -2813,3 +2846,17 @@ ggsave(saveTo, width = 8, height = 6)
 # # Assess multicollinearity, heteroskedasticity for single years
 # # VIFs are all < 5 for all regressors and years it seems
 # # BP test indicates heteroskedasticity for all years
+
+# Density plots of clustered residuals
+# dfPlot <- data.frame(residuals = modChr2a$residuals, id = dfModChr$Grp, year = dfModChr$year)
+# gg <- ggplot(dfPlot, aes(x = residuals)) + geom_hline(yintercept = 0)
+# gg <- gg + geom_histogram(aes(y = ..density..),
+#                             colour = 1, fill = "white", binwidth = 0.125)
+# gg <- gg + geom_density() + geom_vline(xintercept = 0, color = "red") +
+#   facet_wrap(~id, ncol = 2) +
+#   theme(axis.text.x = element_text(size = axisTextSize, angle = 60, hjust = 1),
+#         axis.text.y = element_text(size = axisTextSize),
+#         axis.title = element_text(size = axisTitleSize))
+# thisGraphic <- "clustrdResids_chr.png"
+# thisFilepath <- paste0(outFolder, thisGraphic)
+# ggsave(thisFilepath, width = 4, height = 5)
