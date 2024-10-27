@@ -958,6 +958,71 @@ ggsave(thisFilepath, width = 7, height = 2)
 # Graphics/tables
 #========================================================================
 #========================================================================
+# List of countries in cleaned dataset, prior to burden specific cleaning
+ctys <- dfMod %>% .$country %>% unique() %>% paste(collapse = ", ")
+#------------------------------------------------------------------------
+# Table mapping food regressors to IMPACT food variables
+foodRegrsVec <- setdiff(colnames(dfFBS), c("area", "year", "element", "Population", "Grand Total"))
+thisFilePath <- paste0(dataFolder, "Food FAO detail/")
+theseFiles <- list.files(thisFilePath)
+foodDetailList <- list()
+for(i in 1:length(theseFiles)){
+  nameThis <- gsub(" detail.csv", "", theseFiles[i])
+  foodDetailList[[nameThis]] <- read.csv(paste0(thisFilePath, theseFiles[i]), stringsAsFactors = F) %>%
+    select(Item, `Item.Code..FBS.`) %>% rename(ItemCode = `Item.Code..FBS.`) %>%
+    mutate(ItemCode = gsub("\\<s", "", ItemCode)) %>%
+    mutate(Item = paste(ItemCode, Item)) %>% .$Item %>%
+    {sub(".", "", .)}
+}
+cerOtherDetail <- "68 Popcorn, 89 Buckwheat, 90 Flour, buckwheat, 91 Bran, buckwheat, 92 Quinoa, 94 Fonio, 95 Flour, fonio, 96 Bran, fonio, 97 Triticale, 98 Flour, triticale, 99 Bran, triticale, 101 Canary seed, 103 Grain, mixed, 104 Flour, mixed grain, 105 Bran, mixed grains, 108 Cereals, nes, 111 Flour, cereals, 112 Bran, cereals nes, 113 Cereal preparations, nes"
+fruitOtherDetail <- "521 Pears, 523 Quinces, 526 Apricots, 527 Apricots, dry, 530 Cherries, sour, 531 Cherries, 534 Peaches and nectarines, 536 Plums and sloes, 537 Plums dried (prunes), 538 Juice, plum, single strength, 539 Juice, plum, concentrated, 541 Fruit, stone nes, 542 Fruit, pome nes, 544 Strawberries, 547 Raspberries, 549 Gooseberries, 550 Currants, 552 Blueberries, 554 Cranberries, 558 Berries nes, 567 Watermelons, 568 Melons, other (inc.cantaloupes), 569 Figs, 570 Figs dried, 571 Mangoes, mangosteens, guavas, 572 Avocados, 583 Juice, mango, 587 Persimmons, 591 Cashewapple, 592 Kiwi fruit, 600 Papayas, 603 Fruit, tropical fresh nes, 604 Fruit, tropical dried nes, 619 Fruit, fresh nes, 620 Fruit, dried nes, 622 Juice, fruit nes, 623 Fruit, prepared nes, 624 Flour, fruit, 625 Fruits, nuts, peel, sugar preserved, 626 Fruit, cooked, homogenized preparations"
+vegOtherDetail <- "358 Cabbages and other brassicas, 366 Artichokes, 367 Asparagus, 372 Lettuce and chicory, 373 Spinach, 378 Cassava leaves, 393 Cauliflowers and broccoli, 394 Pumpkins, squash and gourds, 397 Cucumbers and gherkins, 399 Eggplants (aubergines), 401 Chillies and peppers, green, 402 Onions, shallots, green, 406 Garlic, 407 Leeks, other alliaceous vegetables, 414 Beans, green, 417 Peas, green, 420 Vegetables, leguminous nes, 423 String beans, 426 Carrots and turnips, 430 Okra, 446 Maize, green, 447 Sweet corn frozen, 448 Sweet corn prep or preserved, 449 Mushrooms and truffles, 450 Mushrooms, dried, 451 Mushrooms, canned, 459 Chicory roots, 461 Carobs, 463 Vegetables, fresh nes, 464 Vegetables, dried nes, 465 Vegetables, canned nes, 466 Juice, vegetables nes, 469 Vegetables, dehydrated, 471 Vegetables in vinegar, 472 Vegetables, preserved nes, 473 Vegetables, frozen, 474 Vegetables, temporarily preserved, 475 Vegetables, preserved, frozen, 476 Vegetables, homogenized preparations, 567 Watermelons, 568 Melons, other (inc.cantaloupes), 658 Coffee, substitutes containing coffee"
+pulsesOtherDetail <- "181 Broad beans, horse beans, dry, 191 Chick peas, 195 Cow peas, dry, 197 Pigeon peas, 201 Lentils, 203 Bambara beans, 205 Vetches, 210 Lupins, 211 Pulses, nes, 212 Flour, pulses, 213 Bran, pulses"
+rootsOtherDetail <- "135 Yautia (cocoyam), 136 Taro (cocoyam), 149 Roots and tubers, nes, 150 Flour, roots and tubers nes, 151 Roots and tubers dried"
+sweetenersOtherDetail <- "154 Fructose chemically pure, 155 Maltose chemically pure, 160 Maple sugar and syrups, 161 Sugar crops, nes, 165 Molasses, 166 Fructose and syrup, other, 167 Sugar, nes, 172 Glucose and dextrose, 173 Lactose, 175 Isoglucose, 633 Beverages, non alcoholic"
+oilCropsOilOtherDetail <- "264 Butter of karite nuts, 266 Oil, castor beans, 276 Oil, tung nuts, 278 Oil, jojoba, 281 Oil, safflower, 297 Oil, poppy, 306 Vegetable tallow, 307 Oil, stillingia, 313 Oil, kapok, 334 Oil, linseed, 337 Oil, hempseed, 340 Oil, vegetable origin nes, 664 Cocoa, butter, 1241 Margarine, liquid, 1242 Margarine, short, 1273 Castor oil, hydrogenated (opal wax), 1274 Oil, boiled etc, 1275 Oil, hydrogenated"
+
+regrsr2FAO <- c()
+regrsr2FAO["Animal products"] <- paste(foodDetailList$`Animal products`, collapse = ", ")
+regrsr2FAO["Cereals"] <- paste(foodDetailList$Cereals, collapse = ", ") %>% paste0("; where 'Cereals, other' = ", cerOtherDetail)
+regrsr2FAO["F&V"] <- paste(foodDetailList$Fruits, foodDetailList$Vegetables, collapse = ", ") %>%
+  paste0("; where 'Fruits, other' = ", fruitOtherDetail, "; and where 'Vegetables, other' = ", vegOtherDetail)
+regrsr2FAO["Pulses"] <- paste(foodDetailList$Pulses, collapse = ", ") %>% paste0("; where 'Pulses, Other and products' = ", pulsesOtherDetail)
+regrsr2FAO["Starchy Roots"] <- paste(foodDetailList$`Starchy roots`, collapse = ", ") %>% paste0("; where 'Roots, Other' = ", rootsOtherDetail)
+regrsr2FAO["Sugar & Sweeteners"] <- paste(foodDetailList$`Sugar n sweeteners`, collapse = ", ") %>% paste0("; where 'Sweeteners, Other' = ", sweetenersOtherDetail)
+regrsr2FAO["Vegetable Oils"] <- paste(foodDetailList$`Veg oils`, collapse = ", ") %>% paste0("; where 'Oilcrops Oil, Other' = ", oilCropsOilOtherDetail)
+
+regrsr2FAO1 <- foodRegrsVec
+regrsr2FAO1[grep("F&V", regrsr2FAO1)] <- "'2919 Fruits - Excluding Wine' and '2918 Vegetables'"
+regrsr2FAO1[grep("Cereals", regrsr2FAO1)] <- "2905 Cereals - Excluding Beer"
+regrsr2FAO1[grep("Animal Products", regrsr2FAO1)] <- "2941 Animal Products"
+regrsr2FAO1[grep("Pulses", regrsr2FAO1)] <- "2911 Pulses"
+regrsr2FAO1[grep("Starchy Roots", regrsr2FAO1)] <- "2907 Starchy Roots"
+regrsr2FAO1[grep("Sugar & Sweeteners", regrsr2FAO1)] <- "2909 Sugar & Sweeteners"
+regrsr2FAO1[grep("Vegetable Oils", regrsr2FAO1)] <- "2914 Vegetable Oils"
+
+regrsr2IMPACT1 <- foodRegrsVec
+regrsr2IMPACT1[grep("F&V", regrsr2IMPACT1)] <- "Fruits & Vegetables"
+regrsr2IMPACT1[grep("Starchy Roots", regrsr2IMPACT1)] <- "Roots & Tubers"
+regrsr2IMPACT1[grep("Sugar & Sweeteners", regrsr2IMPACT1)] <- "Sugar Crops"
+regrsr2IMPACT1[grep("Vegetable Oils", regrsr2IMPACT1)] <- "Processed Oils"
+
+animalDetailIMPACT <- c("")
+cerealDetailIMPACT <- c("")
+FnVDetailIMPACT <- c("")
+pulsDetailIMPACT <- c("")
+RnTDetailIMPACT <- c("")
+sugarDetailIMPACT <- c("")
+procOilDetailIMPACT <- c("")
+
+regrsr2IMPACT <- c()
+
+
+dfFoodMap <- data.frame(`This study` = foodRegrsVec,
+                        IMPACT = regrsr2IMPACT,
+                        FAO = regrsr2FAO1,
+                        `FAO detail` = regrsr2FAO)
+#------------------------------------------------------------------------
 # Summary statistic tables
 # Hunger summary stats by type, year
 dfModSumStats <- do.call(rbind, list(dfModChr, dfModHid, dfModOve)) %>% as.data.frame()
@@ -1015,11 +1080,11 @@ thisFile <- "Regressor summary statistics.png"
 thisFilepath <- paste0(outFolder, thisFile)
 ggsave(thisFilepath, height = 6, width = 7)
 #------------------------------------------------------------------------
-# Correlation plot
-# dfMod %>% subset(year == 2021) %>%
-#   spread(Cat, `DALYs / 100,000 capita`) %>%
-#   select(-c(year, area)) %>% chart.Correlation(histogram=TRUE, pch=19)
-# # Manually save using Export in the plot viewer, use width 1500 height 1000
+# Correlation plot of logged socioeconomic/demographic control variables
+dfMod %>% subset(year == 2018) %>%
+  spread(Cat, `DALYs / 100,000 capita`) %>%
+  select(`Pct Pop < 15`, `Pct Pop < 25`, `GDP / capita`, SDI) %>% chart.Correlation(histogram=F)#, pch=19)
+# Manually save using Export in the plot viewer, (use width 1500 height 1000 if many variables)
 #------------------------------------------------------------------------
 # Create graphics data frame for regionally disaggregated IHME GBD data plots
 thisFile <- "IHME-GBD_1990-2021_cNutDef_byAge_reg.csv"
