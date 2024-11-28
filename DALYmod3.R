@@ -5,6 +5,7 @@ library(tidyverse)
 library(fixest)
 library(modelsummary)
 library(randomcoloR)
+library(car)
 library(scales)
 library(PerformanceAnalytics)
 #library(countries)
@@ -623,7 +624,7 @@ for(j in 1:nMods){
     dfTest <- dfModChr %>% subset(year == yrVec[i]) %>%
       select(y, all_of(theseVars))
     modTest <- lm(y~., dfTest)
-    maxVIFmat[i, j] <- max(car::vif(modTest)) # VIFs
+    maxVIFmat[i, j] <- max(vif(modTest)) # VIFs
     BPmat[i, j] <- lmtest::bptest(modTest)$`p.value` # Breusch-Pagan test for heteroskedasticity
     
   }
@@ -771,7 +772,7 @@ for(j in 1:nMods){
     dfTest <- dfModChr %>% subset(year == yrVec[i]) %>%
       select(y, all_of(theseVars))
     modTest <- lm(y~., dfTest)
-    maxVIFmat[i, j] <- max(car::vif(modTest)) # VIFs
+    maxVIFmat[i, j] <- max(vif(modTest)) # VIFs
     BPmat[i, j] <- lmtest::bptest(modTest)$`p.value` # Breusch-Pagan test for heteroskedasticity
   }
 }
@@ -896,7 +897,7 @@ for(j in 1:nMods){
     dfTest <- dfModChr %>% subset(year == yrVec[i]) %>%
       select(y, all_of(theseVars))
     modTest <- lm(y~., dfTest)
-    maxVIFmat[i, j] <- max(car::vif(modTest)) # VIFs
+    maxVIFmat[i, j] <- max(vif(modTest)) # VIFs
     BPmat[i, j] <- lmtest::bptest(modTest)$`p.value` # Breusch-Pagan test for heteroskedasticity
   }
 }
@@ -962,18 +963,52 @@ ggsave(thisFilepath, width = 7, height = 2)
 ctys <- dfMod %>% .$country %>% unique() %>% paste(collapse = ", ")
 #------------------------------------------------------------------------
 # Table mapping food regressors to IMPACT food variables
+# First get lists of FAO items under each regressor together with item code
 foodRegrsVec <- setdiff(colnames(dfFBS), c("area", "year", "element", "Population", "Grand Total"))
 thisFilePath <- paste0(dataFolder, "Food FAO detail/")
 theseFiles <- list.files(thisFilePath)
 foodDetailList <- list()
 for(i in 1:length(theseFiles)){
   nameThis <- gsub(" detail.csv", "", theseFiles[i])
-  foodDetailList[[nameThis]] <- read.csv(paste0(thisFilePath, theseFiles[i]), stringsAsFactors = F) %>%
+  dfx <- read.csv(paste0(thisFilePath, theseFiles[i]), stringsAsFactors = F) %>%
     select(Item, `Item.Code..FBS.`) %>% rename(ItemCode = `Item.Code..FBS.`) %>%
-    mutate(ItemCode = gsub("\\<s", "", ItemCode)) %>%
-    mutate(Item = paste(ItemCode, Item)) %>% .$Item %>%
-    {sub(".", "", .)}
+    mutate(ItemCode = sub(".", "", ItemCode)) %>%
+    mutate(ItemCodePaste = paste(ItemCode, Item))
+  foodDetailList[[nameThis]] <- dfx %>% .$ItemCodePaste
 }
+# Match FAO item codes given in IMPACT documentation v3.6 to FAO Items
+# for IMPACT designations "Cereals, other", "Tropical fruits", "Temperate fruits",
+# "Vegetables", "Total other oils"
+ocerDetailIMPACT2FAO <- c(2515, 2516, 2520)
+tropFruitDetailIMPACT2FAO <- c(2611:2614, 2618, 2619)
+tempFruitDetailIMPACT2FAO <- c(2617, 2620)
+vegDetailIMPACT2FAO <- c(2601, 2602, 2605, 2640, 2641)
+totOtherOilDetailIMPACT2FAO <- c(2575, 2578, 2579, 2580, 2586)
+impact2FAOList_in <- list(ocerDetailIMPACT2FAO,
+                       tropFruitDetailIMPACT2FAO,
+                       tempFruitDetailIMPACT2FAO,
+                       vegDetailIMPACT2FAO,
+                       totOtherOilDetailIMPACT2FAO)
+theseFiles <- c("Cereals detail.csv",
+                   "Fruits detail.csv",
+                   "Vegetables detail.csv",
+                   "Veg oils detail.csv")
+dfx <- lapply(paste0(thisFilePath, theseFiles), function(i){read.csv(i, stringsAsFactors = F)}) %>%
+  do.call(rbind, .) %>% select(Item, `Item.Code..FBS.`) %>%
+  rename(ItemCode = `Item.Code..FBS.`) %>%
+  mutate(ItemCode = sub(".", "", ItemCode)) %>%
+  mutate(ItemCodePaste = paste(ItemCode, Item))
+nameVec <- c("otherCereals", "tropFruit", "tempFruit", "veg", "otherOil")
+impact2FAOList <- list()
+for(i in 1:length(impact2FAOList_in)){
+  impact2FAOList[[nameVec[i]]] <- dfx$ItemCodePaste[which(dfx$ItemCode %in% impact2FAOList_in[[i]])] %>%
+    paste(collapse = ", ")
+}
+# Under IMPACT "Vegetables" have to manually look up and add
+# 2640 = Pepper, 2641 = Pimento from FAO FBS
+impact2FAOList[["veg"]] <- c(impact2FAOList[["veg"]], "2640 Pepper", "2641 Pimento") %>%
+  paste(collapse = ", ")
+# Now get lists of items included under "other" from FAO FBS "Definitions and Standards" https://www.fao.org/faostat/en/#data/FBS
 cerOtherDetail <- "68 Popcorn, 89 Buckwheat, 90 Flour, buckwheat, 91 Bran, buckwheat, 92 Quinoa, 94 Fonio, 95 Flour, fonio, 96 Bran, fonio, 97 Triticale, 98 Flour, triticale, 99 Bran, triticale, 101 Canary seed, 103 Grain, mixed, 104 Flour, mixed grain, 105 Bran, mixed grains, 108 Cereals, nes, 111 Flour, cereals, 112 Bran, cereals nes, 113 Cereal preparations, nes"
 fruitOtherDetail <- "521 Pears, 523 Quinces, 526 Apricots, 527 Apricots, dry, 530 Cherries, sour, 531 Cherries, 534 Peaches and nectarines, 536 Plums and sloes, 537 Plums dried (prunes), 538 Juice, plum, single strength, 539 Juice, plum, concentrated, 541 Fruit, stone nes, 542 Fruit, pome nes, 544 Strawberries, 547 Raspberries, 549 Gooseberries, 550 Currants, 552 Blueberries, 554 Cranberries, 558 Berries nes, 567 Watermelons, 568 Melons, other (inc.cantaloupes), 569 Figs, 570 Figs dried, 571 Mangoes, mangosteens, guavas, 572 Avocados, 583 Juice, mango, 587 Persimmons, 591 Cashewapple, 592 Kiwi fruit, 600 Papayas, 603 Fruit, tropical fresh nes, 604 Fruit, tropical dried nes, 619 Fruit, fresh nes, 620 Fruit, dried nes, 622 Juice, fruit nes, 623 Fruit, prepared nes, 624 Flour, fruit, 625 Fruits, nuts, peel, sugar preserved, 626 Fruit, cooked, homogenized preparations"
 vegOtherDetail <- "358 Cabbages and other brassicas, 366 Artichokes, 367 Asparagus, 372 Lettuce and chicory, 373 Spinach, 378 Cassava leaves, 393 Cauliflowers and broccoli, 394 Pumpkins, squash and gourds, 397 Cucumbers and gherkins, 399 Eggplants (aubergines), 401 Chillies and peppers, green, 402 Onions, shallots, green, 406 Garlic, 407 Leeks, other alliaceous vegetables, 414 Beans, green, 417 Peas, green, 420 Vegetables, leguminous nes, 423 String beans, 426 Carrots and turnips, 430 Okra, 446 Maize, green, 447 Sweet corn frozen, 448 Sweet corn prep or preserved, 449 Mushrooms and truffles, 450 Mushrooms, dried, 451 Mushrooms, canned, 459 Chicory roots, 461 Carobs, 463 Vegetables, fresh nes, 464 Vegetables, dried nes, 465 Vegetables, canned nes, 466 Juice, vegetables nes, 469 Vegetables, dehydrated, 471 Vegetables in vinegar, 472 Vegetables, preserved nes, 473 Vegetables, frozen, 474 Vegetables, temporarily preserved, 475 Vegetables, preserved, frozen, 476 Vegetables, homogenized preparations, 567 Watermelons, 568 Melons, other (inc.cantaloupes), 658 Coffee, substitutes containing coffee"
@@ -981,9 +1016,8 @@ pulsesOtherDetail <- "181 Broad beans, horse beans, dry, 191 Chick peas, 195 Cow
 rootsOtherDetail <- "135 Yautia (cocoyam), 136 Taro (cocoyam), 149 Roots and tubers, nes, 150 Flour, roots and tubers nes, 151 Roots and tubers dried"
 sweetenersOtherDetail <- "154 Fructose chemically pure, 155 Maltose chemically pure, 160 Maple sugar and syrups, 161 Sugar crops, nes, 165 Molasses, 166 Fructose and syrup, other, 167 Sugar, nes, 172 Glucose and dextrose, 173 Lactose, 175 Isoglucose, 633 Beverages, non alcoholic"
 oilCropsOilOtherDetail <- "264 Butter of karite nuts, 266 Oil, castor beans, 276 Oil, tung nuts, 278 Oil, jojoba, 281 Oil, safflower, 297 Oil, poppy, 306 Vegetable tallow, 307 Oil, stillingia, 313 Oil, kapok, 334 Oil, linseed, 337 Oil, hempseed, 340 Oil, vegetable origin nes, 664 Cocoa, butter, 1241 Margarine, liquid, 1242 Margarine, short, 1273 Castor oil, hydrogenated (opal wax), 1274 Oil, boiled etc, 1275 Oil, hydrogenated"
-
 regrsr2FAO <- c()
-regrsr2FAO["Animal products"] <- paste(foodDetailList$`Animal products`, collapse = ", ")
+regrsr2FAO["Animal Products"] <- paste(foodDetailList$`Animal products`, collapse = ", ")
 regrsr2FAO["Cereals"] <- paste(foodDetailList$Cereals, collapse = ", ") %>% paste0("; where 'Cereals, other' = ", cerOtherDetail)
 regrsr2FAO["F&V"] <- paste(foodDetailList$Fruits, foodDetailList$Vegetables, collapse = ", ") %>%
   paste0("; where 'Fruits, other' = ", fruitOtherDetail, "; and where 'Vegetables, other' = ", vegOtherDetail)
@@ -1007,21 +1041,35 @@ regrsr2IMPACT1[grep("Starchy Roots", regrsr2IMPACT1)] <- "Roots & Tubers"
 regrsr2IMPACT1[grep("Sugar & Sweeteners", regrsr2IMPACT1)] <- "Sugar Crops"
 regrsr2IMPACT1[grep("Vegetable Oils", regrsr2IMPACT1)] <- "Processed Oils"
 
-animalDetailIMPACT <- c("")
-cerealDetailIMPACT <- c("")
-FnVDetailIMPACT <- c("")
-pulsDetailIMPACT <- c("")
-RnTDetailIMPACT <- c("")
-sugarDetailIMPACT <- c("")
-procOilDetailIMPACT <- c("")
+animalDetailIMPACT <- c("2731 Beef", "2744 Eggs", "2732 Lamb", "2848 Dairy", "2733 Pork", "2734 Poultry")
+cerealDetailIMPACT <- c("2513 Barley", "2514 Maize", "2517 Millet", "2805 Rice", "2518 Sorghum", "2511 Wheat", "Other Cereals")
+FnVDetailIMPACT <- c("2615 Banana", "2616 Plantain", "Tropical fruits", "Temperate fruits", "Vegetables")
+pulsDetailIMPACT <- c("2546 Beans", "Chickpeas", "Cowpeas", "Lentils", "Pigeonpeas", "Other pulses")
+RnTDetailIMPACT <- c("Cassava and other roots and tubers", "Potato", "Sweet potatoes", "Yams", "Other roots and tubers")
+sugarDetailIMPACT <- c("2537 Sugar beet", "2536 Sugar cane", "2542 Refined sugar")
+procOilDetailIMPACT <- c("2572 Groundnut oil", "2574 Rapeseed oil", "2573 Sunflower oil", "2577 Palm fruit oil", "2576 Palm kernel oil", "2571 Soybean oil", "Total other oils")
 
 regrsr2IMPACT <- c()
+regrsr2IMPACT["Animal Products"] <- paste(animalDetailIMPACT, collapse = ", ")
+regrsr2IMPACT["Cereals"] <- paste(cerealDetailIMPACT, collapse = ", ") %>% 
+  paste0("; where 'Other Cereals' = ", impact2FAOList$otherCereals)
+regrsr2IMPACT["F&V"] <- paste(FnVDetailIMPACT, collapse = ", ") %>%
+  paste0("; where 'Temperate fruits' = ", impact2FAOList$tempFruit,
+         "; and where 'Tropical fruits' = ", impact2FAOList$tropFruit,
+         "; and where 'Vegetables' = ", impact2FAOList$veg)
+regrsr2IMPACT["Pulses"] <- paste(pulsDetailIMPACT, collapse = ", ")
+regrsr2IMPACT["Starchy Roots"] <- paste(RnTDetailIMPACT, collapse = ", ")
+regrsr2IMPACT["Sugar & Sweeteners"] <- paste(sugarDetailIMPACT, collapse = ", ")
+regrsr2IMPACT["Vegetable Oils"] <- paste(procOilDetailIMPACT, collapse = ", ") %>%
+  paste0("; where 'Total other oils' = ", impact2FAOList$otherOil)
 
-
-dfFoodMap <- data.frame(`This study` = foodRegrsVec,
-                        IMPACT = regrsr2IMPACT,
+dfFoodRegrsrMap <- data.frame(`This study` = foodRegrsVec,
                         FAO = regrsr2FAO1,
-                        `FAO detail` = regrsr2FAO)
+                        `FAO detail` = regrsr2FAO,
+                        IMPACT = regrsr2IMPACT1,
+                        `IMPACT detail` = regrsr2IMPACT)
+outFilePath <- paste0(outFolder, "Food regressors map FAO IMPACT.csv")
+write.csv(dfFoodRegrsrMap, outFilePath, row.names = F)
 #------------------------------------------------------------------------
 # Summary statistic tables
 # Hunger summary stats by type, year
@@ -1337,7 +1385,8 @@ dfPlot <- dfFBSreg %>%
   mutate(Item = gsub("Cereals - Excluding Beer", "Cereals", Item)) %>%
   group_by(Area, Year, Item) %>%
   summarise(`kcal / capita / day` = sum(`kcal / capita / day`, na.rm = T)) %>%
-  spread(Item, `kcal / capita / day`)
+  spread(Item, `kcal / capita / day`) %>%
+  rename(`Fruits & Vegetables` = `F&V`)
 dfPlot[, -c(1, 2)] <- dfPlot[, -c(1, 2)] / dfPlot$`Grand Total` * 100
 dfPlot$`Grand Total` <- NULL
 dfPlot$Residual <- 100 - rowSums(dfPlot[, -c(1, 2)])
@@ -1549,7 +1598,7 @@ ggsave(thisFilepath)
 #   select(-c(area, year, SDI))
 # modTest <- lm(y~., dfModChrTest)
 # summary(modTest)
-# car::vif(modTest)
+# vif(modTest)
 # # Test endogeneity
 # thisFile <- "FAOSTAT_urbanRuralPop.csv"
 # thisFilepath <- paste0(dataFolder, thisFile)
@@ -2275,7 +2324,7 @@ dfModPC$`DALYs/100,000 capita` <- scale(dfModPC$`DALYs/100,000 capita`)
 #dfModPC <- dfModPC[, -5]
 mod <- lm(`DALYs/100,000 capita` ~.-1, dfModPC)
 summ(mod)
-car::vif(mod)
+vif(mod)
 plot(mod$fitted.values, mod$residuals)
 pVals <- summary(mod)$coefficients[, 4]
 colRm <- which(pVals > 0.04) + 1
@@ -2346,7 +2395,7 @@ dfModHid[, -1] <- as.data.frame(apply(dfModHid[, -1], 2, refFn))
 mod <- lm(`DALYs/100,000 capita` ~., dfModHid)
 summ(mod)
 #summary(mod)
-car::vif(mod)
+vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modHid <- mod
 #---
@@ -2354,7 +2403,7 @@ dfModChr[, -1] <- as.data.frame(apply(dfModChr[, -1], 2, refFn))
 mod <- lm(`DALYs/100,000 capita` ~., dfModChr)
 summ(mod)
 #summary(mod)
-car::vif(mod)
+vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modChr <- mod
 #---
@@ -2362,7 +2411,7 @@ dfModOve[, -1] <- as.data.frame(apply(dfModOve[, -1], 2, refFn))
 mod <- lm(`DALYs/100,000 capita` ~., dfModOve)
 summ(mod)
 #summary(mod)
-car::vif(mod)
+vif(mod)
 plot(mod$fitted.values, mod$residuals)
 modOve <- mod
 #---
